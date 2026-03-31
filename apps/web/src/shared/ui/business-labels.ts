@@ -98,6 +98,14 @@ const invitationStatusLabels: Record<string, string> = {
   REVOKED: 'Invitation revoquee',
 };
 
+const featureRequestStatusLabels: Record<string, string> = {
+  OPEN: 'Ouverte',
+  PLANNED: 'Planifiee',
+  IN_PROGRESS: 'En test beta',
+  DONE: 'Livree',
+  REJECTED: 'Non retenue',
+};
+
 const adminAuditActionLabels: Record<string, string> = {
   TRIAL_GRANTED: 'Essai accorde',
   TRIAL_EXTENDED: 'Essai prolonge',
@@ -108,6 +116,8 @@ const adminAuditActionLabels: Record<string, string> = {
   ADMIN_ROLE_CHANGED: 'Role admin modifie',
   USER_INVITED: 'Utilisateur invite',
   USER_INVITE_RESENT: 'Invitation renvoyee',
+  USER_PILOT_ACCESS_UPDATED: 'Acces pilote modifie',
+  FEATURE_REQUEST_STATUS_UPDATED: 'Statut idee modifie',
 };
 
 const dashboardAlertLabels: Record<string, string> = {
@@ -158,6 +168,8 @@ const adminAuditActionTones: Record<string, string> = {
   SUBSCRIPTION_UPDATED: 'info',
   ADMIN_CREATED: 'good',
   ADMIN_ROLE_CHANGED: 'warning',
+  USER_PILOT_ACCESS_UPDATED: 'info',
+  FEATURE_REQUEST_STATUS_UPDATED: 'warning',
 };
 
 const subscriptionStatusTones: Record<string, string> = {
@@ -178,6 +190,14 @@ const invitationStatusTones: Record<string, string> = {
   ACCEPTED: 'good',
   EXPIRED: 'warning',
   REVOKED: 'neutral',
+};
+
+const featureRequestStatusTones: Record<string, string> = {
+  OPEN: 'neutral',
+  PLANNED: 'warning',
+  IN_PROGRESS: 'info',
+  DONE: 'good',
+  REJECTED: 'danger',
 };
 
 function getLabel(labels: Record<string, string>, value: string | null | undefined) {
@@ -236,6 +256,12 @@ export function getInvitationStatusLabel(value: string | null | undefined) {
   return getLabel(invitationStatusLabels, value);
 }
 
+export function getFeatureRequestStatusLabel(
+  value: string | null | undefined,
+) {
+  return getLabel(featureRequestStatusLabels, value);
+}
+
 export function getAdminAuditActionLabel(value: string | null | undefined) {
   return getLabel(adminAuditActionLabels, value);
 }
@@ -278,4 +304,8 @@ export function getAccessStatusTone(value: string | null | undefined) {
 
 export function getInvitationStatusTone(value: string | null | undefined) {
   return invitationStatusTones[value ?? ''] ?? 'neutral';
+}
+
+export function getFeatureRequestStatusTone(value: string | null | undefined) {
+  return featureRequestStatusTones[value ?? ''] ?? 'neutral';
 }

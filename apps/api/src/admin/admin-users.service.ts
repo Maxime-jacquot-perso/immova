@@ -32,6 +32,7 @@ import { UpdateSubscriptionDto } from './dto/update-subscription.dto';
 import { ChangeAdminRoleDto } from './dto/change-admin-role.dto';
 import { InviteUserDto } from './dto/invite-user.dto';
 import { ResendInvitationDto } from './dto/resend-invitation.dto';
+import { UpdateUserPilotAccessDto } from './dto/update-user-pilot-access.dto';
 
 type UserListRecord = Prisma.UserGetPayload<{
   include: {
@@ -626,6 +627,52 @@ export class AdminUsersService {
     });
   }
 
+  async updatePilotAccess(
+    actor: AuthenticatedUser,
+    userId: string,
+    body: UpdateUserPilotAccessDto,
+    requestContext: AdminRequestContext,
+  ) {
+    const target = await this.getManagedUser(userId);
+
+    if (!body.isPilotUser && body.betaAccessEnabled) {
+      throw new BadRequestException(
+        "L'acces beta ne peut etre active que pour un client pilote",
+      );
+    }
+
+    const nextPilotAccess = {
+      isPilotUser: body.isPilotUser,
+      betaAccessEnabled: body.isPilotUser ? body.betaAccessEnabled : false,
+    };
+
+    return this.prisma.$transaction(async (tx) => {
+      const updatedUser = await tx.user.update({
+        where: { id: userId },
+        data: nextPilotAccess,
+      });
+
+      await this.adminAuditService.record({
+        client: tx,
+        actorUserId: actor.userId,
+        targetUserId: userId,
+        action: AdminAuditAction.USER_PILOT_ACCESS_UPDATED,
+        targetType: AdminAuditTargetType.USER,
+        reason: body.reason,
+        oldValue: {
+          isPilotUser: target.isPilotUser,
+          betaAccessEnabled: target.betaAccessEnabled,
+        },
+        newValue: nextPilotAccess,
+        metadata: { actorAdminRole: actor.adminRole },
+        ipAddress: requestContext.ipAddress,
+        userAgent: requestContext.userAgent,
+      });
+
+      return this.mapSimpleMutationResult(updatedUser);
+    });
+  }
+
   private async getOrganization(organizationId: string) {
     const organization = await this.prisma.organization.findUnique({
       where: { id: organizationId },
@@ -740,6 +787,8 @@ export class AdminUsersService {
         email: true,
         adminRole: true,
         isSuspended: true,
+        isPilotUser: true,
+        betaAccessEnabled: true,
         trialEndsAt: true,
         trialExtensionsCount: true,
         subscriptionPlan: true,
@@ -769,6 +818,8 @@ export class AdminUsersService {
         [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email,
       adminRole: user.adminRole,
       isSuspended: user.isSuspended,
+      isPilotUser: user.isPilotUser,
+      betaAccessEnabled: user.betaAccessEnabled,
       accessStatus: user.isSuspended ? 'SUSPENDED' : 'ACTIVE',
       trialEndsAt: user.trialEndsAt,
       trialExtensionsCount: user.trialExtensionsCount,
@@ -792,6 +843,8 @@ export class AdminUsersService {
     id: string;
     adminRole: AdminRole;
     isSuspended: boolean;
+    isPilotUser: boolean;
+    betaAccessEnabled: boolean;
     subscriptionPlan: SubscriptionPlan;
     subscriptionStatus: SubscriptionStatus;
     trialEndsAt: Date | null;
@@ -801,6 +854,8 @@ export class AdminUsersService {
       id: user.id,
       adminRole: user.adminRole,
       isSuspended: user.isSuspended,
+      isPilotUser: user.isPilotUser,
+      betaAccessEnabled: user.betaAccessEnabled,
       subscriptionPlan: user.subscriptionPlan,
       subscriptionStatus: user.subscriptionStatus,
       trialEndsAt: user.trialEndsAt,

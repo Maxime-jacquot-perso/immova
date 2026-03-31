@@ -83,6 +83,8 @@ export class AuthService {
         lastName: user.lastName,
         adminRole: user.adminRole,
         isSuspended: user.isSuspended,
+        isPilotUser: user.isPilotUser,
+        betaAccessEnabled: user.betaAccessEnabled,
         lastLoginAt,
       },
       organization: membership

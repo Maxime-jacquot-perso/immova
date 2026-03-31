@@ -20,6 +20,8 @@ export type Session = {
     lastName?: string | null;
     adminRole: string;
     isSuspended: boolean;
+    isPilotUser: boolean;
+    betaAccessEnabled: boolean;
     lastLoginAt?: string | null;
   };
   organization: {

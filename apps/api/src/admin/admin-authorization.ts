@@ -12,6 +12,8 @@ export const ADMIN_PERMISSIONS = {
   trialExtend: 'trial.extend',
   subscriptionRead: 'subscription.read',
   subscriptionOverride: 'subscription.override',
+  ideasRead: 'ideas.read',
+  ideasUpdate: 'ideas.update',
   adminsRead: 'admins.read',
   adminsCreate: 'admins.create',
   adminsUpdate: 'admins.update',
@@ -47,6 +49,7 @@ const ROLE_PERMISSIONS: Record<AdminRole, readonly AdminPermission[]> = {
     ADMIN_PERMISSIONS.projectsRead,
     ADMIN_PERMISSIONS.trialRead,
     ADMIN_PERMISSIONS.subscriptionRead,
+    ADMIN_PERMISSIONS.ideasRead,
     ADMIN_PERMISSIONS.auditRead,
   ],
   [AdminRole.SALES_ADMIN]: [
@@ -63,6 +66,7 @@ const ROLE_PERMISSIONS: Record<AdminRole, readonly AdminPermission[]> = {
     ADMIN_PERMISSIONS.projectsRead,
     ADMIN_PERMISSIONS.trialRead,
     ADMIN_PERMISSIONS.subscriptionRead,
+    ADMIN_PERMISSIONS.ideasRead,
     ADMIN_PERMISSIONS.auditRead,
   ],
   [AdminRole.ADMIN]: [
@@ -77,6 +81,8 @@ const ROLE_PERMISSIONS: Record<AdminRole, readonly AdminPermission[]> = {
     ADMIN_PERMISSIONS.trialExtend,
     ADMIN_PERMISSIONS.subscriptionRead,
     ADMIN_PERMISSIONS.subscriptionOverride,
+    ADMIN_PERMISSIONS.ideasRead,
+    ADMIN_PERMISSIONS.ideasUpdate,
     ADMIN_PERMISSIONS.adminsRead,
     ADMIN_PERMISSIONS.adminsCreate,
     ADMIN_PERMISSIONS.adminsUpdate,

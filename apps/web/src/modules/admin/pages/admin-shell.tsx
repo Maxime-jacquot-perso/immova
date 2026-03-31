@@ -34,6 +34,16 @@ export function AdminShell() {
               Utilisateurs
             </NavLink>
           ) : null}
+          {hasAdminPermission(session, ADMIN_PERMISSIONS.ideasRead) ? (
+            <NavLink
+              to="/admin/ideas"
+              className={({ isActive }) =>
+                `sidebar__link ${isActive ? 'sidebar__link--active' : ''}`
+              }
+            >
+              Idees produit
+            </NavLink>
+          ) : null}
           {hasAdminPermission(session, ADMIN_PERMISSIONS.adminsRead) ? (
             <NavLink
               to="/admin/admins"

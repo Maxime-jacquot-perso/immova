@@ -6,6 +6,7 @@ import {
   AdminRole,
   DocumentType,
   ExpenseCategory,
+  FeatureRequestStatus,
   InvitationOrganizationMode,
   LotStatus,
   LotType,
@@ -24,6 +25,7 @@ import {
   cleanDatabase,
   cleanupUploads,
   prepareTestDatabase,
+  seedFeatureRequest,
   seedProject,
   seedUser,
 } from './e2e-helpers';
@@ -97,6 +99,96 @@ describe('API e2e', () => {
     expect(response.body.accessToken).toBeDefined();
     expect(response.body.organization.slug).toBe('org-auth');
     expect(response.body.role).toBe('ADMIN');
+  });
+
+  it('creates and lists ideas per organization, then supports vote and unvote', async () => {
+    const actor = await seedUser(prisma, {
+      organizationName: 'Org Ideas',
+      organizationSlug: 'org-ideas',
+      email: 'ideas-user@example.com',
+      password: 'password123',
+      role: MembershipRole.MANAGER,
+    });
+    const outsider = await seedUser(prisma, {
+      organizationName: 'Org Ideas 2',
+      organizationSlug: 'org-ideas-2',
+      email: 'ideas-outsider@example.com',
+      password: 'password123',
+      role: MembershipRole.MANAGER,
+    });
+
+    await seedFeatureRequest(prisma, {
+      organizationId: outsider.organization.id,
+      authorId: outsider.user.id,
+      title: 'Idee externe',
+      description: "Cette idee ne doit pas fuiter dans l'autre organisation.",
+    });
+
+    const token = await login('ideas-user@example.com', 'password123');
+
+    const createResponse = await request(app.getHttpServer())
+      .post('/api/ideas')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        title: 'Ajouter un tri sur les idees',
+        description:
+          'Pouvoir distinguer rapidement les idees recentes des idees les plus soutenues.',
+      })
+      .expect(201);
+
+    const featureRequestId = createResponse.body.id as string;
+
+    const listResponse = await request(app.getHttpServer())
+      .get('/api/ideas')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(listResponse.body).toEqual([
+      expect.objectContaining({
+        id: featureRequestId,
+        title: 'Ajouter un tri sur les idees',
+        votesCount: 0,
+        hasVoted: false,
+        author: expect.objectContaining({
+          email: 'ideas-user@example.com',
+        }),
+      }),
+    ]);
+    expect(JSON.stringify(listResponse.body)).not.toContain('Idee externe');
+
+    const voteResponse = await request(app.getHttpServer())
+      .post(`/api/ideas/${featureRequestId}/vote`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(201);
+
+    expect(voteResponse.body).toEqual({
+      id: featureRequestId,
+      votesCount: 1,
+      hasVoted: true,
+    });
+
+    await request(app.getHttpServer())
+      .post(`/api/ideas/${featureRequestId}/vote`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(400);
+
+    const unvoteResponse = await request(app.getHttpServer())
+      .delete(`/api/ideas/${featureRequestId}/vote`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(unvoteResponse.body).toEqual({
+      id: featureRequestId,
+      votesCount: 0,
+      hasVoted: false,
+    });
+
+    const persistedIdea = await prisma.featureRequest.findUniqueOrThrow({
+      where: { id: featureRequestId },
+    });
+
+    expect(persistedIdea.organizationId).toBe(actor.organization.id);
+    expect(persistedIdea.votesCount).toBe(0);
   });
 
   it('creates an admin-driven invitation, logs it and keeps the password unset until activation', async () => {
@@ -1305,5 +1397,118 @@ describe('API e2e', () => {
     expect(JSON.stringify(outsiderResponse.body)).not.toContain(
       'Projet Travaux Sous Tension',
     );
+  });
+
+  it('updates pilot access and unlocks beta ideas only for activated pilot users', async () => {
+    const actor = await seedUser(prisma, {
+      organizationName: 'Org Pilot',
+      organizationSlug: 'org-pilot',
+      email: 'pilot-admin@example.com',
+      password: 'password123',
+      adminRole: AdminRole.ADMIN,
+    });
+    const target = await prisma.user.create({
+      data: {
+        email: 'pilot-target@example.com',
+        firstName: 'Pilot',
+        lastName: 'Target',
+        passwordHash: hashSync('password123', 10),
+      },
+    });
+
+    await prisma.membership.create({
+      data: {
+        organizationId: actor.organization.id,
+        userId: target.id,
+        role: MembershipRole.MANAGER,
+      },
+    });
+
+    const idea = await seedFeatureRequest(prisma, {
+      organizationId: actor.organization.id,
+      authorId: target.id,
+      title: 'Tester une vue beta reservee',
+      description:
+        "Cette idee servira a verifier que l'acces beta reste reserve aux clients pilotes.",
+    });
+
+    const adminToken = await login('pilot-admin@example.com', 'password123');
+    const targetToken = await login('pilot-target@example.com', 'password123');
+
+    await request(app.getHttpServer())
+      .get('/api/ideas/beta')
+      .set('Authorization', `Bearer ${targetToken}`)
+      .expect(403);
+
+    const pilotAccessResponse = await request(app.getHttpServer())
+      .patch(`/api/admin/users/${target.id}/pilot-access`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        isPilotUser: true,
+        betaAccessEnabled: true,
+        reason: 'Activation du programme pilote',
+      })
+      .expect(200);
+
+    expect(pilotAccessResponse.body).toEqual(
+      expect.objectContaining({
+        id: target.id,
+        isPilotUser: true,
+        betaAccessEnabled: true,
+      }),
+    );
+
+    await request(app.getHttpServer())
+      .patch(`/api/admin/ideas/${idea.id}/status`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        status: FeatureRequestStatus.IN_PROGRESS,
+        reason: 'Passage en validation beta',
+      })
+      .expect(200);
+
+    const refreshedTargetToken = await login(
+      'pilot-target@example.com',
+      'password123',
+    );
+    const betaIdeasResponse = await request(app.getHttpServer())
+      .get('/api/ideas/beta')
+      .set('Authorization', `Bearer ${refreshedTargetToken}`)
+      .expect(200);
+
+    expect(betaIdeasResponse.body).toEqual([
+      expect.objectContaining({
+        id: idea.id,
+        title: 'Tester une vue beta reservee',
+        status: FeatureRequestStatus.IN_PROGRESS,
+        isBeta: true,
+      }),
+    ]);
+
+    const updatedTarget = await prisma.user.findUniqueOrThrow({
+      where: { id: target.id },
+    });
+    const pilotAuditLog = await prisma.adminAuditLog.findFirst({
+      where: {
+        action: AdminAuditAction.USER_PILOT_ACCESS_UPDATED,
+        targetUserId: target.id,
+      },
+    });
+    const ideaAuditLog = await prisma.adminAuditLog.findFirst({
+      where: {
+        action: AdminAuditAction.FEATURE_REQUEST_STATUS_UPDATED,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    expect(updatedTarget).toEqual(
+      expect.objectContaining({
+        isPilotUser: true,
+        betaAccessEnabled: true,
+      }),
+    );
+    expect(pilotAuditLog?.reason).toBe('Activation du programme pilote');
+    expect(ideaAuditLog?.reason).toBe('Passage en validation beta');
+    expect(ideaAuditLog?.targetUserId).toBeNull();
   });
 });

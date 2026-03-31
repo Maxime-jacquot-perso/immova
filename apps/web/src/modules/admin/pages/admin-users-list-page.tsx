@@ -488,6 +488,7 @@ export function AdminUsersListPage() {
               <tr>
                 <th>Utilisateur</th>
                 <th>Acces</th>
+                <th>Programme</th>
                 <th>Role admin</th>
                 <th>Abonnement</th>
                 <th>Essai</th>
@@ -509,6 +510,18 @@ export function AdminUsersListPage() {
                     <AdminBadge tone={getAccessStatusTone(user.accessStatus)}>
                       {getAccessStatusLabel(user.accessStatus)}
                     </AdminBadge>
+                  </td>
+                  <td>
+                    <div className="inline-actions">
+                      {user.isPilotUser ? (
+                        <AdminBadge tone="info">Pilote</AdminBadge>
+                      ) : (
+                        <AdminBadge tone="neutral">Standard</AdminBadge>
+                      )}
+                      {user.betaAccessEnabled ? (
+                        <AdminBadge tone="warning">Acces beta</AdminBadge>
+                      ) : null}
+                    </div>
                   </td>
                   <td>{getAdminRoleLabel(user.adminRole)}</td>
                   <td>

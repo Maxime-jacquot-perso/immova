@@ -6,6 +6,8 @@ import { AdminAuditController } from './admin-audit.controller';
 import { AdminAuditService } from './admin-audit.service';
 import { AdminDashboardController } from './admin-dashboard.controller';
 import { AdminDashboardService } from './admin-dashboard.service';
+import { AdminIdeasController } from './admin-ideas.controller';
+import { AdminIdeasService } from './admin-ideas.service';
 import { AdminPolicyService } from './admin-policy.service';
 import { AdminUsersController } from './admin-users.controller';
 import { AdminUsersService } from './admin-users.service';
@@ -16,12 +18,14 @@ import { AdminPermissionsGuard } from './guards/admin-permissions.guard';
   imports: [InvitationsModule],
   controllers: [
     AdminDashboardController,
+    AdminIdeasController,
     AdminUsersController,
     AdminAdminsController,
     AdminAuditController,
   ],
   providers: [
     AdminDashboardService,
+    AdminIdeasService,
     AdminUsersService,
     AdminAdminsService,
     AdminAuditService,

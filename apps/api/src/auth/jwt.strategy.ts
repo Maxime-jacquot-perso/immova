@@ -30,6 +30,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         email: true,
         isSuspended: true,
         adminRole: true,
+        isPilotUser: true,
+        betaAccessEnabled: true,
         memberships: payload.organizationId
           ? {
               where: {
@@ -68,6 +70,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       organizationId: membership?.organizationId ?? null,
       membershipRole: membership?.role ?? null,
       adminRole: user.adminRole ?? AdminRole.USER,
+      isPilotUser: user.isPilotUser,
+      betaAccessEnabled: user.betaAccessEnabled,
     };
   }
 }

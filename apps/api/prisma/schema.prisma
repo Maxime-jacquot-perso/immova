@@ -108,6 +108,14 @@ enum SubscriptionStatus {
   CANCELED
 }
 
+enum FeatureRequestStatus {
+  OPEN
+  PLANNED
+  IN_PROGRESS
+  DONE
+  REJECTED
+}
+
 enum AdminAuditAction {
   TRIAL_GRANTED
   TRIAL_EXTENDED
@@ -118,12 +126,15 @@ enum AdminAuditAction {
   ADMIN_ROLE_CHANGED
   USER_INVITED
   USER_INVITE_RESENT
+  USER_PILOT_ACCESS_UPDATED
+  FEATURE_REQUEST_STATUS_UPDATED
 }
 
 enum AdminAuditTargetType {
   USER
   ADMIN
   SUBSCRIPTION
+  FEATURE_REQUEST
 }
 
 model Organization {
@@ -139,6 +150,8 @@ model Organization {
   expenses        Expense[]
   documents       Document[]
   userInvitations UserInvitation[]
+  featureRequests FeatureRequest[]
+  featureRequestVotes FeatureRequestVote[]
 }
 
 model User {
@@ -149,6 +162,8 @@ model User {
   passwordHash         String?
   adminRole            AdminRole          @default(USER)
   isSuspended          Boolean            @default(false)
+  isPilotUser          Boolean            @default(false)
+  betaAccessEnabled    Boolean            @default(false)
   trialEndsAt          DateTime?
   trialExtensionsCount Int                @default(0)
   subscriptionPlan     SubscriptionPlan   @default(FREE)
@@ -162,9 +177,12 @@ model User {
   adminAuditTargets  AdminAuditLog[]  @relation("AdminAuditTarget")
   invitations        UserInvitation[] @relation("InvitationUser")
   createdInvitations UserInvitation[] @relation("InvitationCreator")
+  featureRequests    FeatureRequest[] @relation("FeatureRequestAuthor")
+  featureRequestVotes FeatureRequestVote[]
 
   @@index([adminRole])
   @@index([isSuspended, subscriptionStatus])
+  @@index([isPilotUser, betaAccessEnabled])
   @@index([subscriptionPlan])
   @@index([trialEndsAt])
 }
@@ -323,4 +341,40 @@ model AdminAuditLog {
   @@index([actorUserId, createdAt])
   @@index([targetUserId, createdAt])
   @@index([action, createdAt])
+}
+
+model FeatureRequest {
+  id             String               @id @default(cuid())
+  organizationId String
+  authorId       String
+  title          String
+  description    String
+  votesCount     Int                  @default(0)
+  status         FeatureRequestStatus @default(OPEN)
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  organization Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  author       User                 @relation("FeatureRequestAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  votes        FeatureRequestVote[]
+
+  @@index([organizationId, status, createdAt])
+  @@index([organizationId, votesCount, createdAt])
+  @@index([authorId, createdAt])
+}
+
+model FeatureRequestVote {
+  id               String   @id @default(cuid())
+  organizationId   String
+  userId           String
+  featureRequestId String
+  createdAt        DateTime @default(now())
+
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  featureRequest FeatureRequest @relation(fields: [featureRequestId], references: [id], onDelete: Cascade)
+
+  @@unique([featureRequestId, userId])
+  @@index([organizationId, featureRequestId])
+  @@index([organizationId, userId])
 }

@@ -26,6 +26,7 @@ import { ReactivateUserDto } from './dto/reactivate-user.dto';
 import { ResendInvitationDto } from './dto/resend-invitation.dto';
 import { SuspendUserDto } from './dto/suspend-user.dto';
 import { UpdateSubscriptionDto } from './dto/update-subscription.dto';
+import { UpdateUserPilotAccessDto } from './dto/update-user-pilot-access.dto';
 import { AdminAccessGuard } from './guards/admin-access.guard';
 import { AdminPermissionsGuard } from './guards/admin-permissions.guard';
 
@@ -177,6 +178,22 @@ export class AdminUsersController {
     @Req() request: Request,
   ) {
     return this.adminUsersService.changeAdminRole(
+      actor,
+      userId,
+      body,
+      extractAdminRequestContext(request),
+    );
+  }
+
+  @Patch(':userId/pilot-access')
+  @AdminPermissions(ADMIN_PERMISSIONS.usersUpdate)
+  updatePilotAccess(
+    @CurrentUser() actor: AuthenticatedUser,
+    @Param('userId') userId: string,
+    @Body() body: UpdateUserPilotAccessDto,
+    @Req() request: Request,
+  ) {
+    return this.adminUsersService.updatePilotAccess(
       actor,
       userId,
       body,

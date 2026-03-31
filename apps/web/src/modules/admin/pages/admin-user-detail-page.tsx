@@ -10,6 +10,7 @@ import {
   reactivateAdminUser,
   resendAdminUserInvitation,
   suspendAdminUser,
+  updateAdminUserPilotAccess,
   updateAdminUserSubscription,
 } from '../api';
 import { AdminAuditLogList } from '../components/admin-audit-log-list';
@@ -43,7 +44,8 @@ type ActionKind =
   | 'extendTrial'
   | 'subscription'
   | 'changeRole'
-  | 'resendInvitation';
+  | 'resendInvitation'
+  | 'pilotAccess';
 
 type ModalState = {
   kind: ActionKind;
@@ -52,6 +54,8 @@ type ModalState = {
   subscriptionPlan: string;
   subscriptionStatus: string;
   adminRole: string;
+  isPilotUser: boolean;
+  betaAccessEnabled: boolean;
   invitationId?: string;
   invitationLabel?: string;
 };
@@ -72,6 +76,8 @@ function getActionTitle(kind: ActionKind) {
       return 'Changer le role admin';
     case 'resendInvitation':
       return "Renvoyer l'invitation";
+    case 'pilotAccess':
+      return "Mettre a jour l'acces pilote";
     default:
       return 'Action admin';
   }
@@ -135,6 +141,12 @@ export function AdminUserDetailPage() {
 
           return resendAdminUserInvitation(session, currentAction.invitationId, {
             reason: currentAction.reason,
+          });
+        case 'pilotAccess':
+          return updateAdminUserPilotAccess(session, userId, {
+            reason: currentAction.reason,
+            isPilotUser: currentAction.isPilotUser,
+            betaAccessEnabled: currentAction.betaAccessEnabled,
           });
         default:
           throw new Error('Action admin non geree');
@@ -217,6 +229,8 @@ export function AdminUserDetailPage() {
         user!.adminRole === 'USER'
           ? assignableRoles[0] ?? 'READONLY_ADMIN'
           : user!.adminRole,
+      isPilotUser: user!.isPilotUser,
+      betaAccessEnabled: user!.betaAccessEnabled,
       invitationId: undefined,
       invitationLabel: undefined,
     });
@@ -258,6 +272,26 @@ export function AdminUserDetailPage() {
         <div className="card kpi-card">
           <div className="kpi-card__label">Role admin</div>
           <div className="kpi-card__value">{getAdminRoleLabel(user.adminRole)}</div>
+        </div>
+        <div className="card kpi-card">
+          <div className="kpi-card__label">Programme pilote</div>
+          <div className="kpi-card__value">
+            <div className="inline-actions">
+              {user.isPilotUser ? (
+                <AdminBadge tone="info">Pilote</AdminBadge>
+              ) : (
+                <AdminBadge tone="neutral">Standard</AdminBadge>
+              )}
+              {user.betaAccessEnabled ? (
+                <AdminBadge tone="warning">Acces beta</AdminBadge>
+              ) : null}
+            </div>
+          </div>
+          <div className="kpi-card__hint">
+            {user.betaAccessEnabled
+              ? 'Peut tester les fonctionnalites en validation'
+              : 'Pas d acces beta actif'}
+          </div>
         </div>
         <div className="card kpi-card">
           <div className="kpi-card__label">Abonnement</div>
@@ -356,6 +390,16 @@ export function AdminUserDetailPage() {
                 type="button"
               >
                 Changer le role admin
+              </button>
+            ) : null}
+
+            {hasAdminPermission(session, ADMIN_PERMISSIONS.usersUpdate) ? (
+              <button
+                className="button button--secondary"
+                onClick={() => openAction('pilotAccess')}
+                type="button"
+              >
+                Mettre a jour l&apos;acces pilote
               </button>
             ) : null}
           </div>
@@ -471,6 +515,8 @@ export function AdminUserDetailPage() {
                               subscriptionPlan: user.subscriptionPlan,
                               subscriptionStatus: user.subscriptionStatus,
                               adminRole: user.adminRole,
+                              isPilotUser: user.isPilotUser,
+                              betaAccessEnabled: user.betaAccessEnabled,
                               invitationId: invitation.id,
                               invitationLabel: `${invitation.organization.name} · ${invitation.membershipRole}`,
                             })
@@ -570,6 +616,55 @@ export function AdminUserDetailPage() {
                   <option value="ACTIVE">Actif</option>
                   <option value="PAST_DUE">Impay&eacute;</option>
                   <option value="CANCELED">Annule</option>
+                </select>
+              </div>
+            </div>
+          ) : modal?.kind === 'pilotAccess' ? (
+            <div className="form-grid">
+              <div className="field">
+                <label htmlFor="admin-user-is-pilot">Client pilote</label>
+                <select
+                  id="admin-user-is-pilot"
+                  onChange={(event) =>
+                    setModal((current) =>
+                      current
+                        ? {
+                            ...current,
+                            isPilotUser: event.target.value === 'true',
+                            betaAccessEnabled:
+                              event.target.value === 'true'
+                                ? current.betaAccessEnabled
+                                : false,
+                          }
+                        : current,
+                    )
+                  }
+                  value={String(modal.isPilotUser)}
+                >
+                  <option value="false">Non</option>
+                  <option value="true">Oui</option>
+                </select>
+              </div>
+
+              <div className="field">
+                <label htmlFor="admin-user-beta-access">Acces beta</label>
+                <select
+                  disabled={!modal.isPilotUser}
+                  id="admin-user-beta-access"
+                  onChange={(event) =>
+                    setModal((current) =>
+                      current
+                        ? {
+                            ...current,
+                            betaAccessEnabled: event.target.value === 'true',
+                          }
+                        : current,
+                    )
+                  }
+                  value={String(modal.betaAccessEnabled)}
+                >
+                  <option value="false">Desactive</option>
+                  <option value="true">Active</option>
                 </select>
               </div>
             </div>

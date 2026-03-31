@@ -16,6 +16,23 @@ Le coeur du produit reste volontairement limite a :
 
 Le produit n'est ni un logiciel de gestion locative classique, ni un ERP immobilier.
 
+## Feedback produit et beta
+
+Le repo embarque maintenant une boucle de feedback volontairement simple :
+
+- une boite a idees produit sur `/ideas`
+- des votes limites a `1 user = 1 vote` par idee
+- des statuts `OPEN / PLANNED / IN_PROGRESS / DONE / REJECTED`
+- un message UX explicite : les votes aident a prioriser, ils ne decident pas automatiquement
+- un programme `client pilote` base sur `isPilotUser` + `betaAccessEnabled`
+- un espace beta reserve aux pilotes actifs pour les idees en validation
+
+Choix multi-tenant :
+
+- les idees et les votes sont scopes par `organizationId`
+- l application produit ne prend jamais `organizationId` depuis le body
+- le back-office admin garde une vue transverse pour la gestion interne
+
 ## Stack et architecture
 
 - `apps/landing` : Next.js + TypeScript
@@ -150,8 +167,10 @@ pnpm dev:api
 
 Apres le seed Prisma :
 
-- `admin@example.com` / `admin123` : compte `SUPER_ADMIN`, acces a l'application produit et au back-office `/admin`
+- `admin@example.com` / `admin123` : compte `SUPER_ADMIN`, acces a l'application produit et au back-office `/admin`, utilisateur pilote avec acces beta
 - `user@example.com` / `user123` : utilisateur standard, acces a l'application produit
+
+Le seed ajoute aussi deux idees de demonstration dans `demo-org` pour verifier rapidement la page `/ideas` et le panneau beta pilote.
 
 Ces comptes sont uniquement destines au developpement local et aux tests. Ils ne doivent pas etre recrees ni utilises en production.
 
@@ -255,4 +274,5 @@ Notes utiles :
 - [Cadrage produit](docs/cadrage-produit-architecture.md)
 - [Landing et go-to-market](docs/landing-page.md)
 - [MVP lancement strict](docs/mvp-lancement-strict.md)
+- [Feedback produit et clients pilotes](docs/feedback-produit-pilotes.md)
 - [Regles projet IA](AGENTS.md)

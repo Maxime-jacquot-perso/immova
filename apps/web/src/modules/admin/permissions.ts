@@ -9,6 +9,8 @@ export const ADMIN_PERMISSIONS = {
   trialGrant: 'trial.grant',
   trialExtend: 'trial.extend',
   subscriptionOverride: 'subscription.override',
+  ideasRead: 'ideas.read',
+  ideasUpdate: 'ideas.update',
   adminsRead: 'admins.read',
   adminsCreate: 'admins.create',
   adminsUpdate: 'admins.update',

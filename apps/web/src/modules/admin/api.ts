@@ -42,6 +42,8 @@ export type AdminUserSummary = {
   fullName: string;
   adminRole: string;
   isSuspended: boolean;
+  isPilotUser: boolean;
+  betaAccessEnabled: boolean;
   accessStatus: 'ACTIVE' | 'SUSPENDED';
   trialEndsAt?: string | null;
   trialExtensionsCount: number;
@@ -171,6 +173,27 @@ export type AuditLogsResponse = {
   totalPages: number;
 };
 
+export type AdminIdea = {
+  id: string;
+  title: string;
+  description: string;
+  votesCount: number;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  isBeta: boolean;
+  author: {
+    id: string;
+    email: string;
+    name: string;
+  };
+  organization: {
+    id: string;
+    name: string;
+    slug: string;
+  };
+};
+
 export type ListAdminUsersParams = Partial<{
   page: number;
   pageSize: number;
@@ -195,6 +218,11 @@ export type ListAuditLogsParams = Partial<{
   action: string;
   actorUserId: string;
   targetUserId: string;
+}>;
+
+export type ListAdminIdeasParams = Partial<{
+  status: string;
+  sort: 'top' | 'recent';
 }>;
 
 function requireSession(session: Session | null): Session {
@@ -378,6 +406,24 @@ export function updateAdminUserSubscription(
   });
 }
 
+export function updateAdminUserPilotAccess(
+  session: Session | null,
+  userId: string,
+  payload: {
+    isPilotUser: boolean;
+    betaAccessEnabled: boolean;
+    reason: string;
+  },
+) {
+  const currentSession = requireSession(session);
+
+  return apiFetch(`/admin/users/${userId}/pilot-access`, {
+    method: 'PATCH',
+    token: currentSession.accessToken,
+    body: payload,
+  });
+}
+
 export function changeAdminUserRole(
   session: Session | null,
   userId: string,
@@ -452,4 +498,35 @@ export function listAuditLogs(
       token: currentSession.accessToken,
     },
   );
+}
+
+export function listAdminIdeas(
+  session: Session | null,
+  params: ListAdminIdeasParams,
+) {
+  const currentSession = requireSession(session);
+
+  return apiFetch<AdminIdea[]>(
+    `/admin/ideas${buildQuery(params as Record<string, string | number | undefined>)}`,
+    {
+      token: currentSession.accessToken,
+    },
+  );
+}
+
+export function updateAdminIdeaStatus(
+  session: Session | null,
+  featureRequestId: string,
+  payload: {
+    status: string;
+    reason: string;
+  },
+) {
+  const currentSession = requireSession(session);
+
+  return apiFetch<AdminIdea>(`/admin/ideas/${featureRequestId}/status`, {
+    method: 'PATCH',
+    token: currentSession.accessToken,
+    body: payload,
+  });
 }

@@ -3,6 +3,7 @@ import { AppShell } from './layout/app-shell';
 import { LoginPage } from '../modules/auth/pages/login-page';
 import { SetupPasswordPage } from '../modules/auth/pages/setup-password-page';
 import { DashboardPage } from '../modules/dashboard/pages/dashboard-page';
+import { IdeasPage } from '../modules/ideas/pages/ideas-page';
 import { ProjectsListPage } from '../modules/projects/pages/projects-list-page';
 import { ProjectCreatePage } from '../modules/projects/pages/project-create-page';
 import { ProjectEditPage } from '../modules/projects/pages/project-edit-page';
@@ -16,6 +17,7 @@ import { SettingsPage } from '../modules/settings/pages/settings-page';
 import { AdminAdminsPage } from '../modules/admin/pages/admin-admins-page';
 import { AdminAuditLogsPage } from '../modules/admin/pages/admin-audit-logs-page';
 import { AdminDashboardPage } from '../modules/admin/pages/admin-dashboard-page';
+import { AdminIdeasPage } from '../modules/admin/pages/admin-ideas-page';
 import { AdminShell } from '../modules/admin/pages/admin-shell';
 import { AdminUserDetailPage } from '../modules/admin/pages/admin-user-detail-page';
 import { AdminUsersListPage } from '../modules/admin/pages/admin-users-list-page';
@@ -58,6 +60,10 @@ export const router = createBrowserRouter([
               {
                 path: 'projects',
                 element: <ProjectsListPage />,
+              },
+              {
+                path: 'ideas',
+                element: <IdeasPage />,
               },
               {
                 path: 'projects/new',
@@ -127,6 +133,10 @@ export const router = createBrowserRouter([
               {
                 path: 'audit-logs',
                 element: <AdminAuditLogsPage />,
+              },
+              {
+                path: 'ideas',
+                element: <AdminIdeasPage />,
               },
             ],
           },

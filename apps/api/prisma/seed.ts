@@ -1,5 +1,6 @@
 import {
   AdminRole,
+  FeatureRequestStatus,
   MembershipRole,
   PrismaClient,
   ProjectStatus,
@@ -24,6 +25,8 @@ async function main() {
     update: {
       adminRole: AdminRole.SUPER_ADMIN,
       isSuspended: false,
+      isPilotUser: true,
+      betaAccessEnabled: true,
     },
     create: {
       email: 'admin@example.com',
@@ -31,6 +34,8 @@ async function main() {
       lastName: 'Demo',
       passwordHash: hashSync('admin123', 10),
       adminRole: AdminRole.SUPER_ADMIN,
+      isPilotUser: true,
+      betaAccessEnabled: true,
     },
   });
 
@@ -91,6 +96,86 @@ async function main() {
       postalCode: '59000',
       type: ProjectType.APARTMENT_BUILDING,
       status: ProjectStatus.ACQUISITION,
+    },
+  });
+
+  await prisma.featureRequest.upsert({
+    where: { id: 'demo-idea-export-summary' },
+    update: {
+      title: 'Exporter un resume CSV plus lisible',
+      description:
+        "Ajouter un export plus lisible pour partager rapidement l'etat d'un projet avec un comptable ou un associe.",
+      status: FeatureRequestStatus.OPEN,
+      votesCount: 1,
+      authorId: user.id,
+      organizationId: organization.id,
+    },
+    create: {
+      id: 'demo-idea-export-summary',
+      organizationId: organization.id,
+      authorId: user.id,
+      title: 'Exporter un resume CSV plus lisible',
+      description:
+        "Ajouter un export plus lisible pour partager rapidement l'etat d'un projet avec un comptable ou un associe.",
+      status: FeatureRequestStatus.OPEN,
+      votesCount: 1,
+    },
+  });
+
+  await prisma.featureRequest.upsert({
+    where: { id: 'demo-idea-beta-checklist' },
+    update: {
+      title: 'Checklist beta pour la validation avant release',
+      description:
+        "Afficher une checklist tres legere pour verifier qu'une nouveaute est assez stable avant release globale.",
+      status: FeatureRequestStatus.IN_PROGRESS,
+      votesCount: 1,
+      authorId: standardUser.id,
+      organizationId: organization.id,
+    },
+    create: {
+      id: 'demo-idea-beta-checklist',
+      organizationId: organization.id,
+      authorId: standardUser.id,
+      title: 'Checklist beta pour la validation avant release',
+      description:
+        "Afficher une checklist tres legere pour verifier qu'une nouveaute est assez stable avant release globale.",
+      status: FeatureRequestStatus.IN_PROGRESS,
+      votesCount: 1,
+    },
+  });
+
+  await prisma.featureRequestVote.upsert({
+    where: {
+      featureRequestId_userId: {
+        featureRequestId: 'demo-idea-export-summary',
+        userId: standardUser.id,
+      },
+    },
+    update: {
+      organizationId: organization.id,
+    },
+    create: {
+      organizationId: organization.id,
+      featureRequestId: 'demo-idea-export-summary',
+      userId: standardUser.id,
+    },
+  });
+
+  await prisma.featureRequestVote.upsert({
+    where: {
+      featureRequestId_userId: {
+        featureRequestId: 'demo-idea-beta-checklist',
+        userId: user.id,
+      },
+    },
+    update: {
+      organizationId: organization.id,
+    },
+    create: {
+      organizationId: organization.id,
+      featureRequestId: 'demo-idea-beta-checklist',
+      userId: user.id,
     },
   });
 }

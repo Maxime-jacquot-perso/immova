@@ -100,6 +100,11 @@ Entites obligatoires :
 - `Expense`
 - `Document`
 
+Entites additionnelles activees pour le feedback produit MVP :
+
+- `FeatureRequest`
+- `FeatureRequestVote`
+
 Entites repoussees :
 
 - `Vendor`
@@ -121,6 +126,7 @@ Entites repoussees :
 - `/projects/:projectId/expenses`
 - `/projects/:projectId/documents`
 - `/projects/:projectId/export`
+- `/ideas`
 - `/settings`
 
 ## 10. Conventions de code
@@ -153,6 +159,7 @@ Structure frontend :
 - `src/modules/expenses` : gestion depenses dans un projet
 - `src/modules/documents` : upload et consultation documents
 - `src/modules/settings` : organisation courante et membres
+- `src/modules/ideas` : boite a idees produit, votes et lecture beta pilote
 - `src/modules/admin` : back-office interne, dashboard admin, users, admins, audit
 - `src/shared` : client API, UI minimale
 
@@ -169,6 +176,7 @@ Structure backend :
 - `src/prisma`
 - `src/storage`
 - `src/common`
+- `src/ideas`
 - `src/admin`
 - `src/invitations`
 - `src/mail`
@@ -190,6 +198,11 @@ Back :
 - `GET/POST /api/projects/:projectId/documents`
 - `GET /api/projects/:projectId/documents/:documentId/download`
 - `GET /api/projects/:projectId/exports/expenses.csv`
+- `GET /api/ideas`
+- `GET /api/ideas/beta`
+- `POST /api/ideas`
+- `POST /api/ideas/:featureRequestId/vote`
+- `DELETE /api/ideas/:featureRequestId/vote`
 - `GET /api/admin/dashboard`
 - `GET /api/admin/users`
 - `GET /api/admin/users/organizations/options`
@@ -202,6 +215,9 @@ Back :
 - `PATCH /api/admin/users/:userId/extend-trial`
 - `PATCH /api/admin/users/:userId/subscription`
 - `PATCH /api/admin/users/:userId/change-role`
+- `PATCH /api/admin/users/:userId/pilot-access`
+- `GET /api/admin/ideas`
+- `PATCH /api/admin/ideas/:featureRequestId/status`
 - `GET /api/admin/admins`
 - `POST /api/admin/admins`
 - `PATCH /api/admin/admins/:userId/change-role`
@@ -236,7 +252,11 @@ Front :
 - documents
 - filtres documents
 - export CSV
+- boite a idees produit simple avec creation, liste, tri, filtre, vote et retrait de vote
+- message UX explicite rappelant que les votes signalent sans decider automatiquement la roadmap
+- badge beta visible sur les idees `IN_PROGRESS`
 - settings organisation / membres
+- badge utilisateur `Pilote` et indication d acces beta dans l app produit
 - back-office admin interne distinct sous `/admin`
 - dashboard admin avec synthese comptes, essais, suspensions, repartition des roles admin et actions recentes
 - listing admin des utilisateurs avec recherche, filtres, pagination et badges d'etat
@@ -244,6 +264,8 @@ Front :
 - invitation admin d un utilisateur avec email, role membership, choix entre organisation existante et espace personnel, email transactionnel et lien unique vers l app web
 - page publique `/setup-password` pour verifier un token d invitation, definir le mot de passe si necessaire puis rediriger vers `/login`
 - gestion admin des essais, des suspensions/reactivations, des statuts d'abonnement et des roles admin avec motif obligatoire
+- gestion admin du programme pilote avec `isPilotUser` et `betaAccessEnabled`
+- gestion admin des idees produit avec changement de statut audite
 - gestion des administrateurs avec creation de compte interne et changement de role selon le niveau autorise
 - audit log admin exploitable depuis l'UI interne
 - landing marketing Next.js avec hero, sections marketing, pricing, FAQ et SEO de base
@@ -257,13 +279,22 @@ Front :
 
 - Le repo est scaffolded en monorepo avec `apps/landing`, `apps/web` et `apps/api`
 - Le backend expose deja : auth, dashboard global, organization courante, memberships, projects, lots, expenses, documents, exports CSV
-- Le frontend expose deja : login, dashboard global, liste projets, creation projet, detail projet, lots, depenses, documents, export, settings
+- Le backend expose deja : auth, dashboard global, organization courante, memberships, projects, lots, expenses, documents, exports CSV, boite a idees produit et acces beta pilote
+- Le frontend expose deja : login, dashboard global, liste projets, creation projet, detail projet, lots, depenses, documents, export, settings et boite a idees produit
 - Un back-office admin interne distinct est maintenant expose dans `apps/web` sous `/admin`, avec un layout separe et des pages dediees `dashboard / users / admins / audit-logs`
 - L'API expose maintenant un domaine admin dedie sous `/api/admin/*` avec controllers/services separes de l'API produit
 - La creation / invitation d utilisateurs en MVP peut maintenant se faire depuis le back-office admin, sans signup public et sans passage par la landing marketing
 - Le modele `User` porte desormais un `adminRole` global, le statut de suspension, les informations d'essai, le statut/plan d'abonnement et la date de derniere connexion
+- Le modele `User` porte maintenant aussi `isPilotUser` et `betaAccessEnabled` pour un programme pilote simple sans complexifier les roles existants
 - Le champ `User.passwordHash` peut rester nul tant qu un utilisateur invite n a pas encore defini son mot de passe
 - Les permissions admin sont verifiees cote backend sur chaque route sensible via guards et decorators dedies, l'UI ne fait qu'une adaptation d'affichage
+- Les feature requests produit et leurs votes sont strictement scopes par `organizationId` pour rester coherents avec la regle multi-tenant globale du repo
+- La boite a idees reste volontairement minimale : pas de commentaires, pas de pieces jointes, pas de tags complexes et pas de logique sociale
+- Les votes sur les idees servent uniquement de signal de priorisation ; la decision produit reste interne et le message UX l explicite dans l application
+- Le backend expose maintenant un helper d acces beta simple via `User.isPilotUser + User.betaAccessEnabled` et un guard leger reserve aux vues beta pilotes
+- L app produit expose maintenant `/ideas` pour proposer et voter des idees dans l organisation courante, avec tri `plus votees / plus recentes` et filtre par statut
+- Les utilisateurs pilotes avec acces beta actif voient un espace de validation beta limite aux idees `IN_PROGRESS` et un message rappelant que les fonctionnalites testees restent instables
+- Le back-office admin permet maintenant de changer le statut des idees et de piloter l acces pilote/beta des utilisateurs avec audit log
 - Les changements sensibles admin sont traces dans `AdminAuditLog` avec acteur, cible, motif, avant/apres et metadata de requete
 - Les invitations admin sont desormais stockees dans `UserInvitation` avec token hash, expiration, invalidation et rattachement organisation / role
 - `UserInvitation` porte maintenant un `organizationMode` ; `organizationId` peut rester nul uniquement tant qu une invitation `personal` n a pas encore ete acceptee
@@ -313,6 +344,7 @@ Front :
 - Migration Prisma `personal_invitation_spaces` : ajoutee
 - Seed local : OK
 - Deux comptes seed locaux sont disponibles pour les tests : `admin@example.com` / `admin123` en `SUPER_ADMIN` et `user@example.com` / `user123` en utilisateur standard
+- Le seed local ajoute aussi deux idees de demonstration dans `demo-org` et marque `admin@example.com` comme utilisateur pilote avec acces beta pour faciliter les verifications manuelles
 - Les deployments Vercel actifs sont maintenant `https://immova-web.vercel.app/` pour le web et `https://immova-api.vercel.app` pour l'API
 - Le front Vite de production doit pointer vers `https://immova-api.vercel.app/api` via `VITE_API_URL`
 - L'API Vercel avec Prisma Postgres doit utiliser une `DATABASE_URL` poolée pour le runtime et une `DIRECT_URL` directe pour Prisma CLI, Prisma Studio et les migrations

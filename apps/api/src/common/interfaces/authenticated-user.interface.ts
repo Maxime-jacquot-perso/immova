@@ -6,4 +6,6 @@ export interface AuthenticatedUser {
   organizationId: string | null;
   membershipRole: MembershipRole | null;
   adminRole: AdminRole;
+  isPilotUser: boolean;
+  betaAccessEnabled: boolean;
 }

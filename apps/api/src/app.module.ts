@@ -6,6 +6,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
 import { DocumentsModule } from './documents/documents.module';
 import { ExportsModule } from './exports/exports.module';
 import { ExpensesModule } from './expenses/expenses.module';
+import { IdeasModule } from './ideas/ideas.module';
 import { LotsModule } from './lots/lots.module';
 import { MembershipsModule } from './memberships/memberships.module';
 import { OrganizationsModule } from './organizations/organizations.module';
@@ -22,6 +23,7 @@ import { StorageModule } from './storage/storage.module';
     OrganizationsModule,
     MembershipsModule,
     DashboardModule,
+    IdeasModule,
     ProjectsModule,
     LotsModule,
     ExpensesModule,
