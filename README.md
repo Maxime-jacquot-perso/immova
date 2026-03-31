@@ -32,6 +32,8 @@ Le produit n'est ni un logiciel de gestion locative classique, ni un ERP immobil
 |   |-- api/
 |   |-- landing/
 |   `-- web/
+|-- .github/
+|   `-- workflows/
 |-- docs/
 |-- AGENTS.md
 |-- docker-compose.yml
@@ -93,6 +95,8 @@ Apres le seed Prisma :
 Depuis la racine du monorepo :
 
 ```bash
+pnpm lint
+pnpm build
 pnpm build:landing
 pnpm build:web
 pnpm build:api
@@ -102,6 +106,23 @@ pnpm lint:api
 pnpm test:e2e:api
 pnpm test:e2e:web
 ```
+
+Pour corriger automatiquement le lint backend si besoin :
+
+```bash
+cd apps/api
+pnpm lint:fix
+```
+
+## CI GitHub Actions
+
+Le repo embarque une CI GitHub Actions volontairement simple, sous `.github/workflows/`.
+
+- `ci.yml` : workflow principal se lance sur `push` et `pull_request` vers `main`, avec installation des dependances, `pnpm lint` puis `pnpm build`
+- `e2e-api.yml` : workflow separe pour `pnpm test:e2e:api`, lance sur `push` et `pull_request` vers `main` quand la pile backend evolue, plus en `workflow_dispatch`, avec PostgreSQL 16 en service GitHub Actions, generation du client Prisma et execution des tests backend
+- `test:e2e:web` reste volontairement hors CI principale pour garder un feedback rapide et stable sur le socle `lint + build`
+
+Les deux workflows utilisent Node.js 20 et `pnpm@9.4.0`, alignes sur l'etat actuel du repo.
 
 ## GitHub et hygiene du repo
 
@@ -118,12 +139,12 @@ Le repo fournit `apps/api/.env.example` comme point d'entree pour la configurati
 
 ## Tests et validation
 
-Les builds a verifier avant publication :
+Verification locale recommandee avant push :
 
 ```bash
-pnpm build:landing
-pnpm build:web
-pnpm build:api
+pnpm lint
+pnpm build
+pnpm test:e2e:api
 ```
 
 Notes utiles :
@@ -131,6 +152,7 @@ Notes utiles :
 - les tests e2e API utilisent par defaut la base `immo_ops_e2e`
 - le setup e2e refuse de reset une base dont le nom ne contient pas `e2e`
 - les smoke tests Playwright couvrent login, projets, lots, depenses, documents, export et settings
+- `pnpm test:e2e:web` reste utile en local ou dans un workflow dedie plus tard, mais n'alourdit pas la CI de base pour l'instant
 
 ## Documentation
 

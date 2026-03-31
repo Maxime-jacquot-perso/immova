@@ -131,12 +131,15 @@ Entites repoussees :
 - Score de completude, alertes metier, suggestions d'action et statut decisionnel centralises cote backend
 - Pas de logique produit dupliquee entre front et back
 - Etats de chargement, erreur, feedback et empty state harmonises via des composants UI partages legers
+- La CI GitHub Actions doit rester progressive : un workflow principal limite a l'installation, au lint et au build ; les checks plus lourds vivent dans des workflows separes
+- Les commandes de lint de verification ne doivent pas modifier le code ; les auto-fix doivent rester explicites
 
 ## 11. Structure du repo
 
 - `apps/landing` : landing marketing Next.js
 - `apps/web` : application React + Vite
 - `apps/api` : API NestJS + Prisma
+- `.github/workflows` : workflows GitHub Actions du monorepo
 - `docs/` : cadrage produit et MVP
 - `docker-compose.yml` : PostgreSQL local standard si Docker est disponible
 
@@ -237,6 +240,8 @@ Front :
 - route error boundary pour eviter l'ecran technique React Router
 - tests e2e API des flows critiques MVP
 - smoke tests UI Playwright : login, projet, lot, depense, document, export et settings
+- workflow GitHub Actions `ci.yml` pour installation, lint et build du monorepo sur `push` et `pull_request` vers `main`
+- workflow GitHub Actions `e2e-api.yml` separe pour `pnpm test:e2e:api` avec PostgreSQL de CI
 
 ## 13. Etat actuel
 
@@ -278,6 +283,10 @@ Front :
 - Le repo est maintenant prepare pour une publication GitHub propre avec un `.gitignore` monorepo renforce pour `.env`, `node_modules`, `dist`, `.next`, `coverage`, `uploads`, temporaires de tests et volumes locaux
 - Les fichiers runtime suivis sous `apps/api/uploads` ont ete identifies comme artefacts generes et doivent rester hors du versioning
 - Le README racine et les README de `apps/api` / `apps/web` ont ete remis en coherence pour decrire le monorepo reel plutot que les templates d'origine
+- Une CI GitHub Actions progressive est maintenant en place sous `.github/workflows` avec un workflow principal `ci.yml` pour `install + lint + build`
+- Le workflow `e2e-api.yml` lance `pnpm test:e2e:api` sur PostgreSQL GitHub Actions et reste separe de la CI de base pour conserver un feedback rapide
+- Les commandes locales equivalentes au socle CI sont `pnpm lint` et `pnpm build`, avec `pnpm test:e2e:api` pour le workflow backend dedie
+- Le lint API de verification n'applique plus `--fix` implicitement ; l'auto-fix passe par une commande dediee
 - Build front et back : OK
 - Migration Prisma initiale : OK
 - Migration Prisma `admin_backoffice` : ajoutee
@@ -286,8 +295,8 @@ Front :
 - Tests e2e API : OK
 - Smoke tests UI Playwright : en place
 - Couverture Playwright actuelle : login, dashboard global, navigation dashboard vers projet, comparaison projets, statut decisionnel, suggestions d'action, empty state projets, creation projet, empty states d'un projet neuf, edition / archivage projet, creation lot, edition / archivage lot, creation depense avec justificatif, edition depense, verification du score de completude / fiabilite et des alertes dans l'overview, export CSV, verification document lie, upload document manuel, settings / ajout membre
-- Validation rejouee pendant cette session : audit GitHub, `build:landing`, `build:web`, `build:api` = OK
-- Tests non relances pendant cette session : `lint:landing`, `lint:web`, `lint:api`, `test:e2e:api`, `test:e2e:web`
+- Validation rejouee pendant cette session : audit CI monorepo, `pnpm lint`, `pnpm build`, `pnpm test:e2e:api` = OK
+- Tests non relances pendant cette session : `test:e2e:web`
 - Les documents de cadrage vivent dans `docs/`
 
 ## 14. Demarrage local de reference
@@ -298,6 +307,7 @@ Front :
 - Lancer migration et seed dans `apps/api`
 - Login demo seed admin : `admin@example.com` / `admin123`
 - Login demo seed utilisateur : `user@example.com` / `user123`
+- Commandes equivalentes a la CI de base : `pnpm lint` puis `pnpm build`
 - Commande tests e2e API : `pnpm test:e2e:api`
 - Commande tests UI Playwright : `pnpm test:e2e:web`
 - Base e2e par defaut : `immo_ops_e2e`
