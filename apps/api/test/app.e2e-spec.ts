@@ -6,6 +6,7 @@ import {
   AdminRole,
   DocumentType,
   ExpenseCategory,
+  InvitationOrganizationMode,
   LotStatus,
   LotType,
   MembershipRole,
@@ -15,6 +16,7 @@ import {
 } from '@prisma/client';
 import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
+import { buildPersonalOrganizationSlug } from '../src/invitations/personal-organization';
 import { MailService } from '../src/mail/mail.service';
 import { configureApp } from '../src/app.setup';
 import { PrismaService } from '../src/prisma/prisma.service';
@@ -115,6 +117,7 @@ describe('API e2e', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({
         email: 'invitee@example.com',
+        organizationMode: 'existing',
         organizationId: actor.organization.id,
         membershipRole: MembershipRole.MANAGER,
         reason: 'Ouverture du compte client',
@@ -161,6 +164,65 @@ describe('API e2e', () => {
     );
   });
 
+  it('creates a personal invitation even when no organization exists yet', async () => {
+    await prisma.user.create({
+      data: {
+        email: 'solo-admin@example.com',
+        passwordHash: hashSync('password123', 10),
+        firstName: 'Solo',
+        lastName: 'Admin',
+        adminRole: AdminRole.ADMIN,
+      },
+    });
+    const token = await login('solo-admin@example.com', 'password123');
+    const mailSpy = jest
+      .spyOn(mailService, 'sendUserInvitation')
+      .mockResolvedValue({ mode: 'console' });
+
+    const response = await request(app.getHttpServer())
+      .post('/api/admin/users/invite')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        email: 'solo-invitee@example.com',
+        organizationMode: 'personal',
+        membershipRole: MembershipRole.ADMIN,
+        reason: 'Creation de l espace solo',
+      })
+      .expect(201);
+
+    const invitedUser = await prisma.user.findUniqueOrThrow({
+      where: { email: 'solo-invitee@example.com' },
+    });
+    const invitation = await prisma.userInvitation.findFirst({
+      where: {
+        userId: invitedUser.id,
+        organizationMode: InvitationOrganizationMode.PERSONAL,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    const auditLog = await prisma.adminAuditLog.findFirst({
+      where: {
+        action: AdminAuditAction.USER_INVITED,
+        targetUserId: invitedUser.id,
+      },
+    });
+
+    expect(response.body.invitation.organizationMode).toBe('personal');
+    expect(response.body.invitation.organization.id).toBeNull();
+    expect(response.body.invitation.organization.slug).toBe(
+      buildPersonalOrganizationSlug(invitedUser.id),
+    );
+    expect(invitation?.organizationId).toBeNull();
+    expect(auditLog?.reason).toBe('Creation de l espace solo');
+    expect(mailSpy.mock.calls[0][0]).toEqual(
+      expect.objectContaining({
+        to: 'solo-invitee@example.com',
+        organizationName: expect.stringContaining('Espace personnel'),
+        membershipRole: MembershipRole.ADMIN,
+      }),
+    );
+  });
+
   it('refuses the invitation flow without the required admin permission', async () => {
     await seedUser(prisma, {
       organizationName: 'Org Support',
@@ -176,6 +238,7 @@ describe('API e2e', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({
         email: 'blocked@example.com',
+        organizationMode: 'existing',
         organizationId: 'unknown-org',
         membershipRole: MembershipRole.READER,
         reason: 'Tentative sans permission',
@@ -201,6 +264,7 @@ describe('API e2e', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({
         email: 'verify-user@example.com',
+        organizationMode: 'existing',
         organizationId: actor.organization.id,
         membershipRole: MembershipRole.ACCOUNTANT,
         reason: 'Creation du compte invite',
@@ -248,6 +312,7 @@ describe('API e2e', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({
         email: 'expired-user@example.com',
+        organizationMode: 'existing',
         organizationId: actor.organization.id,
         membershipRole: MembershipRole.READER,
         reason: 'Creation temporaire',
@@ -291,6 +356,7 @@ describe('API e2e', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({
         email: 'accepted-user@example.com',
+        organizationMode: 'existing',
         organizationId: actor.organization.id,
         membershipRole: MembershipRole.ADMIN,
         reason: 'Activation du compte',
@@ -348,6 +414,100 @@ describe('API e2e', () => {
     expect(loginResponse.body.organization.slug).toBe(actor.organization.slug);
   });
 
+  it('accepts a personal invitation and creates a dedicated organization membership', async () => {
+    await prisma.user.create({
+      data: {
+        email: 'personal-admin@example.com',
+        passwordHash: hashSync('password123', 10),
+        adminRole: AdminRole.ADMIN,
+      },
+    });
+    const token = await login('personal-admin@example.com', 'password123');
+    const mailSpy = jest
+      .spyOn(mailService, 'sendUserInvitation')
+      .mockResolvedValue({ mode: 'console' });
+
+    await request(app.getHttpServer())
+      .post('/api/admin/users/invite')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        email: 'personal-user@example.com',
+        organizationMode: 'personal',
+        membershipRole: MembershipRole.MANAGER,
+        reason: 'Creation du compte investisseur solo',
+      })
+      .expect(201);
+
+    const invitationToken = getTokenFromAcceptUrl(
+      mailSpy.mock.calls[0][0].acceptUrl,
+    );
+
+    const verifyResponse = await request(app.getHttpServer())
+      .get('/api/auth/invitations/verify')
+      .query({ token: invitationToken })
+      .expect(200);
+
+    expect(verifyResponse.body.organizationMode).toBe('personal');
+    expect(verifyResponse.body.organization.id).toBeNull();
+
+    const acceptResponse = await request(app.getHttpServer())
+      .post('/api/auth/invitations/accept')
+      .send({
+        token: invitationToken,
+        password: 'personal-password123',
+      })
+      .expect(201);
+
+    const invitedUser = await prisma.user.findUniqueOrThrow({
+      where: { email: 'personal-user@example.com' },
+    });
+    const personalOrganization = await prisma.organization.findUniqueOrThrow({
+      where: { slug: buildPersonalOrganizationSlug(invitedUser.id) },
+    });
+    const membership = await prisma.membership.findUnique({
+      where: {
+        organizationId_userId: {
+          organizationId: personalOrganization.id,
+          userId: invitedUser.id,
+        },
+      },
+    });
+    const invitation = await prisma.userInvitation.findFirst({
+      where: {
+        userId: invitedUser.id,
+        organizationMode: InvitationOrganizationMode.PERSONAL,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    const auditLog = await prisma.adminAuditLog.findFirst({
+      where: {
+        action: AdminAuditAction.USER_INVITED,
+        targetUserId: invitedUser.id,
+      },
+    });
+
+    expect(acceptResponse.body.organization.id).toBe(personalOrganization.id);
+    expect(acceptResponse.body.organization.slug).toBe(
+      personalOrganization.slug,
+    );
+    expect(membership?.role).toBe(MembershipRole.MANAGER);
+    expect(invitation?.acceptedAt).toBeTruthy();
+    expect(invitation?.organizationId).toBe(personalOrganization.id);
+    expect(auditLog).toBeTruthy();
+
+    const loginResponse = await request(app.getHttpServer())
+      .post('/api/auth/login')
+      .send({
+        email: 'personal-user@example.com',
+        password: 'personal-password123',
+      })
+      .expect(201);
+
+    expect(loginResponse.body.organization.slug).toBe(
+      personalOrganization.slug,
+    );
+  });
+
   it('rejects a token that was already used', async () => {
     const actor = await seedUser(prisma, {
       organizationName: 'Org Used',
@@ -366,6 +526,7 @@ describe('API e2e', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({
         email: 'used-user@example.com',
+        organizationMode: 'existing',
         organizationId: actor.organization.id,
         membershipRole: MembershipRole.READER,
         reason: 'Lien unique',
@@ -426,6 +587,7 @@ describe('API e2e', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({
         email: 'already-member@example.com',
+        organizationMode: 'existing',
         organizationId: actor.organization.id,
         membershipRole: MembershipRole.READER,
         reason: 'Tentative doublon',
@@ -451,6 +613,7 @@ describe('API e2e', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({
         email: 'resend-user@example.com',
+        organizationMode: 'existing',
         organizationId: actor.organization.id,
         membershipRole: MembershipRole.MANAGER,
         reason: 'Invitation initiale',

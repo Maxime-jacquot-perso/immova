@@ -9,6 +9,8 @@ export type AdminInvitationStatus =
   | 'EXPIRED'
   | 'REVOKED';
 
+export type AdminInvitationOrganizationMode = 'existing' | 'personal';
+
 export type AdminDashboard = {
   summary: {
     totalUsers: number;
@@ -93,6 +95,7 @@ export type AdminUserDetail = AdminUserSummary & {
   invitations: Array<{
     id: string;
     email: string;
+    organizationMode: AdminInvitationOrganizationMode;
     membershipRole: string;
     status: AdminInvitationStatus;
     expiresAt: string;
@@ -101,7 +104,7 @@ export type AdminUserDetail = AdminUserSummary & {
     createdAt: string;
     requiresPasswordSetup: boolean;
     organization: {
-      id: string;
+      id: string | null;
       name: string;
       slug: string;
     };
@@ -262,7 +265,8 @@ export function inviteAdminUser(
   session: Session | null,
   payload: {
     email: string;
-    organizationId: string;
+    organizationMode: AdminInvitationOrganizationMode;
+    organizationId?: string;
     membershipRole: string;
     reason: string;
   },
@@ -272,7 +276,7 @@ export function inviteAdminUser(
   return apiFetch<{
     userId: string;
     email: string;
-    deliveryMode: 'console' | 'resend';
+    deliveryMode: 'console' | 'smtp' | 'resend';
     invitation: AdminUserDetail['invitations'][number];
   }>('/admin/users/invite', {
     method: 'POST',
@@ -291,7 +295,7 @@ export function resendAdminUserInvitation(
   return apiFetch<{
     userId: string;
     email: string;
-    deliveryMode: 'console' | 'resend';
+    deliveryMode: 'console' | 'smtp' | 'resend';
     invitation: AdminUserDetail['invitations'][number];
   }>(`/admin/users/invitations/${invitationId}/resend`, {
     method: 'POST',

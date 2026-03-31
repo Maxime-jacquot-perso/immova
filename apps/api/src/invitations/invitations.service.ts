@@ -4,11 +4,23 @@ import {
   GoneException,
   Injectable,
 } from '@nestjs/common';
-import { MembershipRole } from '@prisma/client';
+import {
+  InvitationOrganizationMode,
+  MembershipRole,
+  Prisma,
+} from '@prisma/client';
 import { hashSync } from 'bcryptjs';
 import { createHash, randomBytes } from 'node:crypto';
 import { MailService } from '../mail/mail.service';
 import { PrismaService } from '../prisma/prisma.service';
+import {
+  serializeInvitationOrganizationMode,
+  type InvitationOrganizationModeInput,
+} from './invitation-organization-mode';
+import {
+  buildPersonalOrganizationName,
+  buildPersonalOrganizationSlug,
+} from './personal-organization';
 
 type InvitationRecord = Awaited<
   ReturnType<InvitationsService['getInvitationByTokenOrThrow']>
@@ -17,6 +29,7 @@ type InvitationRecord = Awaited<
 export type UserInvitationSummary = {
   id: string;
   email: string;
+  organizationMode: InvitationOrganizationModeInput;
   membershipRole: MembershipRole;
   status: 'PENDING' | 'ACCEPTED' | 'EXPIRED' | 'REVOKED';
   expiresAt: Date;
@@ -25,7 +38,7 @@ export type UserInvitationSummary = {
   createdAt: Date;
   requiresPasswordSetup: boolean;
   organization: {
-    id: string;
+    id: string | null;
     name: string;
     slug: string;
   };
@@ -33,7 +46,7 @@ export type UserInvitationSummary = {
 
 export type IssuedInvitationResult = {
   invitation: UserInvitationSummary;
-  deliveryMode: 'console' | 'resend' | 'failed';
+  deliveryMode: 'console' | 'smtp' | 'resend' | 'failed';
   deliveryError?: string;
 };
 
@@ -52,11 +65,12 @@ export class InvitationsService {
   async issueInvitation(input: {
     userId: string;
     email: string;
+    organizationMode: InvitationOrganizationMode;
     organization: {
       id: string;
       name: string;
       slug: string;
-    };
+    } | null;
     membershipRole: MembershipRole;
     createdByAdminUserId: string;
     requiresPasswordSetup: boolean;
@@ -67,15 +81,20 @@ export class InvitationsService {
       Date.now() + this.invitationTtlHours * 60 * 60 * 1000,
     );
     const now = new Date();
+    const organizationSummary = this.resolveOrganizationSummary({
+      organizationMode: input.organizationMode,
+      organization: input.organization,
+      userId: input.userId,
+      email: input.email,
+    });
 
     const invitation = await this.prisma.$transaction(async (tx) => {
       await tx.userInvitation.updateMany({
-        where: {
+        where: this.buildPendingInvitationsScope({
           userId: input.userId,
-          organizationId: input.organization.id,
-          acceptedAt: null,
-          revokedAt: null,
-        },
+          organizationMode: input.organizationMode,
+          organizationId: input.organization?.id ?? null,
+        }),
         data: {
           revokedAt: now,
         },
@@ -85,7 +104,8 @@ export class InvitationsService {
         data: {
           email: input.email,
           userId: input.userId,
-          organizationId: input.organization.id,
+          organizationMode: input.organizationMode,
+          organizationId: input.organization?.id ?? null,
           membershipRole: input.membershipRole,
           tokenHash,
           expiresAt,
@@ -99,8 +119,8 @@ export class InvitationsService {
     try {
       const delivery = await this.mailService.sendUserInvitation({
         to: input.email,
-        organizationName: input.organization.name,
-        organizationSlug: input.organization.slug,
+        organizationName: organizationSummary.name,
+        organizationSlug: organizationSummary.slug,
         membershipRole: input.membershipRole,
         acceptUrl,
         expiresAt,
@@ -110,7 +130,7 @@ export class InvitationsService {
       return {
         invitation: this.mapInvitationSummary({
           invitation,
-          organization: input.organization,
+          organization: organizationSummary,
           requiresPasswordSetup: input.requiresPasswordSetup,
         }),
         deliveryMode: delivery.mode,
@@ -119,7 +139,7 @@ export class InvitationsService {
       return {
         invitation: this.mapInvitationSummary({
           invitation,
-          organization: input.organization,
+          organization: organizationSummary,
           requiresPasswordSetup: input.requiresPasswordSetup,
         }),
         deliveryMode: 'failed',
@@ -152,7 +172,12 @@ export class InvitationsService {
     return invitations.map((invitation) =>
       this.mapInvitationSummary({
         invitation,
-        organization: invitation.organization,
+        organization: this.resolveOrganizationSummary({
+          organizationMode: invitation.organizationMode,
+          organization: invitation.organization,
+          userId: invitation.userId,
+          email: invitation.email,
+        }),
         requiresPasswordSetup: !invitation.user?.passwordHash,
       }),
     );
@@ -184,23 +209,36 @@ export class InvitationsService {
       throw new BadRequestException('Invitation introuvable');
     }
 
-    return invitation;
+    return {
+      ...invitation,
+      organizationSummary: this.resolveOrganizationSummary({
+        organizationMode: invitation.organizationMode,
+        organization: invitation.organization,
+        userId: invitation.user.id,
+        email: invitation.email,
+      }),
+    };
   }
 
   async verifyToken(token: string) {
     const invitation = await this.getInvitationByTokenOrThrow(token);
     this.assertInvitationUsable(invitation);
+    const organizationSummary = this.resolveOrganizationSummary({
+      organizationMode: invitation.organizationMode,
+      organization: invitation.organization,
+      userId: invitation.user?.id ?? invitation.userId,
+      email: invitation.email,
+    });
 
     return {
       email: invitation.email,
+      organizationMode: serializeInvitationOrganizationMode(
+        invitation.organizationMode,
+      ),
       membershipRole: invitation.membershipRole,
       expiresAt: invitation.expiresAt,
       requiresPasswordSetup: !invitation.user?.passwordHash,
-      organization: {
-        id: invitation.organization.id,
-        name: invitation.organization.name,
-        slug: invitation.organization.slug,
-      },
+      organization: organizationSummary,
     };
   }
 
@@ -219,11 +257,25 @@ export class InvitationsService {
     }
 
     const acceptedAt = new Date();
+    let acceptedOrganization: {
+      id: string;
+      name: string;
+      slug: string;
+    } | null = invitation.organization;
 
     await this.prisma.$transaction(async (tx) => {
       if (!invitation.user) {
         throw new BadRequestException("Le compte invite n'est plus disponible");
       }
+
+      const organization =
+        invitation.organizationMode === InvitationOrganizationMode.EXISTING
+          ? this.assertExistingOrganization(invitation.organization)
+          : await this.ensurePersonalOrganization(tx, {
+              userId: invitation.user.id,
+              email: invitation.email,
+            });
+      acceptedOrganization = organization;
 
       if (!invitation.user.passwordHash && input.password) {
         await tx.user.update({
@@ -238,7 +290,7 @@ export class InvitationsService {
       await tx.membership.upsert({
         where: {
           organizationId_userId: {
-            organizationId: invitation.organizationId,
+            organizationId: organization.id,
             userId: invitation.user.id,
           },
         },
@@ -246,7 +298,7 @@ export class InvitationsService {
           role: invitation.membershipRole,
         },
         create: {
-          organizationId: invitation.organizationId,
+          organizationId: organization.id,
           userId: invitation.user.id,
           role: invitation.membershipRole,
         },
@@ -256,16 +308,18 @@ export class InvitationsService {
         where: { id: invitation.id },
         data: {
           acceptedAt,
+          organizationId: organization.id,
         },
       });
 
       await tx.userInvitation.updateMany({
         where: {
-          userId: invitation.user.id,
-          organizationId: invitation.organizationId,
+          ...this.buildPendingInvitationsScope({
+            userId: invitation.user.id,
+            organizationMode: invitation.organizationMode,
+            organizationId: organization.id,
+          }),
           id: { not: invitation.id },
-          acceptedAt: null,
-          revokedAt: null,
         },
         data: {
           revokedAt: acceptedAt,
@@ -275,11 +329,7 @@ export class InvitationsService {
 
     return {
       email: invitation.email,
-      organization: {
-        id: invitation.organization.id,
-        name: invitation.organization.name,
-        slug: invitation.organization.slug,
-      },
+      organization: this.assertExistingOrganization(acceptedOrganization),
       requiresPasswordSetup: !invitation.user.passwordHash,
     };
   }
@@ -347,6 +397,7 @@ export class InvitationsService {
     invitation: {
       id: string;
       email: string;
+      organizationMode: InvitationOrganizationMode;
       membershipRole: MembershipRole;
       expiresAt: Date;
       acceptedAt: Date | null;
@@ -354,7 +405,7 @@ export class InvitationsService {
       createdAt: Date;
     };
     organization: {
-      id: string;
+      id: string | null;
       name: string;
       slug: string;
     };
@@ -363,6 +414,9 @@ export class InvitationsService {
     return {
       id: input.invitation.id,
       email: input.invitation.email,
+      organizationMode: serializeInvitationOrganizationMode(
+        input.invitation.organizationMode,
+      ),
       membershipRole: input.invitation.membershipRole,
       status: this.getInvitationStatus(input.invitation),
       expiresAt: input.invitation.expiresAt,
@@ -372,6 +426,113 @@ export class InvitationsService {
       requiresPasswordSetup: input.requiresPasswordSetup,
       organization: input.organization,
     };
+  }
+
+  private buildPendingInvitationsScope(input: {
+    userId: string;
+    organizationMode: InvitationOrganizationMode;
+    organizationId: string | null;
+  }): Prisma.UserInvitationWhereInput {
+    return {
+      userId: input.userId,
+      organizationMode: input.organizationMode,
+      acceptedAt: null,
+      revokedAt: null,
+      ...(input.organizationMode === InvitationOrganizationMode.EXISTING
+        ? { organizationId: this.assertOrganizationId(input.organizationId) }
+        : {}),
+    };
+  }
+
+  private resolveOrganizationSummary(input: {
+    organizationMode: InvitationOrganizationMode;
+    organization: {
+      id: string;
+      name: string;
+      slug: string;
+    } | null;
+    userId?: string | null;
+    email: string;
+  }) {
+    if (input.organization) {
+      return {
+        id: input.organization.id,
+        name: input.organization.name,
+        slug: input.organization.slug,
+      };
+    }
+
+    if (input.organizationMode === InvitationOrganizationMode.EXISTING) {
+      throw new BadRequestException(
+        "L'organisation cible de l'invitation est introuvable",
+      );
+    }
+
+    const personalUserId = this.assertUserId(input.userId);
+
+    return {
+      id: null,
+      name: buildPersonalOrganizationName({ email: input.email }),
+      slug: buildPersonalOrganizationSlug(personalUserId),
+    };
+  }
+
+  private async ensurePersonalOrganization(
+    tx: Prisma.TransactionClient,
+    input: {
+      userId: string;
+      email: string;
+    },
+  ) {
+    const slug = buildPersonalOrganizationSlug(input.userId);
+
+    return tx.organization.upsert({
+      where: { slug },
+      update: {},
+      create: {
+        name: buildPersonalOrganizationName({ email: input.email }),
+        slug,
+      },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+      },
+    });
+  }
+
+  private assertExistingOrganization(
+    organization: {
+      id: string;
+      name: string;
+      slug: string;
+    } | null,
+  ) {
+    if (!organization) {
+      throw new BadRequestException(
+        "L'organisation cible de l'invitation est introuvable",
+      );
+    }
+
+    return organization;
+  }
+
+  private assertOrganizationId(organizationId: string | null) {
+    if (!organizationId) {
+      throw new BadRequestException(
+        "L'organisation cible de l'invitation est introuvable",
+      );
+    }
+
+    return organizationId;
+  }
+
+  private assertUserId(userId?: string | null) {
+    if (!userId) {
+      throw new BadRequestException("Le compte invite n'est plus disponible");
+    }
+
+    return userId;
   }
 
   private getInvitationStatus(invitation: {

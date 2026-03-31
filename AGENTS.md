@@ -193,7 +193,7 @@ Back :
 - `GET /api/admin/dashboard`
 - `GET /api/admin/users`
 - `GET /api/admin/users/organizations/options`
-- `POST /api/admin/users/invite`
+- `POST /api/admin/users/invite` avec `organizationMode = existing | personal`
 - `GET /api/admin/users/:userId`
 - `POST /api/admin/users/invitations/:invitationId/resend`
 - `PATCH /api/admin/users/:userId/suspend`
@@ -241,7 +241,7 @@ Front :
 - dashboard admin avec synthese comptes, essais, suspensions, repartition des roles admin et actions recentes
 - listing admin des utilisateurs avec recherche, filtres, pagination et badges d'etat
 - detail utilisateur admin avec organisations rattachees, invitations, historique admin recent et actions sensibles auditees
-- invitation admin d un utilisateur avec email, organisation cible, role membership, email transactionnel et lien unique vers l app web
+- invitation admin d un utilisateur avec email, role membership, choix entre organisation existante et espace personnel, email transactionnel et lien unique vers l app web
 - page publique `/setup-password` pour verifier un token d invitation, definir le mot de passe si necessaire puis rediriger vers `/login`
 - gestion admin des essais, des suspensions/reactivations, des statuts d'abonnement et des roles admin avec motif obligatoire
 - gestion des administrateurs avec creation de compte interne et changement de role selon le niveau autorise
@@ -266,9 +266,12 @@ Front :
 - Les permissions admin sont verifiees cote backend sur chaque route sensible via guards et decorators dedies, l'UI ne fait qu'une adaptation d'affichage
 - Les changements sensibles admin sont traces dans `AdminAuditLog` avec acteur, cible, motif, avant/apres et metadata de requete
 - Les invitations admin sont desormais stockees dans `UserInvitation` avec token hash, expiration, invalidation et rattachement organisation / role
+- `UserInvitation` porte maintenant un `organizationMode` ; `organizationId` peut rester nul uniquement tant qu une invitation `personal` n a pas encore ete acceptee
 - Le backend centralise le flow d invitation dans un domaine dedie `src/invitations`, reutilise par l admin et par l auth publique
-- Un module `src/mail` simple existe maintenant avec fallback console en local et support optionnel de Resend via variables d environnement
+- Un module `src/mail` simple existe maintenant avec priorite SMTP, support optionnel de Resend et fallback console en local
 - Le flow d invitation cree un lien unique vers `APP_WEB_URL/setup-password?token=...`, verifie le token, permet la definition du mot de passe si necessaire, active le membership cible puis redirige vers `/login`
+- Une invitation admin peut maintenant viser une organisation existante ou un espace personnel ; si besoin, l organisation personnelle est creee a l acceptation pour conserver un multi-tenant strict sans tenant orphelin inutile
+- Un utilisateur solo reste donc strictement multi-tenant via `1 user + 1 organization personnelle + 1 membership`
 - Les garde-fous admin couvrent notamment : impossibilite de suspendre son propre compte, impossibilite de changer son propre role admin, blocage de la suppression/degradation du dernier `SUPER_ADMIN`, restrictions d'elevation pour `ADMIN` et limites de trial par role
 - La landing marketing Next.js a ete refondue avec un message plus concret, un hero probleme/promesse, des sections marketing completes, un pricing plus credible et une FAQ visible
 - La landing marketing embarque des metadata SEO, Open Graph, Twitter et du JSON-LD `SoftwareApplication` + `FAQPage`
@@ -307,6 +310,7 @@ Front :
 - Migration Prisma initiale : OK
 - Migration Prisma `admin_backoffice` : ajoutee
 - Migration Prisma `user_invitations_admin_flow` : ajoutee
+- Migration Prisma `personal_invitation_spaces` : ajoutee
 - Seed local : OK
 - Deux comptes seed locaux sont disponibles pour les tests : `admin@example.com` / `admin123` en `SUPER_ADMIN` et `user@example.com` / `user123` en utilisateur standard
 - Les deployments Vercel actifs sont maintenant `https://immova-web.vercel.app/` pour le web et `https://immova-api.vercel.app` pour l'API
@@ -314,11 +318,11 @@ Front :
 - L'API Vercel avec Prisma Postgres doit utiliser une `DATABASE_URL` poolée pour le runtime et une `DIRECT_URL` directe pour Prisma CLI, Prisma Studio et les migrations
 - Le `PrismaService` backend n'ouvre plus de connexion explicite au bootstrap afin d'eviter des connexions inutiles sur des requetes serverless qui ne touchent pas la base
 - Des fichiers helper `.env.prod` locaux et `.env.prod.example` versionnes existent maintenant dans `apps/api` et `apps/web` pour guider le remplissage des variables Vercel de production
-- Les variables backend utiles au flow d invitation sont maintenant `APP_WEB_URL`, `USER_INVITATION_TTL_HOURS` et, en option de production, `MAIL_FROM` / `RESEND_API_KEY`
+- Les variables backend utiles au flow d invitation sont maintenant `APP_WEB_URL`, `USER_INVITATION_TTL_HOURS`, `MAIL_FROM`, les variables `SMTP_*` pour un SMTP simple et, en option, `RESEND_API_KEY`
 - Les comptes seed demo restent strictement reserves au local et aux tests ; la production ne doit pas embarquer de donnees de demonstration
 - Tests e2e API : OK
 - Smoke tests UI Playwright : en place
-- Couverture Playwright actuelle : login, dashboard global, navigation dashboard vers projet, comparaison projets, statut decisionnel, suggestions d'action, empty state projets, creation projet, empty states d'un projet neuf, edition / archivage projet, creation lot, edition / archivage lot, creation depense avec justificatif, edition depense, verification du score de completude / fiabilite et des alertes dans l'overview, export CSV, verification document lie, upload document manuel, settings / ajout membre, invitation admin utilisateur et page `setup-password`
+- Couverture Playwright actuelle : login, dashboard global, navigation dashboard vers projet, comparaison projets, statut decisionnel, suggestions d'action, empty state projets, creation projet, empty states d'un projet neuf, edition / archivage projet, creation lot, edition / archivage lot, creation depense avec justificatif, edition depense, verification du score de completude / fiabilite et des alertes dans l'overview, export CSV, verification document lie, upload document manuel, settings / ajout membre, invitation admin utilisateur vers organisation existante, invitation admin vers espace personnel, cas sans organisation disponible et page `setup-password`
 - Validation rejouee pendant cette session : audit CI monorepo, `pnpm lint`, `pnpm build`, `pnpm test:e2e:api` et `CI=1 pnpm test:e2e -- tests/e2e/invitations.spec.ts` = OK
 - Tests UI Playwright non relances pendant cette session : le reste de `test:e2e:web` hors spec `invitations`
 - Les documents de cadrage vivent dans `docs/`

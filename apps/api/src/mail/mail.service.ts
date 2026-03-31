@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import * as nodemailer from 'nodemailer';
 
 export type SendUserInvitationMailInput = {
   to: string;
@@ -11,7 +12,7 @@ export type SendUserInvitationMailInput = {
 };
 
 export type MailDeliveryResult = {
-  mode: 'console' | 'resend';
+  mode: 'console' | 'smtp' | 'resend';
 };
 
 @Injectable()
@@ -19,6 +20,17 @@ export class MailService {
   private readonly logger = new Logger(MailService.name);
   private readonly resendApiKey = process.env.RESEND_API_KEY?.trim();
   private readonly mailFrom = process.env.MAIL_FROM?.trim();
+  private readonly smtpHost = process.env.SMTP_HOST?.trim();
+  private readonly smtpPort = process.env.SMTP_PORT?.trim();
+  private readonly smtpUser = process.env.SMTP_USER?.trim();
+  private readonly smtpPass = process.env.SMTP_PASS?.trim();
+  private readonly smtpSecure = process.env.SMTP_SECURE?.trim();
+  private readonly hasSmtpIntent =
+    Boolean(this.smtpHost) ||
+    Boolean(this.smtpPort) ||
+    Boolean(this.smtpUser) ||
+    Boolean(this.smtpPass) ||
+    Boolean(this.smtpSecure);
 
   async sendUserInvitation(
     input: SendUserInvitationMailInput,
@@ -26,6 +38,29 @@ export class MailService {
     const subject = 'Votre acces a Immova';
     const text = this.buildInvitationText(input);
     const html = this.buildInvitationHtml(input);
+    const smtpConfig = this.getSmtpConfig();
+
+    if (smtpConfig) {
+      const transport = nodemailer.createTransport({
+        host: smtpConfig.host,
+        port: smtpConfig.port,
+        secure: smtpConfig.secure,
+        auth: {
+          user: smtpConfig.user,
+          pass: smtpConfig.pass,
+        },
+      });
+
+      await transport.sendMail({
+        from: this.mailFrom,
+        to: input.to,
+        subject,
+        text,
+        html,
+      });
+
+      return { mode: 'smtp' };
+    }
 
     if (this.resendApiKey && this.mailFrom) {
       const response = await fetch('https://api.resend.com/emails', {
@@ -68,6 +103,46 @@ export class MailService {
     );
 
     return { mode: 'console' };
+  }
+
+  private getSmtpConfig() {
+    if (!this.hasSmtpIntent) {
+      return null;
+    }
+
+    if (
+      !this.smtpHost ||
+      !this.smtpPort ||
+      !this.smtpUser ||
+      !this.smtpPass ||
+      !this.mailFrom
+    ) {
+      throw new Error(
+        'SMTP config incomplete. Expected SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS and MAIL_FROM.',
+      );
+    }
+
+    const port = Number(this.smtpPort);
+
+    if (!Number.isInteger(port) || port <= 0) {
+      throw new Error('SMTP_PORT must be a valid positive integer.');
+    }
+
+    return {
+      host: this.smtpHost,
+      port,
+      user: this.smtpUser,
+      pass: this.smtpPass,
+      secure: this.parseSmtpSecure(port),
+    };
+  }
+
+  private parseSmtpSecure(port: number) {
+    if (!this.smtpSecure) {
+      return port === 465;
+    }
+
+    return ['1', 'true', 'yes', 'on'].includes(this.smtpSecure.toLowerCase());
   }
 
   private buildInvitationText(input: SendUserInvitationMailInput) {

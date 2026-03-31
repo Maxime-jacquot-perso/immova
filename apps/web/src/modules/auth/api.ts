@@ -33,11 +33,12 @@ export type Session = {
 
 export type InvitationVerification = {
   email: string;
+  organizationMode: 'existing' | 'personal';
   membershipRole: string;
   expiresAt: string;
   requiresPasswordSetup: boolean;
   organization: {
-    id: string;
+    id: string | null;
     name: string;
     slug: string;
   };

@@ -8,6 +8,7 @@ import {
   AdminAuditAction,
   AdminAuditTargetType,
   AdminRole,
+  InvitationOrganizationMode,
   Prisma,
   SubscriptionPlan,
   SubscriptionStatus,
@@ -15,6 +16,8 @@ import {
 import { addDays } from '../common/utils/date.util';
 import type { AuthenticatedUser } from '../common/interfaces/authenticated-user.interface';
 import { InvitationsService } from '../invitations/invitations.service';
+import { mapInvitationOrganizationModeInput } from '../invitations/invitation-organization-mode';
+import { buildPersonalOrganizationSlug } from '../invitations/personal-organization';
 import { PrismaService } from '../prisma/prisma.service';
 import { AdminAuditService } from './admin-audit.service';
 import { ADMIN_PERMISSIONS, hasAdminPermission } from './admin-authorization';
@@ -130,7 +133,9 @@ export class AdminUsersService {
     requestContext: AdminRequestContext,
   ) {
     const email = body.email.toLowerCase();
-    const organization = await this.getOrganization(body.organizationId);
+    const organizationMode = mapInvitationOrganizationModeInput(
+      body.organizationMode,
+    );
     let user = await this.prisma.user.findUnique({
       where: { email },
       select: {
@@ -140,29 +145,21 @@ export class AdminUsersService {
         isSuspended: true,
       },
     });
+    const organization =
+      organizationMode === InvitationOrganizationMode.EXISTING
+        ? await this.getOrganization(body.organizationId!)
+        : null;
 
     if (user?.isSuspended) {
       throw new BadRequestException('Suspended accounts cannot be invited');
     }
 
     if (user) {
-      const existingMembership = await this.prisma.membership.findUnique({
-        where: {
-          organizationId_userId: {
-            organizationId: organization.id,
-            userId: user.id,
-          },
-        },
-        select: {
-          id: true,
-        },
+      await this.assertInvitationTargetAvailable({
+        userId: user.id,
+        organizationMode,
+        organizationId: organization?.id ?? null,
       });
-
-      if (existingMembership) {
-        throw new BadRequestException(
-          'This user already belongs to the selected organization',
-        );
-      }
     } else {
       user = await this.prisma.user.create({
         data: {
@@ -181,6 +178,7 @@ export class AdminUsersService {
     const invitationResult = await this.invitationsService.issueInvitation({
       userId: user.id,
       email,
+      organizationMode,
       organization,
       membershipRole: body.membershipRole,
       createdByAdminUserId: actor.userId,
@@ -194,8 +192,10 @@ export class AdminUsersService {
       targetType: AdminAuditTargetType.USER,
       reason: body.reason,
       newValue: {
-        organizationId: organization.id,
-        organizationSlug: organization.slug,
+        organizationMode: invitationResult.invitation.organizationMode,
+        organizationId: invitationResult.invitation.organization.id,
+        organizationSlug: invitationResult.invitation.organization.slug,
+        organizationName: invitationResult.invitation.organization.name,
         membershipRole: body.membershipRole,
         invitationId: invitationResult.invitation.id,
         deliveryMode: invitationResult.deliveryMode,
@@ -237,27 +237,16 @@ export class AdminUsersService {
       throw new BadRequestException('Suspended accounts cannot be invited');
     }
 
-    const existingMembership = await this.prisma.membership.findUnique({
-      where: {
-        organizationId_userId: {
-          organizationId: currentInvitation.organization.id,
-          userId: invitedUser.id,
-        },
-      },
-      select: {
-        id: true,
-      },
+    await this.assertInvitationTargetAvailable({
+      userId: invitedUser.id,
+      organizationMode: currentInvitation.organizationMode,
+      organizationId: currentInvitation.organization?.id ?? null,
     });
-
-    if (existingMembership) {
-      throw new BadRequestException(
-        'This user already belongs to the selected organization',
-      );
-    }
 
     const invitationResult = await this.invitationsService.issueInvitation({
       userId: invitedUser.id,
       email: currentInvitation.email,
+      organizationMode: currentInvitation.organizationMode,
       organization: currentInvitation.organization,
       membershipRole: currentInvitation.membershipRole,
       createdByAdminUserId: actor.userId,
@@ -276,8 +265,10 @@ export class AdminUsersService {
       },
       newValue: {
         invitationId: invitationResult.invitation.id,
-        organizationId: currentInvitation.organization.id,
-        organizationSlug: currentInvitation.organization.slug,
+        organizationMode: invitationResult.invitation.organizationMode,
+        organizationId: invitationResult.invitation.organization.id,
+        organizationSlug: invitationResult.invitation.organization.slug,
+        organizationName: invitationResult.invitation.organization.name,
         membershipRole: currentInvitation.membershipRole,
         deliveryMode: invitationResult.deliveryMode,
       },
@@ -650,6 +641,53 @@ export class AdminUsersService {
     }
 
     return organization;
+  }
+
+  private async assertInvitationTargetAvailable(input: {
+    userId: string;
+    organizationMode: InvitationOrganizationMode;
+    organizationId: string | null;
+  }) {
+    if (
+      input.organizationMode === InvitationOrganizationMode.EXISTING &&
+      input.organizationId
+    ) {
+      const existingMembership = await this.prisma.membership.findUnique({
+        where: {
+          organizationId_userId: {
+            organizationId: input.organizationId,
+            userId: input.userId,
+          },
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      if (existingMembership) {
+        throw new BadRequestException(
+          'This user already belongs to the selected organization',
+        );
+      }
+
+      return;
+    }
+
+    const personalMembership = await this.prisma.membership.findFirst({
+      where: {
+        userId: input.userId,
+        organization: {
+          slug: buildPersonalOrganizationSlug(input.userId),
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (personalMembership) {
+      throw new BadRequestException('This user already has a personal space');
+    }
   }
 
   private buildWhere(query: ListAdminUsersQueryDto): Prisma.UserWhereInput {

@@ -1,29 +1,22 @@
-import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query';
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { Link } from 'react-router-dom';
-import { z } from 'zod';
-import { useAuth } from '../../auth/auth-context';
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
+import { Link } from "react-router-dom";
+import { z } from "zod";
+import { useAuth } from "../../auth/auth-context";
 import {
   inviteAdminUser,
   listAdminOrganizationOptions,
   listAdminUsers,
-} from '../api';
-import { AdminBadge } from '../components/admin-badge';
-import { AdminFiltersToolbar } from '../components/admin-filters-toolbar';
-import { AdminPagination } from '../components/admin-pagination';
-import {
-  ADMIN_PERMISSIONS,
-  hasAdminPermission,
-} from '../permissions';
-import { ErrorState } from '../../../shared/ui/error-state';
-import { FeedbackMessage } from '../../../shared/ui/feedback-message';
-import { LoadingBlock } from '../../../shared/ui/loading-block';
+} from "../api";
+import { AdminBadge } from "../components/admin-badge";
+import { AdminFiltersToolbar } from "../components/admin-filters-toolbar";
+import { AdminPagination } from "../components/admin-pagination";
+import { ADMIN_PERMISSIONS, hasAdminPermission } from "../permissions";
+import { ErrorState } from "../../../shared/ui/error-state";
+import { FeedbackMessage } from "../../../shared/ui/feedback-message";
+import { LoadingBlock } from "../../../shared/ui/loading-block";
 import {
   getAccessStatusLabel,
   getAccessStatusTone,
@@ -31,38 +24,52 @@ import {
   getSubscriptionPlanLabel,
   getSubscriptionStatusLabel,
   getSubscriptionStatusTone,
-} from '../../../shared/ui/business-labels';
+} from "../../../shared/ui/business-labels";
 import {
   formatCount,
   formatDate,
   formatDateTime,
-} from '../../../shared/ui/formatters';
-import { getErrorMessage } from '../../../shared/ui/error-utils';
+} from "../../../shared/ui/formatters";
+import { getErrorMessage } from "../../../shared/ui/error-utils";
 
-const inviteSchema = z.object({
-  email: z.string().email('Saisissez un email valide.'),
-  organizationId: z.string().min(1, 'Selectionnez une organisation.'),
-  membershipRole: z.enum(['ADMIN', 'MANAGER', 'ACCOUNTANT', 'READER']),
-  reason: z
-    .string()
-    .min(5, 'Renseignez un motif explicite.')
-    .max(500, 'Le motif est trop long.'),
-});
+const inviteSchema = z
+  .object({
+    email: z.string().email("Saisissez un email valide."),
+    organizationMode: z.enum(["existing", "personal"]),
+    organizationId: z.string().optional(),
+    membershipRole: z.enum(["ADMIN", "MANAGER", "ACCOUNTANT", "READER"]),
+    reason: z
+      .string()
+      .min(5, "Renseignez un motif explicite.")
+      .max(500, "Le motif est trop long."),
+  })
+  .superRefine((values, context) => {
+    if (values.organizationMode === "existing" && !values.organizationId) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["organizationId"],
+        message: "Selectionnez une organisation.",
+      });
+    }
+  });
 
 type InviteFormValues = z.infer<typeof inviteSchema>;
 
 export function AdminUsersListPage() {
   const { session } = useAuth();
   const queryClient = useQueryClient();
-  const canInviteUsers = hasAdminPermission(session, ADMIN_PERMISSIONS.usersUpdate);
+  const canInviteUsers = hasAdminPermission(
+    session,
+    ADMIN_PERMISSIONS.usersUpdate,
+  );
   const [page, setPage] = useState(1);
-  const [search, setSearch] = useState('');
-  const [adminRole, setAdminRole] = useState('');
-  const [subscriptionStatus, setSubscriptionStatus] = useState('');
-  const [subscriptionPlan, setSubscriptionPlan] = useState('');
-  const [accessStatus, setAccessStatus] = useState('');
+  const [search, setSearch] = useState("");
+  const [adminRole, setAdminRole] = useState("");
+  const [subscriptionStatus, setSubscriptionStatus] = useState("");
+  const [subscriptionPlan, setSubscriptionPlan] = useState("");
+  const [accessStatus, setAccessStatus] = useState("");
   const [feedback, setFeedback] = useState<{
-    type: 'success' | 'error' | 'info';
+    type: "success" | "error" | "info";
     title: string;
     message?: string;
     userId?: string;
@@ -70,7 +77,7 @@ export function AdminUsersListPage() {
 
   const usersQuery = useQuery({
     queryKey: [
-      'admin-users',
+      "admin-users",
       page,
       search,
       adminRole,
@@ -86,13 +93,13 @@ export function AdminUsersListPage() {
         adminRole: adminRole || undefined,
         subscriptionStatus: subscriptionStatus || undefined,
         subscriptionPlan: subscriptionPlan || undefined,
-        accessStatus: accessStatus as 'ACTIVE' | 'SUSPENDED' | undefined,
+        accessStatus: accessStatus as "ACTIVE" | "SUSPENDED" | undefined,
       }),
   });
 
   const organizationsQuery = useQuery({
     enabled: canInviteUsers,
-    queryKey: ['admin-organization-options'],
+    queryKey: ["admin-organization-options"],
     queryFn: () => listAdminOrganizationOptions(session),
   });
 
@@ -100,44 +107,87 @@ export function AdminUsersListPage() {
     register,
     handleSubmit,
     reset,
+    setValue,
+    control,
     formState: { errors },
   } = useForm<InviteFormValues>({
     resolver: zodResolver(inviteSchema),
     defaultValues: {
-      email: '',
-      organizationId: '',
-      membershipRole: 'MANAGER',
-      reason: '',
+      email: "",
+      organizationMode: "existing",
+      organizationId: "",
+      membershipRole: "MANAGER",
+      reason: "",
     },
   });
+  const organizationOptions = organizationsQuery.data ?? [];
+  const organizationMode = useWatch({
+    control,
+    name: "organizationMode",
+  });
+
+  useEffect(() => {
+    if (!organizationsQuery.isSuccess) {
+      return;
+    }
+
+    if (organizationOptions.length === 0 && organizationMode !== "personal") {
+      setValue("organizationMode", "personal");
+    }
+  }, [
+    organizationMode,
+    organizationOptions.length,
+    organizationsQuery.isSuccess,
+    setValue,
+  ]);
+
+  useEffect(() => {
+    if (organizationMode === "personal") {
+      setValue("organizationId", "");
+    }
+  }, [organizationMode, setValue]);
 
   const inviteMutation = useMutation({
-    mutationFn: (payload: InviteFormValues) => inviteAdminUser(session, payload),
+    mutationFn: (payload: InviteFormValues) =>
+      inviteAdminUser(session, {
+        email: payload.email,
+        organizationMode: payload.organizationMode,
+        organizationId:
+          payload.organizationMode === "existing"
+            ? payload.organizationId
+            : undefined,
+        membershipRole: payload.membershipRole,
+        reason: payload.reason,
+      }),
     onSuccess: async (response, variables) => {
       reset({
-        email: '',
-        organizationId: '',
+        email: "",
+        organizationMode:
+          organizationOptions.length === 0
+            ? "personal"
+            : variables.organizationMode,
+        organizationId: "",
         membershipRole: variables.membershipRole,
-        reason: '',
+        reason: "",
       });
       setFeedback({
-        type: 'success',
-        title: 'Invitation envoyee',
+        type: "success",
+        title: "Invitation envoyee",
         message:
-          response.deliveryMode === 'console'
+          response.deliveryMode === "console"
             ? "Le lien a ete journalise localement pour le dev et l'invitation est prete."
             : "L'utilisateur a recu son lien securise par email.",
         userId: response.userId,
       });
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['admin-users'] }),
-        queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] }),
-        queryClient.invalidateQueries({ queryKey: ['admin-audit-logs'] }),
+        queryClient.invalidateQueries({ queryKey: ["admin-users"] }),
+        queryClient.invalidateQueries({ queryKey: ["admin-dashboard"] }),
+        queryClient.invalidateQueries({ queryKey: ["admin-audit-logs"] }),
       ]);
     },
     onError: (error) => {
       setFeedback({
-        type: 'error',
+        type: "error",
         title: "Invitation impossible",
         message: getErrorMessage(error),
       });
@@ -146,14 +196,17 @@ export function AdminUsersListPage() {
 
   function resetFilters() {
     setPage(1);
-    setSearch('');
-    setAdminRole('');
-    setSubscriptionStatus('');
-    setSubscriptionPlan('');
-    setAccessStatus('');
+    setSearch("");
+    setAdminRole("");
+    setSubscriptionStatus("");
+    setSubscriptionPlan("");
+    setAccessStatus("");
   }
 
-  if (usersQuery.isLoading || (canInviteUsers && organizationsQuery.isLoading)) {
+  if (
+    usersQuery.isLoading ||
+    (canInviteUsers && organizationsQuery.isLoading)
+  ) {
     return <LoadingBlock label="Chargement des utilisateurs..." />;
   }
 
@@ -192,7 +245,10 @@ export function AdminUsersListPage() {
         <FeedbackMessage
           action={
             feedback.userId ? (
-              <Link className="button button--secondary" to={`/admin/users/${feedback.userId}`}>
+              <Link
+                className="button button--secondary"
+                to={`/admin/users/${feedback.userId}`}
+              >
                 Ouvrir la fiche
               </Link>
             ) : undefined
@@ -313,43 +369,60 @@ export function AdminUsersListPage() {
               <div>
                 <h2 className="section-title">Inviter un utilisateur</h2>
                 <div className="section-subtitle">
-                  Creation admin-driven avec lien securise vers l&apos;application,
-                  sans signup public ni passage par la landing.
+                  Creation admin-driven avec lien securise vers
+                  l&apos;application, sans signup public ni passage par la
+                  landing.
                 </div>
               </div>
             </div>
 
-            {(organizationsQuery.data ?? []).length === 0 ? (
-              <div className="meta">
-                Aucune organisation disponible pour preparer une invitation.
+            <form
+              className="stack"
+              onSubmit={handleSubmit((values) => {
+                void inviteMutation.mutateAsync(values);
+              })}
+            >
+              <div className="field">
+                <label htmlFor="invite-user-email">Email</label>
+                <input
+                  id="invite-user-email"
+                  type="email"
+                  {...register("email")}
+                />
+                {errors.email ? (
+                  <div className="field__error">{errors.email.message}</div>
+                ) : null}
               </div>
-            ) : (
-              <form
-                className="stack"
-                onSubmit={handleSubmit((values) => {
-                  void inviteMutation.mutateAsync(values);
-                })}
-              >
-                <div className="field">
-                  <label htmlFor="invite-user-email">Email</label>
-                  <input
-                    id="invite-user-email"
-                    type="email"
-                    {...register('email')}
-                  />
-                  {errors.email ? (
-                    <div className="field__error">{errors.email.message}</div>
-                  ) : null}
-                </div>
 
+              <div className="field">
+                <label htmlFor="invite-user-target">Cible du compte</label>
+                <select
+                  id="invite-user-target"
+                  {...register("organizationMode")}
+                >
+                  {organizationOptions.length > 0 ? (
+                    <option value="existing">Organisation existante</option>
+                  ) : null}
+                  <option value="personal">Espace personnel</option>
+                </select>
+                <div className="meta">
+                  {organizationOptions.length === 0
+                    ? "Aucune organisation n'existe encore : l'invitation creera automatiquement un espace personnel pour cet utilisateur lors de l'activation."
+                    : organizationMode === "personal"
+                      ? "Un espace personnel dedie sera cree automatiquement pour cet utilisateur lors de l'activation."
+                      : "L'utilisateur sera rattache a l'organisation selectionnee."}
+                </div>
+              </div>
+
+              {organizationMode === "existing" ? (
                 <div className="field">
                   <label htmlFor="invite-user-organization">Organisation</label>
                   <select
                     id="invite-user-organization"
-                    {...register('organizationId')}
+                    {...register("organizationId")}
                   >
                     <option value="">Selectionner une organisation</option>
-                    {(organizationsQuery.data ?? []).map((organization) => (
+                    {organizationOptions.map((organization) => (
                       <option key={organization.id} value={organization.id}>
                         {organization.name} · {organization.slug}
                       </option>
@@ -361,43 +434,40 @@ export function AdminUsersListPage() {
                     </div>
                   ) : null}
                 </div>
+              ) : null}
 
-                <div className="field">
-                  <label htmlFor="invite-user-role">Role membership</label>
-                  <select id="invite-user-role" {...register('membershipRole')}>
-                    <option value="ADMIN">Admin</option>
-                    <option value="MANAGER">Gestion</option>
-                    <option value="ACCOUNTANT">Comptabilite</option>
-                    <option value="READER">Lecture</option>
-                  </select>
-                </div>
+              <div className="field">
+                <label htmlFor="invite-user-role">Role membership</label>
+                <select id="invite-user-role" {...register("membershipRole")}>
+                  <option value="ADMIN">Admin</option>
+                  <option value="MANAGER">Gestion</option>
+                  <option value="ACCOUNTANT">Comptabilite</option>
+                  <option value="READER">Lecture</option>
+                </select>
+              </div>
 
-                <div className="field">
-                  <label htmlFor="invite-user-reason">Motif</label>
-                  <textarea
-                    id="invite-user-reason"
-                    placeholder="Expliquez le contexte de cet acces."
-                    {...register('reason')}
-                  />
-                  {errors.reason ? (
-                    <div className="field__error">{errors.reason.message}</div>
-                  ) : null}
-                </div>
+              <div className="field">
+                <label htmlFor="invite-user-reason">Motif</label>
+                <textarea
+                  id="invite-user-reason"
+                  placeholder="Expliquez le contexte de cet acces."
+                  {...register("reason")}
+                />
+                {errors.reason ? (
+                  <div className="field__error">{errors.reason.message}</div>
+                ) : null}
+              </div>
 
-                <button
-                  className="button"
-                  disabled={
-                    inviteMutation.isPending ||
-                    (organizationsQuery.data ?? []).length === 0
-                  }
-                  type="submit"
-                >
-                  {inviteMutation.isPending
-                    ? 'Invitation en cours...'
-                    : 'Inviter un utilisateur'}
-                </button>
-              </form>
-            )}
+              <button
+                className="button"
+                disabled={inviteMutation.isPending}
+                type="submit"
+              >
+                {inviteMutation.isPending
+                  ? "Invitation en cours..."
+                  : "Inviter un utilisateur"}
+              </button>
+            </form>
           </section>
         ) : null}
       </div>
@@ -444,7 +514,9 @@ export function AdminUsersListPage() {
                   <td>
                     <div className="stack stack--sm">
                       <AdminBadge
-                        tone={getSubscriptionStatusTone(user.subscriptionStatus)}
+                        tone={getSubscriptionStatusTone(
+                          user.subscriptionStatus,
+                        )}
                       >
                         {getSubscriptionStatusLabel(user.subscriptionStatus)}
                       </AdminBadge>

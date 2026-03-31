@@ -45,8 +45,13 @@ Projet Vercel `immova-api` :
 - `JWT_SECRET` : secret JWT long et aleatoire
 - `APP_WEB_URL` : URL publique de `apps/web`, utilisee dans les emails d invitation admin
 - `USER_INVITATION_TTL_HOURS` : duree de validite d un lien d invitation
-- `MAIL_FROM` : expediteur transactionnel optionnel pour les emails
-- `RESEND_API_KEY` : cle API Resend optionnelle pour l envoi de production
+- `MAIL_FROM` : expediteur transactionnel utilise par SMTP ou Resend
+- `SMTP_HOST` : serveur SMTP optionnel
+- `SMTP_PORT` : port SMTP optionnel
+- `SMTP_USER` : identifiant SMTP optionnel
+- `SMTP_PASS` : secret SMTP optionnel
+- `SMTP_SECURE` : force le mode secure SMTP si besoin
+- `RESEND_API_KEY` : cle API Resend optionnelle si SMTP n est pas configure
 
 Valeurs de reference :
 
@@ -56,7 +61,12 @@ DIRECT_URL=postgres://USER:PASSWORD@db.prisma.io:5432/postgres?sslmode=require
 JWT_SECRET=replace-with-a-long-random-secret
 APP_WEB_URL=https://immova-web.vercel.app
 USER_INVITATION_TTL_HOURS=72
-# MAIL_FROM="Immova <noreply@votre-domaine.tld>"
+# MAIL_FROM="Immova <votre-adresse@gmail.com>"
+# SMTP_HOST="smtp.gmail.com"
+# SMTP_PORT=465
+# SMTP_USER="votre-adresse@gmail.com"
+# SMTP_PASS="mot-de-passe-d-application"
+# SMTP_SECURE=true
 # RESEND_API_KEY=re_xxx
 ```
 
@@ -150,16 +160,30 @@ Ces comptes sont uniquement destines au developpement local et aux tests. Ils ne
 Le MVP n expose aucun signup public et n envoie jamais les invites vers la landing.
 Le back-office `/admin` permet maintenant de :
 
-- inviter un utilisateur avec `email + organisation + role membership`
+- inviter un utilisateur avec `email + role membership` vers :
+  - une organisation existante
+  - ou un espace personnel
 - envoyer un lien unique vers `apps/web` sur `/setup-password`
 - laisser l invite definir son mot de passe si le compte est nouveau
 - rattacher le membership cible au moment de l acceptation
 - tracer invitation initiale et renvois dans l audit log admin
+- rester strictement multi-tenant : un utilisateur solo obtient aussi une vraie `Organization` technique
+
+Comportement utile :
+
+- si des organisations existent, l admin peut choisir entre organisation existante et espace personnel
+- si aucune organisation n existe encore, l invitation reste possible et cree un espace personnel a l activation
+- l organisation personnelle est creee au moment de l acceptation du lien, pour eviter des tenants inutiles sur des invitations jamais activees
 
 Notes utiles :
 
+- aucun signup public n est ajoute ; le flow reste admin-driven de bout en bout
 - en local, sans provider configure, l API journalise l email d invitation dans les logs pour rester exploitable sans service externe
-- en production, un provider Resend peut etre branche via `MAIL_FROM` et `RESEND_API_KEY`
+- le module mail choisit son transport dans cet ordre :
+  1. SMTP si `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` et `MAIL_FROM` sont definis
+  2. Resend si `RESEND_API_KEY` et `MAIL_FROM` sont definis
+  3. fallback console sinon
+- Gmail fonctionne en SMTP simple avec `smtp.gmail.com`, le port `465` et un mot de passe d application
 - le login existant reste en place ; l activation redirige ensuite vers `/login`
 
 ## Scripts utiles
