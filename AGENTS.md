@@ -113,6 +113,7 @@ Entites repoussees :
 
 - `/dashboard`
 - `/login`
+- `/setup-password`
 - `/projects`
 - `/projects/new`
 - `/projects/:projectId`
@@ -146,7 +147,7 @@ Entites repoussees :
 Structure frontend :
 
 - `src/app` : routing, providers, layout
-- `src/modules/auth` : login et session
+- `src/modules/auth` : login, session et activation invitation
 - `src/modules/projects` : liste projets, detail projet, overview, export, API projet
 - `src/modules/lots` : gestion lots dans un projet
 - `src/modules/expenses` : gestion depenses dans un projet
@@ -169,12 +170,16 @@ Structure backend :
 - `src/storage`
 - `src/common`
 - `src/admin`
+- `src/invitations`
+- `src/mail`
 
 ## 12. Features existantes
 
 Back :
 
 - `POST /api/auth/login`
+- `GET /api/auth/invitations/verify`
+- `POST /api/auth/invitations/accept`
 - `GET /api/dashboard`
 - `GET /api/organizations/current`
 - `GET/POST/PATCH /api/memberships`
@@ -187,7 +192,10 @@ Back :
 - `GET /api/projects/:projectId/exports/expenses.csv`
 - `GET /api/admin/dashboard`
 - `GET /api/admin/users`
+- `GET /api/admin/users/organizations/options`
+- `POST /api/admin/users/invite`
 - `GET /api/admin/users/:userId`
+- `POST /api/admin/users/invitations/:invitationId/resend`
 - `PATCH /api/admin/users/:userId/suspend`
 - `PATCH /api/admin/users/:userId/reactivate`
 - `PATCH /api/admin/users/:userId/grant-trial`
@@ -232,7 +240,9 @@ Front :
 - back-office admin interne distinct sous `/admin`
 - dashboard admin avec synthese comptes, essais, suspensions, repartition des roles admin et actions recentes
 - listing admin des utilisateurs avec recherche, filtres, pagination et badges d'etat
-- detail utilisateur admin avec organisations rattachees, historique admin recent et actions sensibles auditees
+- detail utilisateur admin avec organisations rattachees, invitations, historique admin recent et actions sensibles auditees
+- invitation admin d un utilisateur avec email, organisation cible, role membership, email transactionnel et lien unique vers l app web
+- page publique `/setup-password` pour verifier un token d invitation, definir le mot de passe si necessaire puis rediriger vers `/login`
 - gestion admin des essais, des suspensions/reactivations, des statuts d'abonnement et des roles admin avec motif obligatoire
 - gestion des administrateurs avec creation de compte interne et changement de role selon le niveau autorise
 - audit log admin exploitable depuis l'UI interne
@@ -250,9 +260,15 @@ Front :
 - Le frontend expose deja : login, dashboard global, liste projets, creation projet, detail projet, lots, depenses, documents, export, settings
 - Un back-office admin interne distinct est maintenant expose dans `apps/web` sous `/admin`, avec un layout separe et des pages dediees `dashboard / users / admins / audit-logs`
 - L'API expose maintenant un domaine admin dedie sous `/api/admin/*` avec controllers/services separes de l'API produit
+- La creation / invitation d utilisateurs en MVP peut maintenant se faire depuis le back-office admin, sans signup public et sans passage par la landing marketing
 - Le modele `User` porte desormais un `adminRole` global, le statut de suspension, les informations d'essai, le statut/plan d'abonnement et la date de derniere connexion
+- Le champ `User.passwordHash` peut rester nul tant qu un utilisateur invite n a pas encore defini son mot de passe
 - Les permissions admin sont verifiees cote backend sur chaque route sensible via guards et decorators dedies, l'UI ne fait qu'une adaptation d'affichage
 - Les changements sensibles admin sont traces dans `AdminAuditLog` avec acteur, cible, motif, avant/apres et metadata de requete
+- Les invitations admin sont desormais stockees dans `UserInvitation` avec token hash, expiration, invalidation et rattachement organisation / role
+- Le backend centralise le flow d invitation dans un domaine dedie `src/invitations`, reutilise par l admin et par l auth publique
+- Un module `src/mail` simple existe maintenant avec fallback console en local et support optionnel de Resend via variables d environnement
+- Le flow d invitation cree un lien unique vers `APP_WEB_URL/setup-password?token=...`, verifie le token, permet la definition du mot de passe si necessaire, active le membership cible puis redirige vers `/login`
 - Les garde-fous admin couvrent notamment : impossibilite de suspendre son propre compte, impossibilite de changer son propre role admin, blocage de la suppression/degradation du dernier `SUPER_ADMIN`, restrictions d'elevation pour `ADMIN` et limites de trial par role
 - La landing marketing Next.js a ete refondue avec un message plus concret, un hero probleme/promesse, des sections marketing completes, un pricing plus credible et une FAQ visible
 - La landing marketing embarque des metadata SEO, Open Graph, Twitter et du JSON-LD `SoftwareApplication` + `FAQPage`
@@ -290,6 +306,7 @@ Front :
 - Build front et back : OK
 - Migration Prisma initiale : OK
 - Migration Prisma `admin_backoffice` : ajoutee
+- Migration Prisma `user_invitations_admin_flow` : ajoutee
 - Seed local : OK
 - Deux comptes seed locaux sont disponibles pour les tests : `admin@example.com` / `admin123` en `SUPER_ADMIN` et `user@example.com` / `user123` en utilisateur standard
 - Les deployments Vercel actifs sont maintenant `https://immova-web.vercel.app/` pour le web et `https://immova-api.vercel.app` pour l'API
@@ -297,12 +314,13 @@ Front :
 - L'API Vercel avec Prisma Postgres doit utiliser une `DATABASE_URL` poolée pour le runtime et une `DIRECT_URL` directe pour Prisma CLI, Prisma Studio et les migrations
 - Le `PrismaService` backend n'ouvre plus de connexion explicite au bootstrap afin d'eviter des connexions inutiles sur des requetes serverless qui ne touchent pas la base
 - Des fichiers helper `.env.prod` locaux et `.env.prod.example` versionnes existent maintenant dans `apps/api` et `apps/web` pour guider le remplissage des variables Vercel de production
+- Les variables backend utiles au flow d invitation sont maintenant `APP_WEB_URL`, `USER_INVITATION_TTL_HOURS` et, en option de production, `MAIL_FROM` / `RESEND_API_KEY`
 - Les comptes seed demo restent strictement reserves au local et aux tests ; la production ne doit pas embarquer de donnees de demonstration
 - Tests e2e API : OK
 - Smoke tests UI Playwright : en place
-- Couverture Playwright actuelle : login, dashboard global, navigation dashboard vers projet, comparaison projets, statut decisionnel, suggestions d'action, empty state projets, creation projet, empty states d'un projet neuf, edition / archivage projet, creation lot, edition / archivage lot, creation depense avec justificatif, edition depense, verification du score de completude / fiabilite et des alertes dans l'overview, export CSV, verification document lie, upload document manuel, settings / ajout membre
-- Validation rejouee pendant cette session : audit CI monorepo, `pnpm lint`, `pnpm build`, `pnpm test:e2e:api` = OK
-- Tests non relances pendant cette session : `test:e2e:web`
+- Couverture Playwright actuelle : login, dashboard global, navigation dashboard vers projet, comparaison projets, statut decisionnel, suggestions d'action, empty state projets, creation projet, empty states d'un projet neuf, edition / archivage projet, creation lot, edition / archivage lot, creation depense avec justificatif, edition depense, verification du score de completude / fiabilite et des alertes dans l'overview, export CSV, verification document lie, upload document manuel, settings / ajout membre, invitation admin utilisateur et page `setup-password`
+- Validation rejouee pendant cette session : audit CI monorepo, `pnpm lint`, `pnpm build`, `pnpm test:e2e:api` et `CI=1 pnpm test:e2e -- tests/e2e/invitations.spec.ts` = OK
+- Tests UI Playwright non relances pendant cette session : le reste de `test:e2e:web` hors spec `invitations`
 - Les documents de cadrage vivent dans `docs/`
 
 ## 14. Demarrage local de reference

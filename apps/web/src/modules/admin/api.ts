@@ -3,6 +3,12 @@ import { apiFetch } from '../../shared/api/client';
 
 export type AdminPermission = string;
 
+export type AdminInvitationStatus =
+  | 'PENDING'
+  | 'ACCEPTED'
+  | 'EXPIRED'
+  | 'REVOKED';
+
 export type AdminDashboard = {
   summary: {
     totalUsers: number;
@@ -84,8 +90,32 @@ export type AdminUserDetail = AdminUserSummary & {
       projectsCount: number;
     };
   }>;
+  invitations: Array<{
+    id: string;
+    email: string;
+    membershipRole: string;
+    status: AdminInvitationStatus;
+    expiresAt: string;
+    acceptedAt?: string | null;
+    revokedAt?: string | null;
+    createdAt: string;
+    requiresPasswordSetup: boolean;
+    organization: {
+      id: string;
+      name: string;
+      slug: string;
+    };
+  }>;
   totalProjectsCount: number;
   recentAuditLogs: AdminAuditLog[];
+};
+
+export type AdminOrganizationOption = {
+  id: string;
+  name: string;
+  slug: string;
+  membersCount: number;
+  projectsCount: number;
 };
 
 export type AdminUserListResponse = {
@@ -214,6 +244,59 @@ export function getAdminUser(session: Session | null, userId: string) {
 
   return apiFetch<AdminUserDetail>(`/admin/users/${userId}`, {
     token: currentSession.accessToken,
+  });
+}
+
+export function listAdminOrganizationOptions(session: Session | null) {
+  const currentSession = requireSession(session);
+
+  return apiFetch<AdminOrganizationOption[]>(
+    '/admin/users/organizations/options',
+    {
+      token: currentSession.accessToken,
+    },
+  );
+}
+
+export function inviteAdminUser(
+  session: Session | null,
+  payload: {
+    email: string;
+    organizationId: string;
+    membershipRole: string;
+    reason: string;
+  },
+) {
+  const currentSession = requireSession(session);
+
+  return apiFetch<{
+    userId: string;
+    email: string;
+    deliveryMode: 'console' | 'resend';
+    invitation: AdminUserDetail['invitations'][number];
+  }>('/admin/users/invite', {
+    method: 'POST',
+    token: currentSession.accessToken,
+    body: payload,
+  });
+}
+
+export function resendAdminUserInvitation(
+  session: Session | null,
+  invitationId: string,
+  payload: { reason: string },
+) {
+  const currentSession = requireSession(session);
+
+  return apiFetch<{
+    userId: string;
+    email: string;
+    deliveryMode: 'console' | 'resend';
+    invitation: AdminUserDetail['invitations'][number];
+  }>(`/admin/users/invitations/${invitationId}/resend`, {
+    method: 'POST',
+    token: currentSession.accessToken,
+    body: payload,
   });
 }
 

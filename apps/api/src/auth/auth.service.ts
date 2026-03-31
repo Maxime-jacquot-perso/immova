@@ -11,14 +11,18 @@ import {
   getTrialPolicy,
   isAdminRole,
 } from '../admin/admin-authorization';
+import { InvitationsService } from '../invitations/invitations.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { AcceptInvitationDto } from './dto/accept-invitation.dto';
 import { LoginDto } from './dto/login.dto';
+import { VerifyInvitationQueryDto } from './dto/verify-invitation-query.dto';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly invitationsService: InvitationsService,
   ) {}
 
   async login(input: LoginDto) {
@@ -33,7 +37,10 @@ export class AuthService {
       },
     });
 
-    if (!user || !compareSync(input.password, user.passwordHash)) {
+    if (
+      !user?.passwordHash ||
+      !compareSync(input.password, user.passwordHash)
+    ) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -95,5 +102,13 @@ export class AuthService {
           }
         : null,
     };
+  }
+
+  verifyInvitation(input: VerifyInvitationQueryDto) {
+    return this.invitationsService.verifyToken(input.token);
+  }
+
+  acceptInvitation(input: AcceptInvitationDto) {
+    return this.invitationsService.acceptInvitation(input);
   }
 }

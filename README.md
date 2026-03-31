@@ -43,6 +43,10 @@ Projet Vercel `immova-api` :
 - `DATABASE_URL` : URL Prisma Postgres poolée pour le runtime
 - `DIRECT_URL` : URL Prisma Postgres directe pour `prisma migrate deploy` et Prisma Studio
 - `JWT_SECRET` : secret JWT long et aleatoire
+- `APP_WEB_URL` : URL publique de `apps/web`, utilisee dans les emails d invitation admin
+- `USER_INVITATION_TTL_HOURS` : duree de validite d un lien d invitation
+- `MAIL_FROM` : expediteur transactionnel optionnel pour les emails
+- `RESEND_API_KEY` : cle API Resend optionnelle pour l envoi de production
 
 Valeurs de reference :
 
@@ -50,6 +54,10 @@ Valeurs de reference :
 DATABASE_URL=postgres://USER:PASSWORD@db.prisma.io:5432/postgres?sslmode=require&pool=true
 DIRECT_URL=postgres://USER:PASSWORD@db.prisma.io:5432/postgres?sslmode=require
 JWT_SECRET=replace-with-a-long-random-secret
+APP_WEB_URL=https://immova-web.vercel.app
+USER_INVITATION_TTL_HOURS=72
+# MAIL_FROM="Immova <noreply@votre-domaine.tld>"
+# RESEND_API_KEY=re_xxx
 ```
 
 Projet Vercel `immova-web` :
@@ -136,6 +144,23 @@ Apres le seed Prisma :
 - `user@example.com` / `user123` : utilisateur standard, acces a l'application produit
 
 Ces comptes sont uniquement destines au developpement local et aux tests. Ils ne doivent pas etre recrees ni utilises en production.
+
+## Invitation admin des utilisateurs
+
+Le MVP n expose aucun signup public et n envoie jamais les invites vers la landing.
+Le back-office `/admin` permet maintenant de :
+
+- inviter un utilisateur avec `email + organisation + role membership`
+- envoyer un lien unique vers `apps/web` sur `/setup-password`
+- laisser l invite definir son mot de passe si le compte est nouveau
+- rattacher le membership cible au moment de l acceptation
+- tracer invitation initiale et renvois dans l audit log admin
+
+Notes utiles :
+
+- en local, sans provider configure, l API journalise l email d invitation dans les logs pour rester exploitable sans service externe
+- en production, un provider Resend peut etre branche via `MAIL_FROM` et `RESEND_API_KEY`
+- le login existant reste en place ; l activation redirige ensuite vers `/login`
 
 ## Scripts utiles
 

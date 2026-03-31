@@ -1,9 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { z } from 'zod';
 import { useAuth } from '../auth-context';
 import { getErrorMessage } from '../../../shared/ui/error-utils';
+import { FeedbackMessage } from '../../../shared/ui/feedback-message';
 
 const schema = z.object({
   email: z.string().email('Saisissez un email valide.'),
@@ -14,7 +15,11 @@ type FormValues = z.infer<typeof schema>;
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { login } = useAuth();
+  const invitationAccepted = searchParams.get('invitation') === 'accepted';
+  const emailPrefill = searchParams.get('email') ?? '';
+  const organizationSlug = searchParams.get('organizationSlug') || undefined;
   const {
     register,
     handleSubmit,
@@ -23,7 +28,7 @@ export function LoginPage() {
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      email: '',
+      email: emailPrefill,
       password: '',
     },
   });
@@ -31,6 +36,14 @@ export function LoginPage() {
   return (
     <div className="auth-screen">
       <div className="panel auth-card stack">
+        {invitationAccepted ? (
+          <FeedbackMessage
+            title="Acces active"
+            message="Votre invitation est validee. Connectez-vous pour ouvrir l'application."
+            type="success"
+          />
+        ) : null}
+
         <div>
           <h1 style={{ margin: 0 }}>Pilotage Immo</h1>
           <p className="page-subtitle">
@@ -42,7 +55,10 @@ export function LoginPage() {
           className="stack"
           onSubmit={handleSubmit(async (values) => {
             try {
-              await login(values);
+              await login({
+                ...values,
+                organizationSlug,
+              });
               navigate('/');
             } catch (error) {
               setError('root', {

@@ -1,6 +1,7 @@
 import { createBrowserRouter } from 'react-router-dom';
 import { AppShell } from './layout/app-shell';
 import { LoginPage } from '../modules/auth/pages/login-page';
+import { SetupPasswordPage } from '../modules/auth/pages/setup-password-page';
 import { DashboardPage } from '../modules/dashboard/pages/dashboard-page';
 import { ProjectsListPage } from '../modules/projects/pages/projects-list-page';
 import { ProjectCreatePage } from '../modules/projects/pages/project-create-page';
@@ -28,6 +29,11 @@ export const router = createBrowserRouter([
   {
     path: '/login',
     element: <LoginPage />,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: '/setup-password',
+    element: <SetupPasswordPage />,
     errorElement: <RouteErrorBoundary />,
   },
   {

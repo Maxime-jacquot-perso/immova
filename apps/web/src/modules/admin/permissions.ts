@@ -3,6 +3,7 @@ import type { Session } from '../auth/api';
 export const ADMIN_PERMISSIONS = {
   dashboardRead: 'dashboard.read',
   usersRead: 'users.read',
+  usersUpdate: 'users.update',
   usersSuspend: 'users.suspend',
   usersReactivate: 'users.reactivate',
   trialGrant: 'trial.grant',

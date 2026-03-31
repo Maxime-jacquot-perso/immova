@@ -91,6 +91,13 @@ const accessStatusLabels: Record<string, string> = {
   SUSPENDED: 'Suspendu',
 };
 
+const invitationStatusLabels: Record<string, string> = {
+  PENDING: 'Invitation envoyee',
+  ACCEPTED: 'Invitation acceptee',
+  EXPIRED: 'Invitation expiree',
+  REVOKED: 'Invitation revoquee',
+};
+
 const adminAuditActionLabels: Record<string, string> = {
   TRIAL_GRANTED: 'Essai accorde',
   TRIAL_EXTENDED: 'Essai prolonge',
@@ -99,6 +106,8 @@ const adminAuditActionLabels: Record<string, string> = {
   SUBSCRIPTION_UPDATED: 'Abonnement modifie',
   ADMIN_CREATED: 'Admin cree',
   ADMIN_ROLE_CHANGED: 'Role admin modifie',
+  USER_INVITED: 'Utilisateur invite',
+  USER_INVITE_RESENT: 'Invitation renvoyee',
 };
 
 const dashboardAlertLabels: Record<string, string> = {
@@ -164,6 +173,13 @@ const accessStatusTones: Record<string, string> = {
   SUSPENDED: 'danger',
 };
 
+const invitationStatusTones: Record<string, string> = {
+  PENDING: 'info',
+  ACCEPTED: 'good',
+  EXPIRED: 'warning',
+  REVOKED: 'neutral',
+};
+
 function getLabel(labels: Record<string, string>, value: string | null | undefined) {
   if (!value) {
     return '—';
@@ -216,6 +232,10 @@ export function getAccessStatusLabel(value: string | null | undefined) {
   return getLabel(accessStatusLabels, value);
 }
 
+export function getInvitationStatusLabel(value: string | null | undefined) {
+  return getLabel(invitationStatusLabels, value);
+}
+
 export function getAdminAuditActionLabel(value: string | null | undefined) {
   return getLabel(adminAuditActionLabels, value);
 }
@@ -254,4 +274,8 @@ export function getSubscriptionStatusTone(value: string | null | undefined) {
 
 export function getAccessStatusTone(value: string | null | undefined) {
   return accessStatusTones[value ?? ''] ?? 'neutral';
+}
+
+export function getInvitationStatusTone(value: string | null | undefined) {
+  return invitationStatusTones[value ?? ''] ?? 'neutral';
 }

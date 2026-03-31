@@ -5,7 +5,11 @@ import { login as loginRequest, type Session } from './api';
 type AuthContextValue = {
   session: Session | null;
   isReady: boolean;
-  login: (payload: { email: string; password: string }) => Promise<void>;
+  login: (payload: {
+    email: string;
+    password: string;
+    organizationSlug?: string;
+  }) => Promise<void>;
   logout: () => void;
 };
 

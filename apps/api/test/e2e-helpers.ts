@@ -59,6 +59,7 @@ export async function cleanupUploads() {
 
 export async function cleanDatabase(prisma: PrismaClient) {
   await prisma.adminAuditLog.deleteMany();
+  await prisma.userInvitation.deleteMany();
   await prisma.document.deleteMany();
   await prisma.expense.deleteMany();
   await prisma.lot.deleteMany();

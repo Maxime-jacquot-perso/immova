@@ -8,6 +8,7 @@ import {
   getAdminUser,
   grantAdminUserTrial,
   reactivateAdminUser,
+  resendAdminUserInvitation,
   suspendAdminUser,
   updateAdminUserSubscription,
 } from '../api';
@@ -22,6 +23,8 @@ import {
   getAccessStatusLabel,
   getAccessStatusTone,
   getAdminRoleLabel,
+  getInvitationStatusLabel,
+  getInvitationStatusTone,
   getSubscriptionPlanLabel,
   getSubscriptionStatusLabel,
   getSubscriptionStatusTone,
@@ -39,7 +42,8 @@ type ActionKind =
   | 'grantTrial'
   | 'extendTrial'
   | 'subscription'
-  | 'changeRole';
+  | 'changeRole'
+  | 'resendInvitation';
 
 type ModalState = {
   kind: ActionKind;
@@ -48,6 +52,8 @@ type ModalState = {
   subscriptionPlan: string;
   subscriptionStatus: string;
   adminRole: string;
+  invitationId?: string;
+  invitationLabel?: string;
 };
 
 function getActionTitle(kind: ActionKind) {
@@ -64,6 +70,8 @@ function getActionTitle(kind: ActionKind) {
       return "Modifier l'abonnement";
     case 'changeRole':
       return 'Changer le role admin';
+    case 'resendInvitation':
+      return "Renvoyer l'invitation";
     default:
       return 'Action admin';
   }
@@ -120,6 +128,14 @@ export function AdminUserDetailPage() {
             reason: currentAction.reason,
             adminRole: currentAction.adminRole,
           });
+        case 'resendInvitation':
+          if (!currentAction.invitationId) {
+            throw new Error('Invitation admin invalide');
+          }
+
+          return resendAdminUserInvitation(session, currentAction.invitationId, {
+            reason: currentAction.reason,
+          });
         default:
           throw new Error('Action admin non geree');
       }
@@ -127,8 +143,14 @@ export function AdminUserDetailPage() {
     onSuccess: async (_, variables) => {
       setFeedback({
         type: 'success',
-        title: 'Action admin enregistree',
-        message: `L'action ${variables.kind} a ete appliquee avec audit.`,
+        title:
+          variables.kind === 'resendInvitation'
+            ? 'Invitation renvoyee'
+            : 'Action admin enregistree',
+        message:
+          variables.kind === 'resendInvitation'
+            ? "Un nouveau lien d'acces a ete genere et journalise."
+            : `L'action ${variables.kind} a ete appliquee avec audit.`,
       });
       setModal(null);
       await Promise.all([
@@ -195,6 +217,8 @@ export function AdminUserDetailPage() {
         user!.adminRole === 'USER'
           ? assignableRoles[0] ?? 'READONLY_ADMIN'
           : user!.adminRole,
+      invitationId: undefined,
+      invitationLabel: undefined,
     });
   }
 
@@ -386,6 +410,88 @@ export function AdminUserDetailPage() {
       <section className="panel">
         <div className="panel-header">
           <div>
+            <h2 className="section-title">Invitations</h2>
+            <div className="section-subtitle">
+              Suivi des liens envoyes depuis le back-office pour activer ou
+              re-activer un acces.
+            </div>
+          </div>
+        </div>
+
+        {user.invitations.length === 0 ? (
+          <div className="meta">
+            Aucune invitation recente pour ce compte.
+          </div>
+        ) : (
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Organisation</th>
+                  <th>Role</th>
+                  <th>Statut</th>
+                  <th>Envoi</th>
+                  <th>Expiration</th>
+                  <th>Activation</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {user.invitations.map((invitation) => (
+                  <tr key={invitation.id}>
+                    <td>
+                      <div className="stack stack--sm">
+                        <strong>{invitation.organization.name}</strong>
+                        <div className="meta">{invitation.organization.slug}</div>
+                      </div>
+                    </td>
+                    <td>{invitation.membershipRole}</td>
+                    <td>
+                      <AdminBadge tone={getInvitationStatusTone(invitation.status)}>
+                        {getInvitationStatusLabel(invitation.status)}
+                      </AdminBadge>
+                    </td>
+                    <td>{formatDateTime(invitation.createdAt)}</td>
+                    <td>{formatDateTime(invitation.expiresAt)}</td>
+                    <td>
+                      {invitation.requiresPasswordSetup
+                        ? 'Mot de passe a definir'
+                        : 'Compte existant'}
+                    </td>
+                    <td>
+                      {hasAdminPermission(session, ADMIN_PERMISSIONS.usersUpdate) &&
+                      ['PENDING', 'EXPIRED'].includes(invitation.status) ? (
+                        <button
+                          className="button button--secondary button--small"
+                          onClick={() =>
+                            setModal({
+                              kind: 'resendInvitation',
+                              reason: '',
+                              durationDays: '',
+                              subscriptionPlan: user.subscriptionPlan,
+                              subscriptionStatus: user.subscriptionStatus,
+                              adminRole: user.adminRole,
+                              invitationId: invitation.id,
+                              invitationLabel: `${invitation.organization.name} · ${invitation.membershipRole}`,
+                            })
+                          }
+                          type="button"
+                        >
+                          Renvoyer
+                        </button>
+                      ) : null}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      <section className="panel">
+        <div className="panel-header">
+          <div>
             <h2 className="section-title">Historique admin recent</h2>
             <div className="section-subtitle">
               Vue recentree sur ce compte pour reconstruire les decisions
@@ -510,7 +616,11 @@ export function AdminUserDetailPage() {
           )
         }
         reason={modal?.reason ?? ''}
-        title={getActionTitle(modal?.kind ?? 'suspend')}
+        title={
+          modal?.kind === 'resendInvitation' && modal.invitationLabel
+            ? `${getActionTitle(modal.kind)} · ${modal.invitationLabel}`
+            : getActionTitle(modal?.kind ?? 'suspend')
+        }
       />
     </div>
   );

@@ -31,8 +31,50 @@ export type Session = {
   admin: AdminContext | null;
 };
 
-export function login(payload: { email: string; password: string }) {
+export type InvitationVerification = {
+  email: string;
+  membershipRole: string;
+  expiresAt: string;
+  requiresPasswordSetup: boolean;
+  organization: {
+    id: string;
+    name: string;
+    slug: string;
+  };
+};
+
+export function login(payload: {
+  email: string;
+  password: string;
+  organizationSlug?: string;
+}) {
   return apiFetch<Session>('/auth/login', {
+    method: 'POST',
+    body: payload,
+  });
+}
+
+export function verifyInvitationToken(token: string) {
+  const searchParams = new URLSearchParams({ token });
+
+  return apiFetch<InvitationVerification>(
+    `/auth/invitations/verify?${searchParams.toString()}`,
+  );
+}
+
+export function acceptInvitation(payload: {
+  token: string;
+  password?: string;
+}) {
+  return apiFetch<{
+    email: string;
+    requiresPasswordSetup: boolean;
+    organization: {
+      id: string;
+      name: string;
+      slug: string;
+    };
+  }>('/auth/invitations/accept', {
     method: 'POST',
     body: payload,
   });

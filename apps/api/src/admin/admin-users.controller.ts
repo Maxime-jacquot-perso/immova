@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   Patch,
+  Post,
   Query,
   Req,
   UseGuards,
@@ -19,8 +20,10 @@ import { AdminPermissions } from './decorators/admin-permissions.decorator';
 import { ChangeAdminRoleDto } from './dto/change-admin-role.dto';
 import { ExtendTrialDto } from './dto/extend-trial.dto';
 import { GrantTrialDto } from './dto/grant-trial.dto';
+import { InviteUserDto } from './dto/invite-user.dto';
 import { ListAdminUsersQueryDto } from './dto/list-admin-users-query.dto';
 import { ReactivateUserDto } from './dto/reactivate-user.dto';
+import { ResendInvitationDto } from './dto/resend-invitation.dto';
 import { SuspendUserDto } from './dto/suspend-user.dto';
 import { UpdateSubscriptionDto } from './dto/update-subscription.dto';
 import { AdminAccessGuard } from './guards/admin-access.guard';
@@ -35,6 +38,42 @@ export class AdminUsersController {
   @AdminPermissions(ADMIN_PERMISSIONS.usersRead)
   list(@Query() query: ListAdminUsersQueryDto) {
     return this.adminUsersService.list(query);
+  }
+
+  @Get('organizations/options')
+  @AdminPermissions(ADMIN_PERMISSIONS.usersUpdate)
+  listOrganizationOptions() {
+    return this.adminUsersService.listOrganizationOptions();
+  }
+
+  @Post('invite')
+  @AdminPermissions(ADMIN_PERMISSIONS.usersUpdate)
+  invite(
+    @CurrentUser() actor: AuthenticatedUser,
+    @Body() body: InviteUserDto,
+    @Req() request: Request,
+  ) {
+    return this.adminUsersService.inviteUser(
+      actor,
+      body,
+      extractAdminRequestContext(request),
+    );
+  }
+
+  @Post('invitations/:invitationId/resend')
+  @AdminPermissions(ADMIN_PERMISSIONS.usersUpdate)
+  resendInvitation(
+    @CurrentUser() actor: AuthenticatedUser,
+    @Param('invitationId') invitationId: string,
+    @Body() body: ResendInvitationDto,
+    @Req() request: Request,
+  ) {
+    return this.adminUsersService.resendInvitation(
+      actor,
+      invitationId,
+      body,
+      extractAdminRequestContext(request),
+    );
   }
 
   @Get(':userId')

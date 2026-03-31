@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import {
@@ -13,6 +14,7 @@ import {
 } from '@prisma/client';
 import { addDays } from '../common/utils/date.util';
 import type { AuthenticatedUser } from '../common/interfaces/authenticated-user.interface';
+import { InvitationsService } from '../invitations/invitations.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AdminAuditService } from './admin-audit.service';
 import { ADMIN_PERMISSIONS, hasAdminPermission } from './admin-authorization';
@@ -25,6 +27,8 @@ import { GrantTrialDto } from './dto/grant-trial.dto';
 import { ExtendTrialDto } from './dto/extend-trial.dto';
 import { UpdateSubscriptionDto } from './dto/update-subscription.dto';
 import { ChangeAdminRoleDto } from './dto/change-admin-role.dto';
+import { InviteUserDto } from './dto/invite-user.dto';
+import { ResendInvitationDto } from './dto/resend-invitation.dto';
 
 type UserListRecord = Prisma.UserGetPayload<{
   include: {
@@ -53,6 +57,7 @@ export class AdminUsersService {
     private readonly prisma: PrismaService,
     private readonly adminAuditService: AdminAuditService,
     private readonly adminPolicyService: AdminPolicyService,
+    private readonly invitationsService: InvitationsService,
   ) {}
 
   async list(query: ListAdminUsersQueryDto) {
@@ -94,6 +99,207 @@ export class AdminUsersService {
     };
   }
 
+  async listOrganizationOptions() {
+    const organizations = await this.prisma.organization.findMany({
+      orderBy: { name: 'asc' },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        _count: {
+          select: {
+            memberships: true,
+            projects: true,
+          },
+        },
+      },
+    });
+
+    return organizations.map((organization) => ({
+      id: organization.id,
+      name: organization.name,
+      slug: organization.slug,
+      membersCount: organization._count.memberships,
+      projectsCount: organization._count.projects,
+    }));
+  }
+
+  async inviteUser(
+    actor: AuthenticatedUser,
+    body: InviteUserDto,
+    requestContext: AdminRequestContext,
+  ) {
+    const email = body.email.toLowerCase();
+    const organization = await this.getOrganization(body.organizationId);
+    let user = await this.prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        passwordHash: true,
+        isSuspended: true,
+      },
+    });
+
+    if (user?.isSuspended) {
+      throw new BadRequestException('Suspended accounts cannot be invited');
+    }
+
+    if (user) {
+      const existingMembership = await this.prisma.membership.findUnique({
+        where: {
+          organizationId_userId: {
+            organizationId: organization.id,
+            userId: user.id,
+          },
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      if (existingMembership) {
+        throw new BadRequestException(
+          'This user already belongs to the selected organization',
+        );
+      }
+    } else {
+      user = await this.prisma.user.create({
+        data: {
+          email,
+          adminRole: AdminRole.USER,
+        },
+        select: {
+          id: true,
+          email: true,
+          passwordHash: true,
+          isSuspended: true,
+        },
+      });
+    }
+
+    const invitationResult = await this.invitationsService.issueInvitation({
+      userId: user.id,
+      email,
+      organization,
+      membershipRole: body.membershipRole,
+      createdByAdminUserId: actor.userId,
+      requiresPasswordSetup: !user.passwordHash,
+    });
+
+    await this.adminAuditService.record({
+      actorUserId: actor.userId,
+      targetUserId: user.id,
+      action: AdminAuditAction.USER_INVITED,
+      targetType: AdminAuditTargetType.USER,
+      reason: body.reason,
+      newValue: {
+        organizationId: organization.id,
+        organizationSlug: organization.slug,
+        membershipRole: body.membershipRole,
+        invitationId: invitationResult.invitation.id,
+        deliveryMode: invitationResult.deliveryMode,
+      },
+      metadata: { actorAdminRole: actor.adminRole },
+      ipAddress: requestContext.ipAddress,
+      userAgent: requestContext.userAgent,
+    });
+
+    if (invitationResult.deliveryMode === 'failed') {
+      throw new InternalServerErrorException(
+        "Invitation creee mais l'email n'a pas pu etre envoye. Utilisez le detail utilisateur pour renvoyer le lien.",
+      );
+    }
+
+    return {
+      userId: user.id,
+      email,
+      invitation: invitationResult.invitation,
+      deliveryMode: invitationResult.deliveryMode,
+    };
+  }
+
+  async resendInvitation(
+    actor: AuthenticatedUser,
+    invitationId: string,
+    body: ResendInvitationDto,
+    requestContext: AdminRequestContext,
+  ) {
+    const currentInvitation =
+      await this.invitationsService.getInvitationTarget(invitationId);
+    const invitedUser = currentInvitation.user;
+
+    if (!invitedUser) {
+      throw new BadRequestException('Invitation introuvable');
+    }
+
+    if (invitedUser.isSuspended) {
+      throw new BadRequestException('Suspended accounts cannot be invited');
+    }
+
+    const existingMembership = await this.prisma.membership.findUnique({
+      where: {
+        organizationId_userId: {
+          organizationId: currentInvitation.organization.id,
+          userId: invitedUser.id,
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (existingMembership) {
+      throw new BadRequestException(
+        'This user already belongs to the selected organization',
+      );
+    }
+
+    const invitationResult = await this.invitationsService.issueInvitation({
+      userId: invitedUser.id,
+      email: currentInvitation.email,
+      organization: currentInvitation.organization,
+      membershipRole: currentInvitation.membershipRole,
+      createdByAdminUserId: actor.userId,
+      requiresPasswordSetup: !invitedUser.passwordHash,
+    });
+
+    await this.adminAuditService.record({
+      actorUserId: actor.userId,
+      targetUserId: invitedUser.id,
+      action: AdminAuditAction.USER_INVITE_RESENT,
+      targetType: AdminAuditTargetType.USER,
+      reason: body.reason,
+      oldValue: {
+        invitationId,
+        invitationStatus: this.getInvitationStatus(currentInvitation),
+      },
+      newValue: {
+        invitationId: invitationResult.invitation.id,
+        organizationId: currentInvitation.organization.id,
+        organizationSlug: currentInvitation.organization.slug,
+        membershipRole: currentInvitation.membershipRole,
+        deliveryMode: invitationResult.deliveryMode,
+      },
+      metadata: { actorAdminRole: actor.adminRole },
+      ipAddress: requestContext.ipAddress,
+      userAgent: requestContext.userAgent,
+    });
+
+    if (invitationResult.deliveryMode === 'failed') {
+      throw new InternalServerErrorException(
+        "L'invitation a ete regeneree mais l'email n'a pas pu etre envoye.",
+      );
+    }
+
+    return {
+      userId: invitedUser.id,
+      email: currentInvitation.email,
+      invitation: invitationResult.invitation,
+      deliveryMode: invitationResult.deliveryMode,
+    };
+  }
+
   async findOne(actor: AuthenticatedUser, userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -130,6 +336,7 @@ export class AdminUsersService {
     )
       ? await this.adminAuditService.listRecentForUser(user.id)
       : [];
+    const invitations = await this.invitationsService.listForUser(user.id);
     const totalProjectsCount = user.memberships.reduce(
       (total, membership) => total + membership.organization._count.projects,
       0,
@@ -148,6 +355,7 @@ export class AdminUsersService {
         },
       })),
       totalProjectsCount,
+      invitations,
       recentAuditLogs,
     };
   }
@@ -427,6 +635,23 @@ export class AdminUsersService {
     });
   }
 
+  private async getOrganization(organizationId: string) {
+    const organization = await this.prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+      },
+    });
+
+    if (!organization) {
+      throw new NotFoundException('Organization not found');
+    }
+
+    return organization;
+  }
+
   private buildWhere(query: ListAdminUsersQueryDto): Prisma.UserWhereInput {
     const search = query.search?.trim();
 
@@ -543,5 +768,25 @@ export class AdminUsersService {
       trialEndsAt: user.trialEndsAt,
       trialExtensionsCount: user.trialExtensionsCount,
     };
+  }
+
+  private getInvitationStatus(invitation: {
+    acceptedAt: Date | null;
+    revokedAt: Date | null;
+    expiresAt: Date;
+  }) {
+    if (invitation.acceptedAt) {
+      return 'ACCEPTED';
+    }
+
+    if (invitation.revokedAt) {
+      return 'REVOKED';
+    }
+
+    if (invitation.expiresAt.getTime() <= Date.now()) {
+      return 'EXPIRED';
+    }
+
+    return 'PENDING';
   }
 }

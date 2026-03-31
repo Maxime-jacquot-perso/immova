@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { InvitationsModule } from '../invitations/invitations.module';
 import { AdminAdminsController } from './admin-admins.controller';
 import { AdminAdminsService } from './admin-admins.service';
 import { AdminAuditController } from './admin-audit.controller';
@@ -12,6 +13,7 @@ import { AdminAccessGuard } from './guards/admin-access.guard';
 import { AdminPermissionsGuard } from './guards/admin-permissions.guard';
 
 @Module({
+  imports: [InvitationsModule],
   controllers: [
     AdminDashboardController,
     AdminUsersController,
