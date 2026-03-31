@@ -35,6 +35,7 @@ export function LoginPage() {
 
   return (
     <div className="auth-screen">
+      <img src="/logo-text-bleu.svg" alt="Immova" className="auth-screen__logo" />
       <div className="panel auth-card stack">
         {invitationAccepted ? (
           <FeedbackMessage
