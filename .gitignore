@@ -1,25 +1,49 @@
 # dependencies
 node_modules/
+.pnpm-store/
+.npm/
+.yarn/
 
-# build
+# build outputs
 dist/
 build/
 .next/
 out/
+coverage/
+*.tsbuildinfo
 
-# env
+# environment
 .env
 .env.*
-apps/api/.env
+.envrc
+!.env.example
+!**/.env.example
+!.env*.example
+!**/.env*.example
+
+# runtime data
+uploads/
+apps/api/test/.tmp/
+postgres-data/
+*.sqlite
+*.db
 
 # logs
 *.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-# OS
+# caches
+.cache/
+.turbo/
+.vercel/
+.eslintcache
+
+# editors and OS
 .DS_Store
-
-# prisma
-apps/api/prisma/dev.db
-
-# docker volumes
-postgres-data/
+Thumbs.db
+.idea/
+.vscode/
+!.vscode/extensions.json

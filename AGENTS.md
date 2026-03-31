@@ -275,6 +275,9 @@ Front :
 - Les formulaires web remontent maintenant les erreurs de validation de facon visible sur les champs critiques
 - Le setup local DB passe par `docker-compose.yml`
 - Le setup local alternatif fonctionne avec un PostgreSQL local si Docker n'est pas demarre
+- Le repo est maintenant prepare pour une publication GitHub propre avec un `.gitignore` monorepo renforce pour `.env`, `node_modules`, `dist`, `.next`, `coverage`, `uploads`, temporaires de tests et volumes locaux
+- Les fichiers runtime suivis sous `apps/api/uploads` ont ete identifies comme artefacts generes et doivent rester hors du versioning
+- Le README racine et les README de `apps/api` / `apps/web` ont ete remis en coherence pour decrire le monorepo reel plutot que les templates d'origine
 - Build front et back : OK
 - Migration Prisma initiale : OK
 - Migration Prisma `admin_backoffice` : ajoutee
@@ -283,8 +286,8 @@ Front :
 - Tests e2e API : OK
 - Smoke tests UI Playwright : en place
 - Couverture Playwright actuelle : login, dashboard global, navigation dashboard vers projet, comparaison projets, statut decisionnel, suggestions d'action, empty state projets, creation projet, empty states d'un projet neuf, edition / archivage projet, creation lot, edition / archivage lot, creation depense avec justificatif, edition depense, verification du score de completude / fiabilite et des alertes dans l'overview, export CSV, verification document lie, upload document manuel, settings / ajout membre
-- Validation rejouee pendant cette session : `build:web`, `build:api`, `lint:web`, `lint:api` = OK
-- Tests non relances pendant cette session : `build:landing`, `lint:landing`, `test:e2e:api`, `test:e2e:web`
+- Validation rejouee pendant cette session : audit GitHub, `build:landing`, `build:web`, `build:api` = OK
+- Tests non relances pendant cette session : `lint:landing`, `lint:web`, `lint:api`, `test:e2e:api`, `test:e2e:web`
 - Les documents de cadrage vivent dans `docs/`
 
 ## 14. Demarrage local de reference

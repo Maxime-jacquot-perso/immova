@@ -1,35 +1,81 @@
 # SaaS de pilotage immobilier
 
-Application metier SaaS B2B pour le pilotage d'operations immobilieres.
+Monorepo SaaS B2B pour piloter des operations immobilieres simples et fiables.
+Le produit cible les investisseurs immobiliers, marchands de biens et petites structures multi-projets.
 
-## Stack
+## Positionnement
 
-- Landing marketing : Next.js + TypeScript
-- Frontend app : React + Vite + TypeScript
-- Backend : NestJS
-- Base de donnees : PostgreSQL
-- ORM : Prisma
-- Architecture : monolithe modulaire multi-tenant
+Le coeur du produit reste volontairement limite a :
 
-## MVP visible
-
-- authentification
-- organisations / memberships / roles simples
 - projets
 - lots
-- depenses
+- depenses / factures
 - documents
-- KPI projet
-- export CSV
+- KPI projet simples et fiables
+- export CSV comptable simple
 
-## Demarrage
+Le produit n'est ni un logiciel de gestion locative classique, ni un ERP immobilier.
+
+## Stack et architecture
+
+- `apps/landing` : Next.js + TypeScript
+- `apps/web` : React + Vite + TypeScript
+- `apps/api` : NestJS + Prisma
+- Base de donnees : PostgreSQL
+- Architecture : monolithe modulaire multi-tenant
+
+## Structure du repo
+
+```text
+.
+|-- apps/
+|   |-- api/
+|   |-- landing/
+|   `-- web/
+|-- docs/
+|-- AGENTS.md
+|-- docker-compose.yml
+|-- package.json
+`-- pnpm-workspace.yaml
+```
+
+## Prerequis
+
+- Node.js 20+
+- pnpm 9+
+- PostgreSQL local ou Docker
+
+## Demarrage local
+
+1. Installer les dependances :
 
 ```bash
 pnpm install
-docker compose up -d postgres
+```
+
+2. Preparer l'environnement backend :
+
+```bash
 cp apps/api/.env.example apps/api/.env
-(cd apps/api && pnpm prisma migrate dev --name init)
-(cd apps/api && pnpm prisma db seed)
+```
+
+3. Demarrer PostgreSQL si besoin :
+
+```bash
+docker compose up -d postgres
+```
+
+4. Initialiser la base :
+
+```bash
+cd apps/api
+pnpm prisma migrate dev
+pnpm prisma db seed
+```
+
+5. Lancer les applications dans des terminaux separes depuis la racine :
+
+```bash
 pnpm dev:landing
 pnpm dev:web
 pnpm dev:api
@@ -37,71 +83,58 @@ pnpm dev:api
 
 ## Comptes de demo
 
-Apres `pnpm prisma db seed`, vous pouvez tester avec :
+Apres le seed Prisma :
 
-- `admin@example.com` / `admin123` : compte admin interne `SUPER_ADMIN`, acces a l'application produit et au back-office `/admin`
-- `user@example.com` / `user123` : utilisateur standard, acces a l'application produit uniquement
+- `admin@example.com` / `admin123` : compte `SUPER_ADMIN`, acces a l'application produit et au back-office `/admin`
+- `user@example.com` / `user123` : utilisateur standard, acces a l'application produit
 
-## Tests e2e API
+## Scripts utiles
 
-Les tests e2e couvrent les flows critiques du MVP API :
-
-- login
-- creation / edition / archivage projet
-- creation / edition / archivage lot
-- creation / edition / export depense
-- upload document lie a une depense
-
-Commande de reference :
+Depuis la racine du monorepo :
 
 ```bash
+pnpm build:landing
+pnpm build:web
+pnpm build:api
+pnpm lint:landing
+pnpm lint:web
+pnpm lint:api
 pnpm test:e2e:api
-```
-
-Par defaut, les tests utilisent une base locale dediee `immo_ops_e2e`.
-Si besoin, vous pouvez la surcharger avec `DATABASE_URL_E2E`.
-Le setup refuse volontairement de reset une base dont le nom ne contient pas `e2e`.
-
-## Tests UI Playwright
-
-Les smoke tests UI couvrent le visible strict du lancement :
-
-- login demo
-- acces a la liste projets
-- creation d'un projet depuis le flow principal
-- creation d'un lot dans un projet
-- edition / archivage projet
-- edition / archivage lot
-- creation d'une depense avec justificatif
-- edition d'une depense
-- verification de l'overview projet et des KPI visibles
-- export CSV depuis l'onglet export
-- verification du document lie a la depense
-- upload direct d'un document depuis l'onglet documents
-- consultation settings et ajout d'un membre
-
-Commande de reference :
-
-```bash
 pnpm test:e2e:web
 ```
 
-Le setup seed l'utilisateur demo avant execution, demarre l'API NestJS et le front Vite, puis lance les tests dans Chromium.
+## GitHub et hygiene du repo
 
-## Validation actuelle
+Les fichiers et repertoires suivants sont locaux et ne doivent pas etre publies :
 
-- `pnpm build:landing` OK
-- `pnpm build:web` OK
-- `pnpm build:api` OK
-- `pnpm lint:landing` OK
-- `pnpm lint:web` OK
-- `pnpm lint:api` OK
-- `pnpm test:e2e:api` OK
-- `pnpm test:e2e:web` OK
+- `.env` et variantes locales
+- `node_modules`
+- artefacts de build `dist`, `build`, `.next`, `coverage`
+- uploads runtime de l'API
+- temporaires de tests
+- volumes Docker et bases locales
+
+Le repo fournit `apps/api/.env.example` comme point d'entree pour la configuration locale.
+
+## Tests et validation
+
+Les builds a verifier avant publication :
+
+```bash
+pnpm build:landing
+pnpm build:web
+pnpm build:api
+```
+
+Notes utiles :
+
+- les tests e2e API utilisent par defaut la base `immo_ops_e2e`
+- le setup e2e refuse de reset une base dont le nom ne contient pas `e2e`
+- les smoke tests Playwright couvrent login, projets, lots, depenses, documents, export et settings
 
 ## Documentation
 
-- [Cadrage produit](/Users/maximejacquot/dev/Perso/SaaS%20de%20pilotage%20immobilier%20/docs/cadrage-produit-architecture.md)
-- [Landing et go-to-market](/Users/maximejacquot/dev/Perso/SaaS%20de%20pilotage%20immobilier%20/docs/landing-page.md)
-- [MVP lancement strict](/Users/maximejacquot/dev/Perso/SaaS%20de%20pilotage%20immobilier%20/docs/mvp-lancement-strict.md)
-- [Regles projet IA](/Users/maximejacquot/dev/Perso/SaaS%20de%20pilotage%20immobilier%20/AGENTS.md)
+- [Cadrage produit](docs/cadrage-produit-architecture.md)
+- [Landing et go-to-market](docs/landing-page.md)
+- [MVP lancement strict](docs/mvp-lancement-strict.md)
+- [Regles projet IA](AGENTS.md)
