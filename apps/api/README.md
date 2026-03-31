@@ -2,6 +2,25 @@
 
 Cette application contient l'API du SaaS de pilotage immobilier.
 
+## URL de production
+
+- API Vercel : [https://immova-api.vercel.app](https://immova-api.vercel.app)
+
+## Variables Vercel
+
+Dans le projet Vercel `immova-api`, renseigner :
+
+```env
+DATABASE_URL=postgres://USER:PASSWORD@db.prisma.io:5432/postgres?sslmode=require&pool=true
+DIRECT_URL=postgres://USER:PASSWORD@db.prisma.io:5432/postgres?sslmode=require
+JWT_SECRET=replace-with-a-long-random-secret
+```
+
+Repere dans le repo :
+
+- `apps/api/.env.prod` : helper local pret a copier-coller
+- `apps/api/.env.prod.example` : template versionne sans secret
+
 ## Commandes utiles
 
 Depuis `apps/api` :
@@ -19,9 +38,17 @@ pnpm test:e2e
 
 - copier `.env.example` vers `.env`
 - adapter `DATABASE_URL` a votre PostgreSQL local si besoin
+- `DIRECT_URL` doit pointer vers la connexion directe utilisee par Prisma CLI
 - `UPLOAD_DIR` pointe par defaut vers `./uploads`
 
 Les fichiers d'upload et les temporaires de test sont locaux et ignores par Git.
+
+## Note production
+
+- en production serverless, `DATABASE_URL` doit utiliser une connexion poolée pour le trafic applicatif
+- `DIRECT_URL` doit rester une connexion directe pour `prisma migrate deploy`, Prisma Studio et les outils admin
+- avec Prisma Postgres, garder la connexion directe pour la CLI et ajouter `&pool=true` a la connexion runtime si vous restez sur le meme hostname
+- les comptes seed et donnees de demonstration du repo restent limites au local et aux tests
 
 ## Reference
 

@@ -24,6 +24,51 @@ Le produit n'est ni un logiciel de gestion locative classique, ni un ERP immobil
 - Base de donnees : PostgreSQL
 - Architecture : monolithe modulaire multi-tenant
 
+## Deploiements Vercel
+
+- Web production : [https://immova-web.vercel.app/](https://immova-web.vercel.app/)
+- API production : [https://immova-api.vercel.app](https://immova-api.vercel.app)
+
+Notes utiles :
+
+- l'application web Vite doit pointer vers `https://immova-api.vercel.app/api` via `VITE_API_URL`
+- l'API de production doit utiliser une `DATABASE_URL` poolée pour le runtime et une `DIRECT_URL` pour Prisma CLI / Studio
+- la production ne doit pas utiliser de comptes seed ou de donnees de demonstration
+- les comptes seed du repo restent reserves au local et aux tests
+
+## Variables Vercel
+
+Projet Vercel `immova-api` :
+
+- `DATABASE_URL` : URL Prisma Postgres poolée pour le runtime
+- `DIRECT_URL` : URL Prisma Postgres directe pour `prisma migrate deploy` et Prisma Studio
+- `JWT_SECRET` : secret JWT long et aleatoire
+
+Valeurs de reference :
+
+```env
+DATABASE_URL=postgres://USER:PASSWORD@db.prisma.io:5432/postgres?sslmode=require&pool=true
+DIRECT_URL=postgres://USER:PASSWORD@db.prisma.io:5432/postgres?sslmode=require
+JWT_SECRET=replace-with-a-long-random-secret
+```
+
+Projet Vercel `immova-web` :
+
+- `VITE_API_URL` : URL publique de l'API avec le prefixe `/api`
+
+Valeur de reference :
+
+```env
+VITE_API_URL=https://immova-api.vercel.app/api
+```
+
+Fichiers helper :
+
+- `apps/api/.env.prod` : helper local pret a copier-coller pour `immova-api`
+- `apps/api/.env.prod.example` : template versionne pour les futurs setups
+- `apps/web/.env.prod` : helper local pret a copier-coller pour `immova-web`
+- `apps/web/.env.prod.example` : template versionne pour les futurs setups
+
 ## Structure du repo
 
 ```text
@@ -83,12 +128,14 @@ pnpm dev:web
 pnpm dev:api
 ```
 
-## Comptes de demo
+## Comptes de demo locaux
 
 Apres le seed Prisma :
 
 - `admin@example.com` / `admin123` : compte `SUPER_ADMIN`, acces a l'application produit et au back-office `/admin`
 - `user@example.com` / `user123` : utilisateur standard, acces a l'application produit
+
+Ces comptes sont uniquement destines au developpement local et aux tests. Ils ne doivent pas etre recrees ni utilises en production.
 
 ## Scripts utiles
 

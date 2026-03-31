@@ -292,6 +292,12 @@ Front :
 - Migration Prisma `admin_backoffice` : ajoutee
 - Seed local : OK
 - Deux comptes seed locaux sont disponibles pour les tests : `admin@example.com` / `admin123` en `SUPER_ADMIN` et `user@example.com` / `user123` en utilisateur standard
+- Les deployments Vercel actifs sont maintenant `https://immova-web.vercel.app/` pour le web et `https://immova-api.vercel.app` pour l'API
+- Le front Vite de production doit pointer vers `https://immova-api.vercel.app/api` via `VITE_API_URL`
+- L'API Vercel avec Prisma Postgres doit utiliser une `DATABASE_URL` poolée pour le runtime et une `DIRECT_URL` directe pour Prisma CLI, Prisma Studio et les migrations
+- Le `PrismaService` backend n'ouvre plus de connexion explicite au bootstrap afin d'eviter des connexions inutiles sur des requetes serverless qui ne touchent pas la base
+- Des fichiers helper `.env.prod` locaux et `.env.prod.example` versionnes existent maintenant dans `apps/api` et `apps/web` pour guider le remplissage des variables Vercel de production
+- Les comptes seed demo restent strictement reserves au local et aux tests ; la production ne doit pas embarquer de donnees de demonstration
 - Tests e2e API : OK
 - Smoke tests UI Playwright : en place
 - Couverture Playwright actuelle : login, dashboard global, navigation dashboard vers projet, comparaison projets, statut decisionnel, suggestions d'action, empty state projets, creation projet, empty states d'un projet neuf, edition / archivage projet, creation lot, edition / archivage lot, creation depense avec justificatif, edition depense, verification du score de completude / fiabilite et des alertes dans l'overview, export CSV, verification document lie, upload document manuel, settings / ajout membre

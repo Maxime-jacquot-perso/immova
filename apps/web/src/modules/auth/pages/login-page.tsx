@@ -23,8 +23,8 @@ export function LoginPage() {
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      email: 'admin@example.com',
-      password: 'admin123',
+      email: '',
+      password: '',
     },
   });
 
@@ -34,7 +34,7 @@ export function LoginPage() {
         <div>
           <h1 style={{ margin: 0 }}>Pilotage Immo</h1>
           <p className="page-subtitle">
-            Connexion de demonstration pour piloter projets, lots, depenses et documents.
+            Connectez-vous pour acceder a l'application et au back-office admin.
           </p>
         </div>
 
