@@ -1,0 +1,290 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum MembershipRole {
+  ADMIN
+  MANAGER
+  ACCOUNTANT
+  READER
+}
+
+enum ProjectType {
+  APARTMENT_BUILDING
+  HOUSE
+  MIXED
+  COMMERCIAL
+  OTHER
+}
+
+enum ProjectStatus {
+  DRAFT
+  ACQUISITION
+  WORKS
+  READY
+  ACTIVE
+  SOLD
+  ARCHIVED
+}
+
+enum LotType {
+  APARTMENT
+  HOUSE
+  GARAGE
+  CELLAR
+  OFFICE
+  SHOP
+  OTHER
+}
+
+enum LotStatus {
+  DRAFT
+  AVAILABLE
+  RENTED
+  SOLD
+  ARCHIVED
+}
+
+enum ExpenseCategory {
+  ACQUISITION
+  WORKS
+  TAX
+  INSURANCE
+  UTILITIES
+  MANAGEMENT
+  LEGAL
+  MAINTENANCE
+  OTHER
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+
+enum DocumentType {
+  INVOICE
+  QUOTE
+  CONTRACT
+  DIAGNOSTIC
+  PHOTO
+  PLAN
+  INSURANCE
+  OTHER
+}
+
+enum AdminRole {
+  USER
+  SUPER_ADMIN
+  ADMIN
+  SALES_ADMIN
+  SUPPORT_ADMIN
+  READONLY_ADMIN
+}
+
+enum SubscriptionPlan {
+  FREE
+  PRO
+  BUSINESS
+}
+
+enum SubscriptionStatus {
+  NONE
+  TRIAL
+  ACTIVE
+  PAST_DUE
+  CANCELED
+}
+
+enum AdminAuditAction {
+  TRIAL_GRANTED
+  TRIAL_EXTENDED
+  USER_SUSPENDED
+  USER_REACTIVATED
+  SUBSCRIPTION_UPDATED
+  ADMIN_CREATED
+  ADMIN_ROLE_CHANGED
+}
+
+enum AdminAuditTargetType {
+  USER
+  ADMIN
+  SUBSCRIPTION
+}
+
+model Organization {
+  id          String       @id @default(cuid())
+  name        String
+  slug        String       @unique
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  memberships Membership[]
+  projects    Project[]
+  lots        Lot[]
+  expenses    Expense[]
+  documents   Document[]
+}
+
+model User {
+  id           String       @id @default(cuid())
+  email        String       @unique
+  firstName    String?
+  lastName     String?
+  passwordHash String
+  adminRole    AdminRole    @default(USER)
+  isSuspended  Boolean      @default(false)
+  trialEndsAt  DateTime?
+  trialExtensionsCount Int  @default(0)
+  subscriptionPlan   SubscriptionPlan   @default(FREE)
+  subscriptionStatus SubscriptionStatus @default(NONE)
+  lastLoginAt  DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  memberships  Membership[]
+  adminAuditEntries AdminAuditLog[] @relation("AdminAuditActor")
+  adminAuditTargets AdminAuditLog[] @relation("AdminAuditTarget")
+
+  @@index([adminRole])
+  @@index([isSuspended, subscriptionStatus])
+  @@index([subscriptionPlan])
+  @@index([trialEndsAt])
+}
+
+model Membership {
+  id             String         @id @default(cuid())
+  organizationId String
+  userId         String
+  role           MembershipRole
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([organizationId, role])
+}
+
+model Project {
+  id                String        @id @default(cuid())
+  organizationId    String
+  name              String
+  reference         String?
+  addressLine1      String?
+  postalCode        String?
+  city              String?
+  country           String        @default("FR")
+  type              ProjectType   @default(OTHER)
+  status            ProjectStatus @default(DRAFT)
+  purchasePrice     Decimal?      @db.Decimal(12, 2)
+  notaryFees        Decimal?      @db.Decimal(12, 2)
+  acquisitionFees   Decimal?      @db.Decimal(12, 2)
+  worksBudget       Decimal?      @db.Decimal(12, 2)
+  notes             String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  organization      Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  lots              Lot[]
+  expenses          Expense[]
+  documents         Document[]
+
+  @@index([organizationId, status])
+}
+
+model Lot {
+  id                String      @id @default(cuid())
+  organizationId    String
+  projectId         String
+  name              String
+  reference         String?
+  type              LotType     @default(OTHER)
+  status            LotStatus   @default(DRAFT)
+  surface           Decimal?    @db.Decimal(10, 2)
+  estimatedRent     Decimal?    @db.Decimal(10, 2)
+  notes             String?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project           Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  expenses          Expense[]
+
+  @@index([organizationId, projectId, status])
+}
+
+model Expense {
+  id                String         @id @default(cuid())
+  organizationId    String
+  projectId         String
+  lotId             String?
+  invoiceNumber     String?
+  issueDate         DateTime
+  amountHt          Decimal        @db.Decimal(12, 2)
+  vatAmount         Decimal        @db.Decimal(12, 2)
+  amountTtc         Decimal        @db.Decimal(12, 2)
+  category          ExpenseCategory
+  paymentStatus     PaymentStatus  @default(PENDING)
+  vendorName        String?
+  comment           String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  organization      Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project           Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  lot               Lot?           @relation(fields: [lotId], references: [id], onDelete: SetNull)
+  documents         Document[]
+
+  @@index([organizationId, projectId, category, paymentStatus])
+}
+
+model Document {
+  id                String       @id @default(cuid())
+  organizationId    String
+  projectId         String
+  expenseId         String?
+  type              DocumentType @default(OTHER)
+  title             String
+  originalFileName  String
+  storageKey        String       @unique
+  mimeType          String
+  sizeBytes         Int
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project           Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  expense           Expense?     @relation(fields: [expenseId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, projectId, type])
+}
+
+model AdminAuditLog {
+  id          String               @id @default(cuid())
+  actorUserId String
+  targetUserId String?
+  action      AdminAuditAction
+  targetType  AdminAuditTargetType
+  reason      String
+  oldValue    Json?
+  newValue    Json?
+  metadata    Json?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime             @default(now())
+
+  actorUser   User                 @relation("AdminAuditActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+  targetUser  User?                @relation("AdminAuditTarget", fields: [targetUserId], references: [id], onDelete: SetNull)
+
+  @@index([actorUserId, createdAt])
+  @@index([targetUserId, createdAt])
+  @@index([action, createdAt])
+}

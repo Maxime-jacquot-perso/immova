@@ -1,0 +1,21 @@
+{
+  "name": "real-estate-ops-saas",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@9.4.0",
+  "scripts": {
+    "dev:landing": "cd apps/landing && pnpm dev",
+    "dev:web": "cd apps/web && pnpm dev",
+    "dev:api": "cd apps/api && pnpm start:dev",
+    "build:landing": "cd apps/landing && pnpm build",
+    "build:web": "cd apps/web && pnpm build",
+    "build:api": "cd apps/api && pnpm build",
+    "lint:landing": "cd apps/landing && pnpm lint",
+    "test:e2e:api": "cd apps/api && pnpm test:e2e",
+    "test:e2e:web": "cd apps/web && pnpm test:e2e",
+    "lint:web": "cd apps/web && pnpm lint",
+    "lint:api": "cd apps/api && pnpm lint",
+    "prisma:generate": "cd apps/api && pnpm prisma generate",
+    "prisma:migrate": "cd apps/api && pnpm prisma migrate dev"
+  }
+}

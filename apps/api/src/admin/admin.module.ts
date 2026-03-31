@@ -1,0 +1,31 @@
+import { Module } from '@nestjs/common';
+import { AdminAdminsController } from './admin-admins.controller';
+import { AdminAdminsService } from './admin-admins.service';
+import { AdminAuditController } from './admin-audit.controller';
+import { AdminAuditService } from './admin-audit.service';
+import { AdminDashboardController } from './admin-dashboard.controller';
+import { AdminDashboardService } from './admin-dashboard.service';
+import { AdminPolicyService } from './admin-policy.service';
+import { AdminUsersController } from './admin-users.controller';
+import { AdminUsersService } from './admin-users.service';
+import { AdminAccessGuard } from './guards/admin-access.guard';
+import { AdminPermissionsGuard } from './guards/admin-permissions.guard';
+
+@Module({
+  controllers: [
+    AdminDashboardController,
+    AdminUsersController,
+    AdminAdminsController,
+    AdminAuditController,
+  ],
+  providers: [
+    AdminDashboardService,
+    AdminUsersService,
+    AdminAdminsService,
+    AdminAuditService,
+    AdminPolicyService,
+    AdminAccessGuard,
+    AdminPermissionsGuard,
+  ],
+})
+export class AdminModule {}
