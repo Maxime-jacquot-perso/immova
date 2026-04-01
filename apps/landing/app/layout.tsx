@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   applicationName: siteName,
   title: {
-    default: `Logiciel de pilotage projet immobilier | ${siteName}`,
+    default: `Outil de pilotage projet immobilier pour decisions fiables | ${siteName}`,
     template: `%s | ${siteName}`,
   },
   description: defaultDescription,
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     type: 'website',
   },
   twitter: {
-    card: 'summary',
+    card: 'summary_large_image',
   },
 };
 

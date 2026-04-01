@@ -139,12 +139,12 @@ const faqItems = [
   {
     question: 'Le produit est-il fini ?',
     answer:
-      "Non. Il fonctionne, mais il évolue. Des fonctionnalités vont s&apos;améliorer, d'autres vont être ajoutées. Si vous voulez un produit figé, ce n&apos;est pas pour vous.",
+      "Non. Il fonctionne, mais il évolue. Des fonctionnalités vont s'améliorer, d'autres vont être ajoutées. Si vous voulez un produit figé, ce n'est pas pour vous.",
   },
   {
     question: 'Pourquoi payer un produit en beta ?',
     answer:
-      "Parce qu&apos;il résout déjà le problème mieux que votre stack actuelle. Et parce que le tarif client pilote (15 EUR au lieu de 29 EUR) compense largement.",
+      "Parce qu'il résout déjà le problème mieux que votre stack actuelle. Et parce que le tarif client pilote (15 EUR au lieu de 29 EUR) compense largement.",
   },
   {
     question: 'Que se passe-t-il après la phase pilote ?',
@@ -161,7 +161,7 @@ const faqItems = [
     answer: '3 à 6 mois. Le temps de stabiliser avec vos retours.',
   },
   {
-    question: "Et si j&apos;ai un bug bloquant ?",
+    question: "Et si j'ai un bug bloquant ?",
     answer:
       'Support prioritaire sous 24h. On corrige en priorité les bugs des clients pilotes.',
   },
@@ -188,7 +188,7 @@ const faqItems = [
     question:
       "Qu'est-ce qui différencie Axelys des autres outils immobiliers ?",
     answer:
-      "Axelys ne fait PAS de gestion locative. Pas de comptabilité générale. Pas d'ERP complet. Juste du pilotage d&apos;opérations : projets, lots, dépenses, documents, KPI fiables, statut décisionnel. Si vous cherchez un outil qui fait tout, ce n&apos;est pas ici.",
+      "Axelys ne fait PAS de gestion locative. Pas de comptabilité générale. Pas d'ERP complet. Juste du pilotage d'opérations : projets, lots, dépenses, documents, KPI fiables, statut décisionnel. Si vous cherchez un outil qui fait tout, ce n'est pas ici.",
   },
   {
     question: 'Pourquoi seulement 15 places ?',
@@ -259,7 +259,7 @@ export default function Home() {
       <main>
         <section className="hero" id="top">
           <div className="hero__copy">
-            <div className="eyebrow">Outil de pilotage d&apos;opérations immobilières</div>
+            <div className="eyebrow">Outil de pilotage d'opérations immobilières</div>
             <h1>
               Prenez des décisions fiables sur vos projets immobiliers.
               Le jour où vous devez arbitrer — pas après.
@@ -363,9 +363,9 @@ export default function Home() {
         <section className="section" id="problem">
           <div className="section-heading">
             <div className="eyebrow">Le vrai problème</div>
-            <h2>Vous perdez de l&apos;argent parce que vous décidez trop tard</h2>
+            <h2>Vous perdez de l'argent parce que vous décidez trop tard</h2>
             <p>
-              Le problème n&apos;est pas votre rigueur. C&apos;est que vos données sont
+              Le problème n'est pas votre rigueur. C'est que vos données sont
               dispersées et que vous découvrez les dérapages quand il est trop
               tard pour corriger.
             </p>
@@ -382,7 +382,7 @@ export default function Home() {
 
           <div className="problem-conclusion">
             <p>
-              Ce n&apos;est pas Excel le problème. C&apos;est le fait que vos données ne
+              Ce n'est pas Excel le problème. C'est le fait que vos données ne
               sont jamais au même endroit au bon moment.
             </p>
           </div>
@@ -467,7 +467,7 @@ export default function Home() {
             </p>
             <p>
               On préfère 15 clients qui utilisent vraiment le produit, qui
-              donnent du feedback, et qui construisent l&apos;outil avec nous.
+              donnent du feedback, et qui construisent l'outil avec nous.
             </p>
           </div>
 
@@ -475,9 +475,9 @@ export default function Home() {
             <div className="pilot-deal__column">
               <h3>Ce que vous obtenez</h3>
               <ul>
-                <li>Accès immédiat (pas de liste d&apos;attente)</li>
+                <li>Accès immédiat (pas de liste d'attente)</li>
                 <li>
-                  <strong>15 EUR/mois à vie</strong> (50% de réduction sur l&apos;offre Pro à 29 EUR/mois)
+                  <strong>15 EUR/mois à vie</strong> (50% de réduction sur l'offre Pro à 29 EUR/mois)
                 </li>
                 <li>Influence directe sur la roadmap</li>
                 <li>Accès anticipé aux nouvelles fonctionnalités</li>
@@ -488,7 +488,7 @@ export default function Home() {
             <div className="pilot-deal__column">
               <h3>Ce que vous devez accepter</h3>
               <ul>
-                <li>Le produit n&apos;est pas parfait (bugs possibles)</li>
+                <li>Le produit n'est pas parfait (bugs possibles)</li>
                 <li>Donner du feedback régulier</li>
                 <li>Utiliser le produit sur de vrais projets</li>
                 <li>Être constructif (pas juste se plaindre)</li>
@@ -498,7 +498,7 @@ export default function Home() {
 
           <div className="pilot-filters">
             <div className="pilot-filter pilot-filter--good">
-              <h3>C&apos;est pour vous si :</h3>
+              <h3>C'est pour vous si :</h3>
               <ul>
                 <li>Vous gérez 2 à 10 projets immobiliers actifs</li>
                 <li>
@@ -515,7 +515,7 @@ export default function Home() {
             </div>
 
             <div className="pilot-filter pilot-filter--bad">
-              <h3>Ce n&apos;est PAS pour vous si :</h3>
+              <h3>Ce n'est PAS pour vous si :</h3>
               <ul>
                 <li>Vous voulez un produit 100% fini sans bug</li>
                 <li>Vous ne voulez pas donner de feedback</li>
@@ -523,7 +523,7 @@ export default function Home() {
                 <li>Vous cherchez juste à tester sans utiliser réellement</li>
                 <li>Vous comparez 12 solutions pendant 6 mois avant de décider</li>
                 <li>
-                  Vous n&apos;êtes pas prêt à payer pour un produit en évolution
+                  Vous n'êtes pas prêt à payer pour un produit en évolution
                 </li>
               </ul>
             </div>
@@ -556,7 +556,7 @@ export default function Home() {
             </div>
             <p className="pilot-why-final">
               Si vous cherchez un produit grand public avec 10 000 clients, ce
-              n&apos;est pas ici.
+              n'est pas ici.
             </p>
           </div>
 
@@ -566,7 +566,7 @@ export default function Home() {
 
           <div className="pilot-filter-final">
             <p>
-              Si vous avez lu jusqu&apos;ici et que vous vous reconnaissez, alors on
+              Si vous avez lu jusqu'ici et que vous vous reconnaissez, alors on
               peut travailler ensemble.
             </p>
             <p>
@@ -600,7 +600,7 @@ export default function Home() {
             <p>
               Pas de témoignages inventés. Pas de &ldquo;1000+ clients&rdquo;.
               <br />
-              Juste un produit qui fait ce qu&apos;il promet.
+              Juste un produit qui fait ce qu'il promet.
             </p>
           </div>
         </section>
@@ -619,7 +619,7 @@ export default function Home() {
                 <span>/ mois</span>
               </div>
               <div className="pricing-card__subtitle">
-                Prix bloqué à vie. 50% de réduction sur l&apos;offre Pro (29 EUR/mois)
+                Prix bloqué à vie. 50% de réduction sur l'offre Pro (29 EUR/mois)
               </div>
 
               <h3>Ce qui est inclus :</h3>
@@ -651,13 +651,13 @@ export default function Home() {
               <br />
               Les clients pilotes conservent leur tarif de 15 EUR/mois{' '}
               <strong>à vie</strong>.
-              <br />C&apos;est le deal. On ne vous arnaque pas avec des &ldquo;prix
+              <br />C'est le deal. On ne vous arnaque pas avec des &ldquo;prix
               promotionnels qui augmentent dans 3 mois&rdquo;.
             </p>
 
             <h3>Pourquoi on limite à 15 ?</h3>
             <p>
-              Parce qu&apos;on veut échanger avec chaque client, itérer vite, et ne
+              Parce qu'on veut échanger avec chaque client, itérer vite, et ne
               pas se noyer sous le support.
               <br />
               Quand le produit sera stabilisé, on ouvrira à plus de monde. Mais
@@ -685,18 +685,18 @@ export default function Home() {
         <section className="section section--cta" id="final-cta">
           <div className="cta-panel">
             <div>
-              <div className="eyebrow">Arrêtez de piloter à l&apos;aveugle</div>
+              <div className="eyebrow">Arrêtez de piloter à l'aveugle</div>
               <h2>
-                Rejoignez les 15 premiers clients pilotes qui construisent l&apos;outil de pilotage qu&apos;ils auraient voulu avoir depuis le début
+                Rejoignez les 15 premiers clients pilotes qui construisent l'outil de pilotage qu'ils auraient voulu avoir depuis le début
               </h2>
             </div>
             <p>
-              Le produit existe. Il fonctionne. Il n&apos;est pas parfait, mais il
+              Le produit existe. Il fonctionne. Il n'est pas parfait, mais il
               résout le problème.
             </p>
             <p>
               Si vous êtes prêt à utiliser un produit en évolution rapide en
-              échange d&apos;un prix préférentiel et d&apos;une vraie influence, on vous
+              échange d'un prix préférentiel et d'une vraie influence, on vous
               attend.
             </p>
 
@@ -709,7 +709,7 @@ export default function Home() {
             </a>
 
             <p className="cta-panel__note">
-              Réponse sous 48h. On échange rapidement pour vérifier que c&apos;est
+              Réponse sous 48h. On échange rapidement pour vérifier que c'est
               le bon fit.
             </p>
           </div>
@@ -717,7 +717,7 @@ export default function Home() {
 
         <footer className="site-footer">
           <p>
-            {siteName} — Outil de pilotage d&apos;opérations immobilières pour
+            {siteName} — Outil de pilotage d'opérations immobilières pour
             prendre des décisions fiables.
           </p>
         </footer>
