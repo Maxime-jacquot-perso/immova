@@ -345,7 +345,7 @@ Front :
 - Seed local : OK
 - Deux comptes seed locaux sont disponibles pour les tests : `admin@example.com` / `admin123` en `SUPER_ADMIN` et `user@example.com` / `user123` en utilisateur standard
 - Le seed local ajoute aussi deux idees de demonstration dans `demo-org` et marque `admin@example.com` comme utilisateur pilote avec acces beta pour faciliter les verifications manuelles
-- Les deployments Vercel actifs sont maintenant `https://immova-web.vercel.app/` pour le web et `https://immova-api.vercel.app` pour l'API
+- Les deployments Vercel actifs sont maintenant `https://immova-web.vercel.app/` pour le web et `https://immova-api.vercel.app` pour l'API et `https://axelys.vercel.app` pour la landing page.
 - Le front Vite de production doit pointer vers `https://immova-api.vercel.app/api` via `VITE_API_URL`
 - L'API Vercel avec Prisma Postgres doit utiliser une `DATABASE_URL` poolée pour le runtime et une `DIRECT_URL` directe pour Prisma CLI, Prisma Studio et les migrations
 - Le `PrismaService` backend n'ouvre plus de connexion explicite au bootstrap afin d'eviter des connexions inutiles sur des requetes serverless qui ne touchent pas la base
