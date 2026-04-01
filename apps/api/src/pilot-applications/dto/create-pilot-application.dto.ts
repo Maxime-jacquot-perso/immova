@@ -1,4 +1,5 @@
-import { IsEmail, IsIn, IsNotEmpty, IsString } from 'class-validator';
+import { IsEmail, IsIn, IsNotEmpty, IsString, IsBoolean } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class CreatePilotApplicationDto {
   @IsString()
@@ -21,5 +22,11 @@ export class CreatePilotApplicationDto {
   @IsNotEmpty()
   problemDescription: string;
 
+  @Transform(({ value }) => {
+    if (value === 'true' || value === true) return true;
+    if (value === 'false' || value === false) return false;
+    return value;
+  })
+  @IsBoolean()
   acknowledgement: boolean;
 }
