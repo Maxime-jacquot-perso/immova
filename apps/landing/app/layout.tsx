@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { IBM_Plex_Sans } from 'next/font/google';
 import { defaultDescription, siteName, siteUrl } from './site-config';
 import './globals.css';
+import { SpeedInsights } from "@vercel/speed-insights/next" 
 
 const ibmPlexSans = IBM_Plex_Sans({
   subsets: ['latin'],
@@ -39,6 +40,7 @@ export default function RootLayout({
   return (
     <html className={ibmPlexSans.variable} lang="fr">
       <body>{children}</body>
+      <SpeedInsights />
     </html>
   );
 }
