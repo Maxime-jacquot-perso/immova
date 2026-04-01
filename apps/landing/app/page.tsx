@@ -251,7 +251,7 @@ export default function Home() {
           <a href="#faq">FAQ</a>
         </nav>
 
-        <a className="button" href="#final-cta">
+        <a className="button" href="/apply">
           Demander un accès
         </a>
       </header>
@@ -277,7 +277,7 @@ export default function Home() {
             </p>
 
             <div className="hero__actions">
-              <a className="button" href="#pilot">
+              <a className="button" href="/apply">
                 Demander un accès client pilote (15 places max)
               </a>
               <a className="button button--secondary" href="#workspace">
@@ -575,7 +575,7 @@ export default function Home() {
           </div>
 
           <div className="pilot-cta">
-            <a className="button button--large" href="#final-cta">
+            <a className="button button--large" href="/apply">
               Demander un accès client pilote
             </a>
           </div>
@@ -638,7 +638,7 @@ export default function Home() {
                 Sans engagement. Résiliable à tout moment.
               </p>
 
-              <a className="button button--full" href="#final-cta">
+              <a className="button button--full" href="/apply">
                 Rejoindre les 15 clients pilotes
               </a>
             </article>
@@ -704,7 +704,7 @@ export default function Home() {
               <strong>Places restantes : 11 / 15</strong>
             </div>
 
-            <a className="button cta-panel__button button--large" href="mailto:contact@axelys.fr?subject=Demande%20acces%20client%20pilote">
+            <a className="button cta-panel__button button--large" href="/apply">
               Demander un accès client pilote
             </a>
 

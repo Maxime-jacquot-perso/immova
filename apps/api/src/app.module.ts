@@ -10,6 +10,7 @@ import { IdeasModule } from './ideas/ideas.module';
 import { LotsModule } from './lots/lots.module';
 import { MembershipsModule } from './memberships/memberships.module';
 import { OrganizationsModule } from './organizations/organizations.module';
+import { PilotApplicationsModule } from './pilot-applications/pilot-applications.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ProjectsModule } from './projects/projects.module';
 import { StorageModule } from './storage/storage.module';
@@ -29,6 +30,7 @@ import { StorageModule } from './storage/storage.module';
     ExpensesModule,
     DocumentsModule,
     ExportsModule,
+    PilotApplicationsModule,
   ],
   controllers: [AppController],
   providers: [],
