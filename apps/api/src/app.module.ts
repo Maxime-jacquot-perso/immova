@@ -13,6 +13,8 @@ import { OrganizationsModule } from './organizations/organizations.module';
 import { PilotApplicationsModule } from './pilot-applications/pilot-applications.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ProjectsModule } from './projects/projects.module';
+import { SimulationFoldersModule } from './simulation-folders/simulation-folders.module';
+import { SimulationsModule } from './simulations/simulations.module';
 import { StorageModule } from './storage/storage.module';
 
 @Module({
@@ -31,6 +33,8 @@ import { StorageModule } from './storage/storage.module';
     DocumentsModule,
     ExportsModule,
     PilotApplicationsModule,
+    SimulationFoldersModule,
+    SimulationsModule,
   ],
   controllers: [AppController],
   providers: [],

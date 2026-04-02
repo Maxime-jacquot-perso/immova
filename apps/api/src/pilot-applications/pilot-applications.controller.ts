@@ -1,4 +1,11 @@
-import { Body, Controller, Post, Logger, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Post,
+  Logger,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { PilotApplicationsService } from './pilot-applications.service';
 import { CreatePilotApplicationDto } from './dto/create-pilot-application.dto';
 
@@ -19,7 +26,10 @@ export class PilotApplicationsController {
       await this.pilotApplicationsService.create(createDto);
       return { success: true };
     } catch (error) {
-      this.logger.error(`Failed to process pilot application: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to process pilot application: ${error.message}`,
+        error.stack,
+      );
       throw new HttpException(
         `Failed to process application: ${error.message}`,
         HttpStatus.INTERNAL_SERVER_ERROR,

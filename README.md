@@ -1,20 +1,84 @@
 # SaaS de pilotage immobilier
 
-Monorepo SaaS B2B pour piloter des operations immobilieres simples et fiables.
+Monorepo SaaS B2B pour decider et piloter des operations immobilieres simples et fiables.
 Le produit cible les investisseurs immobiliers, marchands de biens et petites structures multi-projets.
 
 ## Positionnement
 
-Le coeur du produit reste volontairement limite a :
+Axelys aide a **arbitrer entre plusieurs opportunites immobilieres AVANT achat**, puis a **mesurer l'ecart entre hypothese initiale et realite terrain APRES acquisition**.
 
-- projets
-- lots
+Le produit couvre 2 temps :
+
+**Decision avant achat :**
+- dossiers d'opportunites pour regrouper simulations par intention d'achat (ex : "Colmar", "Mulhouse", "Strasbourg")
+- simulateur decisionnel simple et rapide utilisable apres une visite
+- saisie rapide : prix, type de bien, departement, mobilier, debours, travaux, financement, strategie, preparation optionnelle de lots
+- resultats decisionnels calcules backend : cout total, marges brute et nette, rendement, mensualite, capital mobilise, duree, risque, score explicable
+- estimation detaillee des frais de notaire calculee backend : base taxable, droits / TPF, contribution de securite immobiliere, debours et emoluments
+- **recommandation claire par simulation : interessant / a negocier / trop risque**
+- comparaison entre plusieurs simulations au sein d'un meme dossier pour decider
+- **objectif zero double saisie** : reutilisation des donnees de simulation lors de la creation du projet reel (en cours d'amelioration)
+
+**Pilotage apres achat :**
+- projets convertis depuis simulation ou crees directement
+- lots herites de la simulation ou crees apres achat
 - depenses / factures
 - documents
 - KPI projet simples et fiables
 - export CSV comptable simple
 
-Le produit n'est ni un logiciel de gestion locative classique, ni un ERP immobilier.
+Le produit n'est ni un logiciel de gestion locative classique, ni un ERP immobilier, ni une usine a gaz de simulation financiere complexe.
+
+## Etat du module simulation
+
+Le **module de simulation decisionnelle avant achat** est partiellement implemente en premiere version fonctionnelle.
+
+**Ce qui est en place :**
+- dossiers d'opportunites pour structurer les simulations par intention d'achat
+- creation et sauvegarde de plusieurs opportunites immobilieres visitees dans un dossier
+- saisie strategie (revente ou locatif), prix, type de bien, departement, mobilier, debours, travaux par postes, financement
+- formulaire creation / edition de simulation reorganise en 4 blocs simples (`Bien & contexte`, `Acquisition`, `Financement`, `Exploitation & securite`) pour accelerer la saisie et reduire l'effort mental
+- pret auto-calcule cote front sur le formulaire, avec override manuel explicite et bouton de recalcul, sans deplacer la logique decisionnelle hors du backend
+- preparation optionnelle de la structure de lots (appartements, garages, caves) pour anticiper le projet
+- comparaison simple entre simulations au sein d'un meme dossier
+- resultats decisionnels calcules backend
+- calcul detaille des frais de notaire centralise dans `apps/api/src/simulations/simulation-notary-fees.util.ts`
+- recommandation explicite par simulation : interessant / a negocier / trop risque
+- conversion de base simulation vers projet avec reutilisation des donnees principales
+- journal d'opportunite pour documenter evenements structurants (visite, negociation, changement hypothese)
+- **options actives pour arbitrer avec donnees terrain reelles** :
+  - gestion de plusieurs hypotheses par categorie (prix d'achat, travaux, financement)
+  - creation manuelle ou depuis journal d'opportunite
+  - activation explicite par l'utilisateur (pas de selection automatique)
+  - calculs utilisent uniquement l'option active (fallback sur valeur initiale si aucune option)
+  - **comparaison instantanee avant activation** : survol d'une option affiche automatiquement l'impact sur les resultats (cout, marge, mensualite, duree, score) avec deltas visuels (vert = amelioration, rouge = degradation)
+  - **comparaison cote a cote durable** dans l'onglet Options pour lire plusieurs hypotheses d'un meme groupe en meme temps
+  - **historique des activations** pour tracer les arbitrages utilisateur avec avant/apres, deltas et auteur du changement
+  - onglet "Options" dans detail simulation avec UI selection radio buttons et badges "Actuel" / "Alternative"
+  - onglet "Historique" dedie pour expliquer les choix successifs
+  - bouton "Creer option" sur chaque evenement du journal
+
+**Limites actuelles :**
+- UX encore perfectible sur certains ecrans
+- conversion simulation → projet presente mais a consolider dans tous les cas
+- comparaison encore simple : un seul groupe a la fois, pas d'export comparatif, pas de vue multi-groupes
+- mesure ecart previsionnel vs reel pas encore exploitable (pas de tableau de bord compare, pas d'alertes sur derives)
+
+**Garde-fous respectes V1 :**
+- moins de 15 champs critiques obligatoires
+- saisie rapide utilisable apres une visite d'opportunite
+- pas d'IA, pas de moteur expert, pas de cash-flow ultra detaille
+- calculs simples, comprehensibles, explicables
+- calculs centralises cote backend
+- taux departementaux sur l'ancien geres via une configuration centralisee par code departement, basee sur la grille officielle DGFiP DMTO au 1er fevrier 2026
+- statut primo-accedant stocke dans la simulation pour preparer la logique reglementaire, sans modulation automatique appliquee a ce stade
+
+**Prochaines etapes prioritaires :**
+- comparaison multi-groupes ou exportable pour partage avec partenaires et financeurs
+- historique enrichi si besoin avec niveau de justification supplementaire
+- mesure ecart previsionnel vs reel avec tableau de bord et alertes
+- robustesse conversion avec preview et gestion cas limites
+- scoring contextualise selon type operation et profil investisseur
 
 ## Feedback produit et beta
 
@@ -43,19 +107,20 @@ Choix multi-tenant :
 
 ## Deploiements Vercel
 
-- Web production : [https://immova-web.vercel.app/](https://immova-web.vercel.app/)
-- API production : [https://immova-api.vercel.app](https://immova-api.vercel.app)
+- Web production : [https://axelys-web.vercel.app/](https://axelys-web.vercel.app/)
+- API production : [https://axelys-api.vercel.app](https://axelys-api.vercel.app)
+- Landing production :[https://axelys.vercel.app](https://axelys.vercel.app)
 
 Notes utiles :
 
-- l'application web Vite doit pointer vers `https://immova-api.vercel.app/api` via `VITE_API_URL`
+- l'application web Vite doit pointer vers `https://axelys-api.vercel.app/api` via `VITE_API_URL`
 - l'API de production doit utiliser une `DATABASE_URL` poolée pour le runtime et une `DIRECT_URL` pour Prisma CLI / Studio
 - la production ne doit pas utiliser de comptes seed ou de donnees de demonstration
 - les comptes seed du repo restent reserves au local et aux tests
 
 ## Variables Vercel
 
-Projet Vercel `immova-api` :
+Projet Vercel `axelys-api` :
 
 - `DATABASE_URL` : URL Prisma Postgres poolée pour le runtime
 - `DIRECT_URL` : URL Prisma Postgres directe pour `prisma migrate deploy` et Prisma Studio
@@ -76,9 +141,9 @@ Valeurs de reference :
 DATABASE_URL=postgres://USER:PASSWORD@db.prisma.io:5432/postgres?sslmode=require&pool=true
 DIRECT_URL=postgres://USER:PASSWORD@db.prisma.io:5432/postgres?sslmode=require
 JWT_SECRET=replace-with-a-long-random-secret
-APP_WEB_URL=https://immova-web.vercel.app
+APP_WEB_URL=https://axelys-web.vercel.app
 USER_INVITATION_TTL_HOURS=72
-# MAIL_FROM="Immova <votre-adresse@gmail.com>"
+# MAIL_FROM="Axelys <votre-adresse@gmail.com>"
 # SMTP_HOST="smtp.gmail.com"
 # SMTP_PORT=465
 # SMTP_USER="votre-adresse@gmail.com"
@@ -87,21 +152,21 @@ USER_INVITATION_TTL_HOURS=72
 # RESEND_API_KEY=re_xxx
 ```
 
-Projet Vercel `immova-web` :
+Projet Vercel `axelys-web` :
 
 - `VITE_API_URL` : URL publique de l'API avec le prefixe `/api`
 
 Valeur de reference :
 
 ```env
-VITE_API_URL=https://immova-api.vercel.app/api
+VITE_API_URL=https://axelys-api.vercel.app/api
 ```
 
 Fichiers helper :
 
-- `apps/api/.env.prod` : helper local pret a copier-coller pour `immova-api`
+- `apps/api/.env.prod` : helper local pret a copier-coller pour `axelys-api`
 - `apps/api/.env.prod.example` : template versionne pour les futurs setups
-- `apps/web/.env.prod` : helper local pret a copier-coller pour `immova-web`
+- `apps/web/.env.prod` : helper local pret a copier-coller pour `axelys-web`
 - `apps/web/.env.prod.example` : template versionne pour les futurs setups
 
 ## Structure du repo

@@ -144,14 +144,23 @@ model Organization {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  memberships     Membership[]
-  projects        Project[]
-  lots            Lot[]
-  expenses        Expense[]
-  documents       Document[]
-  userInvitations UserInvitation[]
-  featureRequests FeatureRequest[]
-  featureRequestVotes FeatureRequestVote[]
+  memberships                    Membership[]
+  projects                       Project[]
+  lots                           Lot[]
+  expenses                       Expense[]
+  documents                      Document[]
+  userInvitations                UserInvitation[]
+  featureRequests                FeatureRequest[]
+  featureRequestVotes            FeatureRequestVote[]
+  simulationFolders              SimulationFolder[]
+  simulations                    Simulation[]
+  simulationLots                 SimulationLot[]
+  simulationWorkItems            SimulationWorkItem[]
+  workItemOptions                WorkItemOption[]
+  opportunityEvents              OpportunityEvent[]
+  simulationOptionGroups         SimulationOptionGroup[]
+  simulationOptions              SimulationOption[]
+  simulationOptionActivationLogs SimulationOptionActivationLog[]
 }
 
 model User {
@@ -172,12 +181,12 @@ model User {
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt
 
-  memberships        Membership[]
-  adminAuditEntries  AdminAuditLog[]  @relation("AdminAuditActor")
-  adminAuditTargets  AdminAuditLog[]  @relation("AdminAuditTarget")
-  invitations        UserInvitation[] @relation("InvitationUser")
-  createdInvitations UserInvitation[] @relation("InvitationCreator")
-  featureRequests    FeatureRequest[] @relation("FeatureRequestAuthor")
+  memberships         Membership[]
+  adminAuditEntries   AdminAuditLog[]      @relation("AdminAuditActor")
+  adminAuditTargets   AdminAuditLog[]      @relation("AdminAuditTarget")
+  invitations         UserInvitation[]     @relation("InvitationUser")
+  createdInvitations  UserInvitation[]     @relation("InvitationCreator")
+  featureRequests     FeatureRequest[]     @relation("FeatureRequestAuthor")
   featureRequestVotes FeatureRequestVote[]
 
   @@index([adminRole])
@@ -203,23 +212,23 @@ model Membership {
 }
 
 model UserInvitation {
-  id                   String         @id @default(cuid())
+  id                   String                     @id @default(cuid())
   email                String
   userId               String?
   organizationMode     InvitationOrganizationMode @default(EXISTING)
   organizationId       String?
   membershipRole       MembershipRole
-  tokenHash            String         @unique
+  tokenHash            String                     @unique
   expiresAt            DateTime
   acceptedAt           DateTime?
   revokedAt            DateTime?
   createdByAdminUserId String
-  createdAt            DateTime       @default(now())
-  updatedAt            DateTime       @updatedAt
+  createdAt            DateTime                   @default(now())
+  updatedAt            DateTime                   @updatedAt
 
-  user               User?        @relation("InvitationUser", fields: [userId], references: [id], onDelete: SetNull)
+  user               User?         @relation("InvitationUser", fields: [userId], references: [id], onDelete: SetNull)
   organization       Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdByAdminUser User         @relation("InvitationCreator", fields: [createdByAdminUserId], references: [id], onDelete: Restrict)
+  createdByAdminUser User          @relation("InvitationCreator", fields: [createdByAdminUserId], references: [id], onDelete: Restrict)
 
   @@index([email])
   @@index([userId, organizationId])
@@ -246,10 +255,11 @@ model Project {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  lots         Lot[]
-  expenses     Expense[]
-  documents    Document[]
+  organization            Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  lots                    Lot[]
+  expenses                Expense[]
+  documents               Document[]
+  convertedFromSimulation Simulation[] @relation("SimulationConvertedProject")
 
   @@index([organizationId, status])
 }
@@ -377,4 +387,260 @@ model FeatureRequestVote {
   @@unique([featureRequestId, userId])
   @@index([organizationId, featureRequestId])
   @@index([organizationId, userId])
+}
+
+enum SimulationStrategy {
+  FLIP
+  RENTAL
+}
+
+enum SimulationPropertyType {
+  ANCIEN
+  NEUF_VEFA
+}
+
+enum FinancingMode {
+  CASH
+  LOAN
+}
+
+enum DecisionStatus {
+  GOOD
+  REVIEW
+  RISKY
+}
+
+enum SimulationLotType {
+  APARTMENT
+  GARAGE
+  CELLAR
+  OTHER
+}
+
+enum OpportunityEventType {
+  NEGOTIATION_PRICE
+  BANK_FINANCING_QUOTE
+  VISIT_NOTE
+  RISK_ALERT
+  ASSUMPTION_CHANGE
+  OTHER
+}
+
+enum OptionStatus {
+  ACTIVE
+  CANDIDATE
+}
+
+enum SimulationOptionGroupType {
+  PURCHASE_PRICE
+  WORK_BUDGET
+  FINANCING
+}
+
+enum SimulationOptionSource {
+  MANUAL
+  FROM_EVENT
+}
+
+model SimulationFolder {
+  id             String    @id @default(cuid())
+  organizationId String
+  name           String
+  description    String?
+  archivedAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  simulations  Simulation[]
+
+  @@index([organizationId, archivedAt])
+}
+
+model Simulation {
+  id                             String             @id @default(cuid())
+  organizationId                 String
+  folderId                       String
+  name                           String
+  address                        String?
+  strategy                       SimulationStrategy
+  propertyType                   SimulationPropertyType?
+  departmentCode                 String?            @db.VarChar(3)
+  isFirstTimeBuyer               Boolean            @default(false)
+  purchasePrice                  Decimal            @db.Decimal(12, 2)
+  furnitureValue                 Decimal?           @db.Decimal(12, 2)
+  estimatedDisbursements         Decimal?           @db.Decimal(12, 2)
+  notaryFees                     Decimal?           @db.Decimal(12, 2)
+  notaryFeesBreakdown            Json?
+  acquisitionFees                Decimal            @db.Decimal(12, 2)
+  worksBudget                    Decimal            @db.Decimal(12, 2)
+  worksBreakdownJson             Json?
+  financingMode                  FinancingMode
+  downPayment                    Decimal?           @db.Decimal(12, 2)
+  loanAmount                     Decimal?           @db.Decimal(12, 2)
+  interestRate                   Decimal?           @db.Decimal(5, 2)
+  loanDurationMonths             Int?
+  estimatedMonthlyPayment        Decimal?           @db.Decimal(10, 2)
+  estimatedProjectDurationMonths Int?
+  targetResalePrice              Decimal?           @db.Decimal(12, 2)
+  targetMonthlyRent              Decimal?           @db.Decimal(10, 2)
+  bufferAmount                   Decimal?           @db.Decimal(12, 2)
+  notes                          String?
+  decisionScore                  Int?
+  decisionStatus                 DecisionStatus?
+  resultSummaryJson              Json?
+  convertedProjectId             String?
+  archivedAt                     DateTime?
+  createdAt                      DateTime           @default(now())
+  updatedAt                      DateTime           @updatedAt
+
+  organization         Organization                    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  folder               SimulationFolder                @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  convertedProject     Project?                        @relation("SimulationConvertedProject", fields: [convertedProjectId], references: [id], onDelete: SetNull)
+  lots                 SimulationLot[]
+  workItems            SimulationWorkItem[]
+  events               OpportunityEvent[]              @relation("SimulationEvents")
+  optionGroups         SimulationOptionGroup[]
+  optionActivationLogs SimulationOptionActivationLog[]
+
+  @@index([organizationId, folderId, archivedAt])
+  @@index([organizationId, strategy, decisionStatus])
+  @@index([convertedProjectId])
+}
+
+model SimulationLot {
+  id                String            @id @default(cuid())
+  organizationId    String
+  simulationId      String
+  name              String
+  type              SimulationLotType @default(OTHER)
+  surface           Decimal?          @db.Decimal(10, 2)
+  estimatedRent     Decimal?          @db.Decimal(10, 2)
+  targetResaleValue Decimal?          @db.Decimal(12, 2)
+  notes             String?
+  position          Int               @default(0)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  simulation   Simulation   @relation(fields: [simulationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, simulationId, position])
+}
+
+model OpportunityEvent {
+  id             String               @id @default(cuid())
+  organizationId String
+  simulationId   String
+  type           OpportunityEventType
+  title          String
+  description    String?
+  eventDate      DateTime
+  impact         String?
+  metadata       Json?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  simulation     Simulation         @relation("SimulationEvents", fields: [simulationId], references: [id], onDelete: Cascade)
+  relatedOptions SimulationOption[] @relation("EventOptions")
+
+  @@index([organizationId, simulationId, eventDate])
+}
+
+model SimulationOptionGroup {
+  id             String                    @id @default(cuid())
+  organizationId String
+  simulationId   String
+  type           SimulationOptionGroupType
+  label          String
+  activeOptionId String?
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @updatedAt
+
+  organization   Organization                    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  simulation     Simulation                      @relation(fields: [simulationId], references: [id], onDelete: Cascade)
+  activeOption   SimulationOption?               @relation("ActiveOption", fields: [activeOptionId], references: [id], onDelete: SetNull)
+  options        SimulationOption[]              @relation("GroupOptions")
+  activationLogs SimulationOptionActivationLog[]
+
+  @@unique([simulationId, type])
+  @@index([organizationId, simulationId])
+}
+
+model SimulationOptionActivationLog {
+  id                String   @id @default(cuid())
+  organizationId    String
+  simulationId      String
+  optionGroupId     String
+  previousOptionId  String?
+  newOptionId       String
+  activatedByUserId String
+  createdAt         DateTime @default(now())
+
+  organization Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  simulation   Simulation            @relation(fields: [simulationId], references: [id], onDelete: Cascade)
+  optionGroup  SimulationOptionGroup @relation(fields: [optionGroupId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, simulationId, createdAt])
+  @@index([optionGroupId, createdAt])
+  @@index([activatedByUserId, createdAt])
+}
+
+model SimulationOption {
+  id             String                 @id @default(cuid())
+  organizationId String
+  groupId        String
+  label          String
+  valueJson      Json
+  isActive       Boolean                @default(false)
+  source         SimulationOptionSource @default(MANUAL)
+  sourceEventId  String?
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+
+  organization   Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  group          SimulationOptionGroup   @relation("GroupOptions", fields: [groupId], references: [id], onDelete: Cascade)
+  sourceEvent    OpportunityEvent?       @relation("EventOptions", fields: [sourceEventId], references: [id], onDelete: SetNull)
+  activeInGroups SimulationOptionGroup[] @relation("ActiveOption")
+
+  @@index([organizationId, groupId])
+  @@index([groupId, isActive])
+  @@index([sourceEventId])
+}
+
+model SimulationWorkItem {
+  id                    String   @id @default(cuid())
+  organizationId        String
+  simulationId          String
+  name                  String
+  initialCost           Decimal  @db.Decimal(12, 2)
+  estimatedDurationDays Int?
+  position              Int      @default(0)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  simulation   Simulation       @relation(fields: [simulationId], references: [id], onDelete: Cascade)
+  options      WorkItemOption[]
+
+  @@index([organizationId, simulationId, position])
+}
+
+model WorkItemOption {
+  id             String       @id @default(cuid())
+  organizationId String
+  workItemId     String
+  providerName   String
+  cost           Decimal      @db.Decimal(12, 2)
+  durationDays   Int?
+  notes          String?
+  status         OptionStatus @default(CANDIDATE)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  organization Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  workItem     SimulationWorkItem @relation(fields: [workItemId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, workItemId, status])
 }

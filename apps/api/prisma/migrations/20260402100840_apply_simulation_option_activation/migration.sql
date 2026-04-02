@@ -1,0 +1,2 @@
+-- RenameIndex
+ALTER INDEX "SimulationOptionActivationLog_organizationId_simulationId_creat" RENAME TO "SimulationOptionActivationLog_organizationId_simulationId_c_idx";

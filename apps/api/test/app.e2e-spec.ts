@@ -11,9 +11,11 @@ import {
   LotStatus,
   LotType,
   MembershipRole,
+  OpportunityEventType,
   PaymentStatus,
   PrismaClient,
   ProjectStatus,
+  SimulationLotType,
 } from '@prisma/client';
 import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
@@ -1510,5 +1512,414 @@ describe('API e2e', () => {
     expect(pilotAuditLog?.reason).toBe('Activation du programme pilote');
     expect(ideaAuditLog?.reason).toBe('Passage en validation beta');
     expect(ideaAuditLog?.targetUserId).toBeNull();
+  });
+
+  it('creates a simulation folder, simulation, edits it and converts to project', async () => {
+    const actor = await seedUser(prisma, {
+      organizationName: 'Org Simulations',
+      organizationSlug: 'org-simulations',
+      email: 'simulations@example.com',
+      password: 'password123',
+    });
+
+    const token = await login('simulations@example.com', 'password123');
+
+    // Create simulation folder
+    const folderResponse = await request(app.getHttpServer())
+      .post('/api/simulation-folders')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        name: 'Colmar',
+        description: 'Opportunites sur Colmar',
+      })
+      .expect(201);
+
+    const folderId = folderResponse.body.id as string;
+
+    // Create simulation
+    const simulationResponse = await request(app.getHttpServer())
+      .post('/api/simulations')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        folderId,
+        name: 'Appartement Centre Ville',
+        address: '12 rue Test',
+        strategy: 'RENTAL',
+        propertyType: 'ANCIEN',
+        departmentCode: '68',
+        purchasePrice: 180000,
+        worksBudget: 25000,
+        financingMode: 'LOAN',
+        downPayment: 40000,
+        loanAmount: 179400,
+        interestRate: 3.5,
+        loanDurationMonths: 240,
+        targetMonthlyRent: 1200,
+        bufferAmount: 5000,
+      })
+      .expect(201);
+
+    const simulationId = simulationResponse.body.id as string;
+
+    expect(simulationResponse.body).toEqual(
+      expect.objectContaining({
+        name: 'Appartement Centre Ville',
+        strategy: 'RENTAL',
+        decisionScore: expect.any(Number),
+        decisionStatus: expect.stringMatching(/^(GOOD|REVIEW|RISKY)$/),
+      }),
+    );
+
+    // Edit simulation
+    const editResponse = await request(app.getHttpServer())
+      .patch(`/api/simulations/${simulationId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        name: 'Appartement Centre Ville Renove',
+        worksBudget: 28000,
+      })
+      .expect(200);
+
+    expect(editResponse.body.name).toBe('Appartement Centre Ville Renove');
+    expect(editResponse.body.worksBudget).toBe(28000);
+
+    // Add lot to simulation
+    await request(app.getHttpServer())
+      .post(`/api/simulations/${simulationId}/lots`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        name: 'Appartement principal',
+        type: SimulationLotType.APARTMENT,
+        surface: 65,
+        estimatedRent: 950,
+      })
+      .expect(201);
+
+    // Convert to project
+    const convertResponse = await request(app.getHttpServer())
+      .post(`/api/simulations/${simulationId}/convert-to-project`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(201);
+
+    const projectId = convertResponse.body.projectId as string;
+
+    // Verify project was created
+    const project = await prisma.project.findUnique({
+      where: { id: projectId },
+      include: { lots: true },
+    });
+
+    expect(project).toMatchObject({
+      organizationId: actor.organization.id,
+      name: 'Appartement Centre Ville Renove',
+    });
+    expect(project?.purchasePrice?.toString()).toBe('180000');
+    expect(project?.worksBudget?.toString()).toBe('28000');
+    expect(project?.lots).toHaveLength(1);
+    expect(project?.lots[0]).toMatchObject({
+      name: 'Appartement principal',
+      type: LotType.APARTMENT,
+    });
+    expect(project?.lots[0].surface?.toString()).toBe('65');
+    expect(project?.lots[0].estimatedRent?.toString()).toBe('950');
+
+    // Verify simulation is marked as converted
+    const updatedSimulation = await prisma.simulation.findUnique({
+      where: { id: simulationId },
+    });
+
+    expect(updatedSimulation?.convertedProjectId).toBe(projectId);
+  });
+
+  it('creates and manages opportunity events for a simulation', async () => {
+    const actor = await seedUser(prisma, {
+      organizationName: 'Org Events',
+      organizationSlug: 'org-events',
+      email: 'events@example.com',
+      password: 'password123',
+    });
+
+    const token = await login('events@example.com', 'password123');
+
+    // Create folder and simulation
+    const folderResponse = await request(app.getHttpServer())
+      .post('/api/simulation-folders')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        name: 'Mulhouse',
+      })
+      .expect(201);
+
+    const simulationResponse = await request(app.getHttpServer())
+      .post('/api/simulations')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        folderId: folderResponse.body.id,
+        name: 'Maison Familiale',
+        strategy: 'FLIP',
+        propertyType: 'ANCIEN',
+        departmentCode: '68',
+        purchasePrice: 200000,
+        worksBudget: 40000,
+        financingMode: 'CASH',
+        targetResalePrice: 290000,
+      })
+      .expect(201);
+
+    const simulationId = simulationResponse.body.id as string;
+
+    // Create opportunity event
+    const eventResponse = await request(app.getHttpServer())
+      .post(`/api/simulations/${simulationId}/events`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        type: OpportunityEventType.NEGOTIATION_PRICE,
+        title: 'Negociation du prix',
+        description: 'Le vendeur accepte de baisser le prix',
+        eventDate: '2026-03-25',
+        impact: 'Prix reduit de 10000 EUR',
+      })
+      .expect(201);
+
+    const eventId = eventResponse.body.id as string;
+
+    expect(eventResponse.body).toEqual(
+      expect.objectContaining({
+        type: OpportunityEventType.NEGOTIATION_PRICE,
+        title: 'Negociation du prix',
+        simulationId,
+        organizationId: actor.organization.id,
+      }),
+    );
+
+    // List events
+    const listResponse = await request(app.getHttpServer())
+      .get(`/api/simulations/${simulationId}/events`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(listResponse.body).toHaveLength(1);
+    expect(listResponse.body[0].id).toBe(eventId);
+
+    // Update event
+    const updateResponse = await request(app.getHttpServer())
+      .patch(`/api/simulations/${simulationId}/events/${eventId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        title: 'Negociation finalisee',
+        impact: 'Prix reduit de 12000 EUR',
+      })
+      .expect(200);
+
+    expect(updateResponse.body.title).toBe('Negociation finalisee');
+    expect(updateResponse.body.impact).toBe('Prix reduit de 12000 EUR');
+
+    // Delete event
+    await request(app.getHttpServer())
+      .delete(`/api/simulations/${simulationId}/events/${eventId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    // Verify event was deleted
+    const deletedEvent = await prisma.opportunityEvent.findUnique({
+      where: { id: eventId },
+    });
+
+    expect(deletedEvent).toBeNull();
+  });
+
+  it('calculates rental simulation metrics using lot rents when available', async () => {
+    await seedUser(prisma, {
+      organizationName: 'Org Rental Logic',
+      organizationSlug: 'org-rental-logic',
+      email: 'rental-logic@example.com',
+      password: 'password123',
+    });
+
+    const token = await login('rental-logic@example.com', 'password123');
+
+    // Create folder
+    const folderResponse = await request(app.getHttpServer())
+      .post('/api/simulation-folders')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        name: 'Strasbourg',
+      })
+      .expect(201);
+
+    // Create simulation with manual rent
+    const simulationResponse = await request(app.getHttpServer())
+      .post('/api/simulations')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        folderId: folderResponse.body.id,
+        name: 'Immeuble 3 Lots',
+        strategy: 'RENTAL',
+        propertyType: 'ANCIEN',
+        departmentCode: '67',
+        purchasePrice: 300000,
+        worksBudget: 50000,
+        financingMode: 'LOAN',
+        loanAmount: 300000,
+        interestRate: 3.0,
+        loanDurationMonths: 240,
+        targetMonthlyRent: 2000,
+      })
+      .expect(201);
+
+    const simulationId = simulationResponse.body.id as string;
+
+    // Add lots with estimated rents
+    await request(app.getHttpServer())
+      .post(`/api/simulations/${simulationId}/lots`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        name: 'Appartement T3',
+        type: SimulationLotType.APARTMENT,
+        surface: 65,
+        estimatedRent: 900,
+      })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post(`/api/simulations/${simulationId}/lots`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        name: 'Appartement T2',
+        type: SimulationLotType.APARTMENT,
+        surface: 45,
+        estimatedRent: 700,
+      })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post(`/api/simulations/${simulationId}/lots`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        name: 'Garage',
+        type: SimulationLotType.GARAGE,
+        estimatedRent: 100,
+      })
+      .expect(201);
+
+    // Get simulation detail
+    const detailResponse = await request(app.getHttpServer())
+      .get(`/api/simulations/${simulationId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    const result = detailResponse.body.resultSummaryJson as any;
+    const activeValues = detailResponse.body.activeValues;
+
+    // Total rent from lots should be 900 + 700 + 100 = 1700
+    // Not the manual 2000
+    expect(result.metrics.monthlyCashDelta).toBeDefined();
+    expect(activeValues).toBeDefined();
+    expect(activeValues.activeMonthlyRent).toBe(1700);
+    expect(activeValues.activeMonthlyRentSource).toContain('LOTS');
+
+    // Verify comparison endpoint
+    const comparisonResponse = await request(app.getHttpServer())
+      .get(`/api/simulations/folders/${folderResponse.body.id}/comparison`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(comparisonResponse.body).toHaveLength(1);
+  });
+
+  it('enforces tenant isolation for simulations and events', async () => {
+    const actor = await seedUser(prisma, {
+      organizationName: 'Org Sim A',
+      organizationSlug: 'org-sim-a',
+      email: 'sim-a@example.com',
+      password: 'password123',
+    });
+    const outsider = await seedUser(prisma, {
+      organizationName: 'Org Sim B',
+      organizationSlug: 'org-sim-b',
+      email: 'sim-b@example.com',
+      password: 'password123',
+    });
+
+    const token = await login('sim-a@example.com', 'password123');
+    const outsiderToken = await login('sim-b@example.com', 'password123');
+
+    // Create folder and simulation for actor
+    const folderResponse = await request(app.getHttpServer())
+      .post('/api/simulation-folders')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        name: 'Folder A',
+      })
+      .expect(201);
+
+    const simulationResponse = await request(app.getHttpServer())
+      .post('/api/simulations')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        folderId: folderResponse.body.id,
+        name: 'Simulation A',
+        strategy: 'RENTAL',
+        propertyType: 'ANCIEN',
+        departmentCode: '75',
+        purchasePrice: 150000,
+        worksBudget: 20000,
+        financingMode: 'CASH',
+        targetMonthlyRent: 1000,
+      })
+      .expect(201);
+
+    const simulationId = simulationResponse.body.id as string;
+
+    // Outsider cannot access the simulation
+    await request(app.getHttpServer())
+      .get(`/api/simulations/${simulationId}`)
+      .set('Authorization', `Bearer ${outsiderToken}`)
+      .expect(404);
+
+    // Outsider cannot edit the simulation
+    await request(app.getHttpServer())
+      .patch(`/api/simulations/${simulationId}`)
+      .set('Authorization', `Bearer ${outsiderToken}`)
+      .send({
+        name: 'Hacked Name',
+      })
+      .expect(404);
+
+    // Create event for actor
+    const eventResponse = await request(app.getHttpServer())
+      .post(`/api/simulations/${simulationId}/events`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        type: OpportunityEventType.VISIT_NOTE,
+        title: 'Visite du bien',
+        eventDate: '2026-03-26',
+      })
+      .expect(201);
+
+    // Outsider cannot list events
+    await request(app.getHttpServer())
+      .get(`/api/simulations/${simulationId}/events`)
+      .set('Authorization', `Bearer ${outsiderToken}`)
+      .expect(404);
+
+    // Outsider cannot delete event
+    await request(app.getHttpServer())
+      .delete(
+        `/api/simulations/${simulationId}/events/${eventResponse.body.id}`,
+      )
+      .set('Authorization', `Bearer ${outsiderToken}`)
+      .expect(404);
+
+    // Verify data is properly isolated
+    const actorSimulations = await prisma.simulation.findMany({
+      where: { organizationId: actor.organization.id },
+    });
+    const outsiderSimulations = await prisma.simulation.findMany({
+      where: { organizationId: outsider.organization.id },
+    });
+
+    expect(actorSimulations).toHaveLength(1);
+    expect(outsiderSimulations).toHaveLength(0);
   });
 });

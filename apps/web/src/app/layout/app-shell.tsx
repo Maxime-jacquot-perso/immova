@@ -30,6 +30,14 @@ export function AppShell() {
             Projects
           </NavLink>
           <NavLink
+            to="/simulations"
+            className={({ isActive }) =>
+              `sidebar__link ${isActive ? 'sidebar__link--active' : ''}`
+            }
+          >
+            Simulations
+          </NavLink>
+          <NavLink
             to="/ideas"
             className={({ isActive }) =>
               `sidebar__link ${isActive ? 'sidebar__link--active' : ''}`

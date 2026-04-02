@@ -5,15 +5,29 @@ Il doit etre lu au debut de chaque session et mis a jour quand une decision stru
 
 ## 1. Identite produit
 
-- Produit : SaaS de pilotage d'operations immobilieres
+- Produit : SaaS de decision et de pilotage d'operations immobilieres
 - Cible prioritaire : investisseurs immobiliers, marchands de biens, petites structures multi-projets
+- Le produit couvre desormais 2 temps :
+  - **Avant achat** : arbitrer entre plusieurs opportunites immobilieres en simulant, comparant et decidant via un simulateur decisionnel simple
+  - **Apres achat** : mesurer l'ecart entre hypothese initiale et realite terrain en pilotant, suivant et corrigeant via projets, lots, depenses, documents et KPI
+- **Promesse produit centrale** : zero double saisie entre simulation et projet reel grace a la conversion automatique des donnees
 - Le produit n'est pas un logiciel de gestion locative classique
 - Le produit n'est pas un ERP immobilier
+- Le produit n'est pas une usine a gaz de simulation financiere complexe
 
 ## 2. Coeur produit
 
-Le coeur du produit est strictement :
+Le coeur du produit couvre maintenant :
 
+**Decision avant achat :**
+- simulations decisionnelles simples regroupees par dossiers d'opportunites
+- comparaison entre opportunites au sein d'un meme dossier
+- resultats decisionnels calcules backend : cout total, fonds propres, marges brute et nette, rendement, mensualite, capital mobilise, duree projet, indicateurs de risque, score explicable
+- frais de notaire estimes calcules backend avec detail explicable : droits / TPF, CSI, debours et emoluments par tranches
+- recommandation claire par simulation : `interessant` / `a negocier` / `trop risque`
+- conversion simulation retenue vers projet reel sans ressaisie manuelle
+
+**Pilotage apres achat :**
 - projets
 - lots
 - depenses / factures
@@ -21,9 +35,9 @@ Le coeur du produit est strictement :
 - KPI projet simples et fiables
 - export CSV comptable simple
 
-## 3. MVP visible actuel
+## 3. MVP visible actuel et prochaine etape prioritaire
 
-Le MVP visible doit rester limite a :
+**MVP visible actuel** (pilotage apres achat) :
 
 - authentification
 - dashboard global portefeuille
@@ -36,17 +50,42 @@ Le MVP visible doit rester limite a :
 - dashboard projet
 - export CSV
 
-## 4. Hors MVP visible
+**Prochaine etape prioritaire actee** (decision avant achat) :
+
+- module de simulation decisionnelle
+- dossiers d'opportunites pour regrouper plusieurs simulations par intention d'achat
+- creation et sauvegarde de simulations d'opportunites avant achat
+- preparation optionnelle et simplifiee de la structure de lots dans la simulation
+- comparaison entre plusieurs simulations au sein d'un meme dossier
+- resultats decisionnels simples et fiables calcules backend
+- recommandation explicite par simulation : interessant / a negocier / trop risque
+- conversion obligatoire d'une simulation retenue en projet reel sans ressaisie manuelle (prevu, non encore implemente)
+
+## 4. Hors scope explicite
 
 Ne pas remettre dans le scope sans validation explicite :
 
+**Hors scope simulateur V1 :**
+- IA
+- moteur de scenarios avances ou multiples
+- simulation bancaire complexe
+- cash-flow expert ultra detaille
+- wizard d'onboarding dedie si cela complexifie fortement l'app
+- duplication de logique produit entre front et back
+- plus de 15 champs critiques obligatoires dans le formulaire de simulation
+
+**Garde-fous simulateur V1 :**
+- moins de 15 champs critiques obligatoires
+- saisie rapide utilisable apres une visite d'opportunite
+- calculs simples, comprehensibles, explicables
+- pas de moteur de scenarios multiples
+- pas de complexite inutile
+
+**Hors scope pilotage actuel :**
 - gestion locative avancee
 - locataires
 - occupation detaillee
-- wizard d'onboarding dedie ou nouvelle route d'onboarding
 - timeline riche
-- simulation complexe
-- cash-flow reel
 - reporting portefeuille avance
 - generation de baux
 - signature electronique
@@ -82,15 +121,26 @@ Ne pas remettre dans le scope sans validation explicite :
 
 ## 7. Regles produit
 
-- Si une fonctionnalite n'aide pas directement a saisir ou piloter un projet, elle sort
+- Le produit aide a decider avant achat puis a piloter apres achat
+- Si une fonctionnalite n'aide ni a decider ni a piloter, elle sort
 - Aucun KPI ne doit etre affiche sans source fiable
 - Pas de KPI "marketing"
-- Le detail projet est le centre de gravite de l'application
+- Les calculs decisionnels et de pilotage restent simples, explicables et rapides a remplir
+- Le simulateur V1 doit rester simple : pas d'IA, pas de moteur expert, pas de cash-flow ultra detaille
+- Le detail projet reste le centre de gravite de l'application apres achat
 - La simplicite UI prime sur la preparation de features futures
+
+**Doctrine produit issue de l'analyse critique :**
+
+- **Alerte utile = alerte anticipative** : une alerte produit doit permettre d'anticiper un probleme, pas seulement de decrire un etat post-mortem
+- **Friction de saisie = risque critique produit** : toute friction inutile dans la saisie menace directement l'adoption et l'usage reel du produit
+- **Score toujours contextualise et explicable** : un score de completude ou de fiabilite doit etre adapte au type de projet et toujours explicable par l'utilisateur
+- **Aucun indicateur sans impact decisionnel** : un KPI ou indicateur affiche doit directement aider a prendre une decision ou corriger une action, sinon il sort
+- **Zero double saisie** : aucune ressaisie manuelle complete ne doit etre necessaire entre simulation et projet reel ; la conversion doit reutiliser les donnees existantes
 
 ## 8. Modele de donnees V1
 
-Entites obligatoires :
+Entites obligatoires (pilotage actuel) :
 
 - `Organization`
 - `User`
@@ -105,6 +155,55 @@ Entites additionnelles activees pour le feedback produit MVP :
 - `FeatureRequest`
 - `FeatureRequestVote`
 
+**Entites prevues / prioritaires (decision avant achat) :**
+
+- `SimulationFolder` : entite dediee pour regrouper des opportunites par intention d'achat
+  - doit porter `organizationId` pour rester strictement multi-tenant
+  - permet de regrouper plusieurs simulations liees a une meme zone geographique ou intention d'investissement
+  - exemples : dossier "Colmar", dossier "Mulhouse", dossier "Strasbourg centre"
+  - la comparaison entre simulations se fait a l'interieur d'un meme dossier
+  - role produit : eviter la confusion entre dizaines de simulations non structurees
+
+- `Simulation` : entite dediee pour sauvegarder et comparer des opportunites immobilieres avant achat
+  - doit porter `organizationId` pour rester strictement multi-tenant
+  - doit porter `simulationFolderId` pour rattachement a un dossier d'opportunites
+  - doit couvrir : nom projet/opportunite, strategie (revente ou locatif), prix achat, type de bien (`ANCIEN` / `NEUF_VEFA`), code departement, statut primo-accedant, mobilier deduit, debours estimes, frais de notaire calcules et detailles, travaux estimes, detail postes, financement (cash ou credit), apport, taux, duree pret, fin chantier estimee, prix revente cible ou loyer cible
+  - **peut contenir une structure simplifiee de lots** (appartements, garages, caves) de facon optionnelle et non obligatoire pour anticiper la structure du projet et eviter la ressaisie apres achat
+  - doit permettre la comparaison entre plusieurs simulations au sein d'un meme dossier
+  - doit calculer cote backend : cout total, fonds propres mobilises, mensualite estimee, marge brute, marge nette simplifiee, rendement brut si locatif, effort mensuel, duree projet estimee, statut decisionnel, indicateurs de risque/tension, score explicable
+  - doit produire une recommandation claire : `interessant` / `a negocier` / `trop risque`
+  - **doit prevoir une conversion obligatoire en `Project` reel si l'opportunite est retenue, sans ressaisie manuelle complete** (prevu, non encore implemente)
+  - la conversion doit reutiliser les donnees existantes et la structure de lots preparee si elle existe
+
+- `SimulationLot` : entite optionnelle pour preparer la structure de lots d'une simulation
+  - doit porter `organizationId` et `simulationId` pour rester strictement multi-tenant
+  - doit porter un champ `type` avec enum `SimulationLotType` : `APARTMENT`, `GARAGE`, `CELLAR`, `OTHER`
+  - permet d'anticiper la structure du projet sans obliger la saisie complete avant decision
+  - converti automatiquement en `Lot` reel lors de la conversion simulation vers projet
+
+- `OpportunityEvent` : entite pour journaliser les evenements structurants d'une opportunite avant achat
+  - doit porter `organizationId` et `simulationId` pour rester strictement multi-tenant
+  - doit porter un champ `type` avec enum `OpportunityEventType` : `NEGOTIATION_PRICE`, `BANK_FINANCING_QUOTE`, `VISIT_NOTE`, `RISK_ALERT`, `ASSUMPTION_CHANGE`, `OTHER`
+  - permet de tracker visite, negociation prix, devis banque, alerte risque, changement hypothese sans alourdir le formulaire principal
+  - reste leger et optionnel : pas de complexite inutile, pas de workflow, juste une trace chronologique utile
+
+- `SimulationOptionGroup` : entite pour regrouper des options par type d'hypothese (prix, travaux, financement)
+  - doit porter `organizationId` et `simulationId` pour rester strictement multi-tenant
+  - doit porter un champ `type` avec enum `SimulationOptionGroupType` : `PURCHASE_PRICE`, `WORK_BUDGET`, `FINANCING`
+  - porte `activeOptionId` nullable pour identifier l'option actuellement active
+  - permet de gerer plusieurs hypotheses pour une meme categorie (ex: 3 offres de prix differentes)
+  - **une seule option peut etre active par groupe** (activation explicite par l'utilisateur)
+
+- `SimulationOption` : entite pour stocker une hypothese alternative (option)
+  - doit porter `organizationId` et `groupId` pour rester strictement multi-tenant
+  - porte `label` (ex: "Offre 240k", "Menuisier 1", "Banque CIC")
+  - porte `valueJson` (structure libre selon le type : prix, cout, taux, duree, etc.)
+  - porte `isActive` (booleen synchronise avec `SimulationOptionGroup.activeOptionId`)
+  - porte `source` avec enum `SimulationOptionSource` : `MANUAL` (saisie directe) ou `FROM_EVENT` (creee depuis journal)
+  - porte `sourceEventId` nullable pour lier une option a un evenement du journal
+  - **activation explicite par l'utilisateur** : pas de selection automatique du "meilleur choix"
+  - **les calculs utilisent uniquement l'option active** (fallback sur valeur initiale simulation si aucune option active)
+
 Entites repoussees :
 
 - `Vendor`
@@ -112,9 +211,11 @@ Entites repoussees :
 - `Tenant`
 - `Occupancy`
 - `TimelineEvent`
-- `ProjectScenario`
+- `ProjectScenario` (remplace conceptuellement par `Simulation` pour la partie decision avant achat)
 
-## 9. Ecrans MVP
+## 9. Ecrans MVP et ecrans prevus
+
+**Ecrans MVP actuels (pilotage apres achat) :**
 
 - `/dashboard`
 - `/login`
@@ -128,6 +229,14 @@ Entites repoussees :
 - `/projects/:projectId/export`
 - `/ideas`
 - `/settings`
+
+**Ecrans prevus / prioritaires (decision avant achat) :**
+
+- `/simulations` : liste des dossiers d'opportunites avec acces aux simulations regroupees par dossier
+- `/simulations/folders/new` : creation d'un nouveau dossier d'opportunites
+- `/simulations/folders/:folderId` : vue d'un dossier avec liste des simulations associees et comparaison simple entre simulations du meme dossier
+- `/simulations/new` : creation d'une nouvelle simulation d'opportunite dans un dossier existant
+- `/simulations/:simulationId` : detail d'une simulation avec resultats decisionnels, recommandation explicite, possibilite d'edition, preparation optionnelle de lots et action de conversion en projet reel
 
 ## 10. Conventions de code
 
@@ -161,6 +270,7 @@ Structure frontend :
 - `src/modules/settings` : organisation courante et membres
 - `src/modules/ideas` : boite a idees produit, votes et lecture beta pilote
 - `src/modules/admin` : back-office interne, dashboard admin, users, admins, audit
+- `src/modules/simulations` : dossiers d'opportunites, liste simulations, creation, edition, detail, comparaison, options actives, historique de decision et conversion vers projet
 - `src/shared` : client API, UI minimale
 
 Structure backend :
@@ -180,6 +290,8 @@ Structure backend :
 - `src/admin`
 - `src/invitations`
 - `src/mail`
+- `src/simulations` : controller, service, DTO, calculs decisionnels backend (simulation-metrics.util.ts) pour opportunites avant achat, logique de conversion Simulation vers Project
+- `src/simulation-folders` : controller, service, DTO pour gestion des dossiers d'opportunites
 
 ## 12. Features existantes
 
@@ -222,6 +334,34 @@ Back :
 - `POST /api/admin/admins`
 - `PATCH /api/admin/admins/:userId/change-role`
 - `GET /api/admin/audit-logs`
+- `GET /api/simulation-folders`
+- `POST /api/simulation-folders`
+- `GET /api/simulation-folders/:folderId`
+- `PATCH /api/simulation-folders/:folderId`
+- `POST /api/simulation-folders/:folderId/archive`
+- `GET /api/simulations/folders/:folderId/simulations`
+- `POST /api/simulations`
+- `GET /api/simulations/:simulationId`
+- `PATCH /api/simulations/:simulationId`
+- `POST /api/simulations/:simulationId/archive`
+- `GET /api/simulations/folders/:folderId/comparison`
+- `POST /api/simulations/:simulationId/convert-to-project`
+- `GET /api/simulations/:simulationId/lots`
+- `POST /api/simulations/:simulationId/lots`
+- `PATCH /api/simulations/:simulationId/lots/:lotId`
+- `DELETE /api/simulations/:simulationId/lots/:lotId`
+- `GET /api/simulations/:simulationId/events`
+- `POST /api/simulations/:simulationId/events`
+- `PATCH /api/simulations/:simulationId/events/:eventId`
+- `DELETE /api/simulations/:simulationId/events/:eventId`
+- `GET /api/simulations/:simulationId/option-groups`
+- `POST /api/simulations/:simulationId/option-groups`
+- `POST /api/simulations/:simulationId/options`
+- `PATCH /api/simulations/:simulationId/options/:optionId/activate`
+- `GET /api/simulations/:simulationId/options/:optionId/impact`
+- `DELETE /api/simulations/:simulationId/options/:optionId`
+- `GET /api/simulations/:simulationId/options/activation-history`
+- `GET /api/simulations/:simulationId/options/groups/:groupId/comparison`
 
 Front :
 
@@ -269,6 +409,7 @@ Front :
 - gestion des administrateurs avec creation de compte interne et changement de role selon le niveau autorise
 - audit log admin exploitable depuis l'UI interne
 - landing marketing Next.js avec hero, sections marketing, pricing, FAQ et SEO de base
+- module simulations decision avant achat avec `/simulations` liste dossiers, `/simulations/folders/:folderId` detail dossier et comparaison, `/simulations/new` formulaire creation, `/simulations/:simulationId` detail avec resultats decisionnels, options actives, historique d'activation, journal d'opportunite et conversion projet, `/simulations/:simulationId/edit` edition simulation
 - route error boundary pour eviter l'ecran technique React Router
 - tests e2e API des flows critiques MVP
 - smoke tests UI Playwright : login, projet, lot, depense, document, export et settings
@@ -276,6 +417,171 @@ Front :
 - workflow GitHub Actions `e2e-api.yml` separe pour `pnpm test:e2e:api` avec PostgreSQL de CI
 
 ## 13. Etat actuel
+
+### 1. Direction produit actee (doctrine)
+
+**Positionnement strategique :**
+- Axelys devient un SaaS de decision ET de pilotage d'operations immobilieres
+- **Promesse centrale** : arbitrer entre opportunites AVANT achat + mesurer l'ecart hypothese vs realite APRES acquisition
+- Le produit couvre desormais 2 temps : decision avant achat via simulateur decisionnel simple + pilotage apres achat via projets/lots/depenses/documents
+
+**Objectif structurant (non encore atteint) :**
+- **ZERO DOUBLE SAISIE** : objectif produit central consistant a eviter toute ressaisie manuelle complete entre simulation et projet reel
+- Cet objectif guide la conception mais n'est pas encore garanti dans tous les cas
+
+**Doctrine produit renforcee :**
+- Alertes anticipatives (pas seulement descriptives)
+- Friction de saisie = risque critique produit
+- Score toujours contextualise et explicable
+- Aucun indicateur sans impact decisionnel
+
+**Garde-fous simulateur V1 :**
+- Moins de 15 champs critiques obligatoires
+- Saisie rapide utilisable apres une visite d'opportunite
+- Calculs simples, comprehensibles, explicables
+- Pas d'IA, pas de moteur expert, pas de cash-flow ultra detaille
+
+### 2. Implemente (fonctionnel aujourd'hui)
+
+**Module simulation - structure de base :**
+- Entites `SimulationFolder`, `Simulation`, `SimulationLot`, `OpportunityEvent` presentes dans le schema Prisma
+- Routes API simulation-folders et simulations fonctionnelles
+- Ecrans frontend `/simulations`, `/simulations/folders/:folderId`, `/simulations/new`, `/simulations/:simulationId`, `/simulations/:simulationId/edit`
+- Dossiers d'opportunites : creation, edition, archivage, regroupement de simulations
+- Simulations : creation, edition, archivage, affichage resultats decisionnels
+
+**Saisie simulation :**
+- Formulaire creation et edition avec moins de 15 champs obligatoires
+- Disposition 2 colonnes desktop pour limiter le scroll
+- Formulaire creation / edition maintenant partage via un composant unique pour eviter les divergences entre les 2 flows
+- Structure de saisie refondue en 4 blocs visuels sobres : `Bien & contexte`, `Acquisition`, `Financement`, `Exploitation & securite`
+- Saisie strategie (revente ou locatif), prix, frais, travaux par postes, financement
+- Micro-resumes front non intrusifs dans `Acquisition` et `Financement` pour donner un feedback immediat, tout en laissant le backend source de verite pour les resultats detailes
+- Montant du pret auto-calcule cote front a partir du cout d'acquisition indicatif moins l'apport, avec override manuel explicite et bouton `Recalculer`
+- Preparation optionnelle de lots avec types (`APARTMENT`, `GARAGE`, `CELLAR`, `OTHER`)
+
+**Calculs decisionnels backend :**
+- Calculs centralises dans `simulation-metrics.util.ts`
+- Calcul detaille des frais de notaire centralise dans `simulation-notary-fees.util.ts`
+- Metriques : cout total, fonds propres, marges brute/nette, rendement, mensualite, duree, capital mobilise
+- Score de fiabilite calcule
+- Statut decisionnel calcule
+- Recommandation calculee : `interessant` / `a negocier` / `trop risque`
+- Les frais de notaire integres au plan de financement incluent : base taxable nette du mobilier, TPF / droits d'enregistrement, CSI, debours et emoluments par tranches
+- Les taux departementaux sur l'ancien sont resolus via une configuration centralisee par code departement, documentee a partir de la grille DGFiP DMTO au 1er fevrier 2026
+- Le statut `isFirstTimeBuyer` est desormais stocke pour preparer la logique reglementaire, mais n'entraine pas encore de modulation automatique dans le calcul
+
+**Comparaison simulations :**
+- Tableau de synthese simple pour comparer simulations d'un meme dossier
+- Affichage cote a cote des metriques principales
+
+**Journal d'opportunite :**
+- Entite `OpportunityEvent` pour documenter evenements structurants (visite, negociation, changement hypothese)
+- Types : `NEGOTIATION_PRICE`, `BANK_FINANCING_QUOTE`, `VISIT_NOTE`, `RISK_ALERT`, `ASSUMPTION_CHANGE`, `OTHER`
+- Affichage chronologique dans le detail simulation
+- **Le journal documente mais ne modifie PAS les hypotheses actives utilisees dans le calcul**
+
+**Conversion simulation vers projet :**
+- Route API `POST /api/simulations/:simulationId/convert-to-project` presente
+- Logique de conversion de base en place
+- Reutilisation des donnees principales (nom, strategie, prix, frais, travaux)
+- Mapping `SimulationLotType` vers `LotType` implemente pour conversion lots
+
+**Options actives (arbitrage avec donnees terrain) :**
+- Entites `SimulationOptionGroup` et `SimulationOption` implementees dans schema Prisma
+- Entite `SimulationOptionActivationLog` implementees pour tracer chaque activation utilisateur
+- Types d'options geres : `PURCHASE_PRICE`, `WORK_BUDGET`, `FINANCING`
+- Sources d'options : `MANUAL` (saisie directe) ou `FROM_EVENT` (creee depuis journal)
+- Routes API completes : `GET/POST /option-groups`, `POST /options`, `PATCH /options/:id/activate`, `DELETE /options/:id`, `GET /options/:id/impact`, `GET /options/activation-history`, `GET /options/groups/:groupId/comparison`
+- Service backend `SimulationOptionsService` avec CRUD, activation, **journalisation des decisions** et **simulation d'impact**
+- **Comparaison instantanee avant activation** : endpoint `/impact` retourne metriques base, metriques simulees et deltas sans modifier donnees
+- Fonction `simulateWithOptionOverride` backend pour calculer impact d'une option sans activation reelle (aucune persistence, aucun side effect)
+- Moteur de calcul `simulation-resolver.util.ts` adapte pour utiliser options actives (fallback sur valeurs initiales)
+- Onglet "Options" dans detail simulation avec UI selection options actives (radio buttons, activation explicite) et **comparaison cote a cote durable**
+- Onglet "Historique" dans detail simulation avec timeline simple des activations et deltas principaux
+- **Affichage impact visuel au survol** : pour chaque option non active, affichage automatique deltas (cout, marge, mensualite, duree, score) avec couleurs (vert = amelioration, rouge = degradation)
+- Badges visuels : "Actuel" pour option active, "Alternative" pour options non actives
+- Creation d'option simplifiee dans le journal : type auto si evenement prix/financement sinon choix par boutons rapides `Prix / Travaux / Financement`, modal contextuel sans select technique avec max 3 champs utiles et pre-remplissage depuis la description si possible
+- **Activation explicite par utilisateur** : pas de selection automatique, pas de magie, controle total
+- **Calculs utilisent uniquement l'option active** : si option active existe pour un type, elle remplace la valeur initiale
+- **Lien journal → options desormais fonctionnel** : creation explicite d'option depuis evenement avec sourceEventId
+- Tests E2E backend pour validation multi-tenant, activation, suppression, historique et impact/comparaison (coherence deltas, aucune modification base)
+
+**Corrections recentes :**
+- Bug critique corrige : formulaire lots envoyait valeurs francaises (APPARTEMENT) au lieu d'anglaises (APARTMENT)
+- Fonction `getLotTypeLabel()` pour affichage francais + envoi valeurs enum correctes
+- Tests E2E backend pour valider types lots et comptage loyers
+- Checkbox `primo-accedant` refaite avec meilleur alignement, meilleure lisibilite et zone cliquable correcte dans le bloc acquisition
+- Test Playwright web ajoute pour verifier la structure du formulaire simulation et le cycle `pret auto -> manuel -> recalcul`
+
+### 3. En cours de stabilisation / partiel / limites connues
+
+**UX simulation encore perfectible :**
+- Lisibilite onglet travaux a ameliorer malgre deltas calcules par poste
+- Affichage hypotheses actives ameliore mais peut encore gagner en clarte
+- Messages d'etat vide ameliores mais certains contextes peuvent rester confus
+
+**Logique locative encore basique :**
+- Si lots ont loyers : calcul automatique
+- Sinon : loyer manuel saisi dans formulaire principal
+- Source visible dans resultats mais logique encore simpliste pour strategie locative complexe
+
+**Journal d'opportunite maintenant connecte aux calculs via options :**
+- Le journal documente toujours sans modifier automatiquement les hypotheses
+- Mais l'utilisateur peut desormais creer explicitement une option depuis un evenement
+- L'option creee peut ensuite etre activee pour impacter les calculs
+- **Pas de parsing automatique** : creation manuelle, controle explicite
+
+**Conversion simulation → projet encore a consolider :**
+- Logique de conversion presente mais non encore robuste dans tous les cas
+- Cas limites possibles : conversions multiples, gestion erreurs, validation complete
+- UX conversion basique : pas encore de preview avant conversion, pas de gestion explicite des ecarts
+
+**Arbitrage base sur options actives avec comparaison instantanee :**
+- Options prix d'achat multiples maintenant possibles via `SimulationOption`
+- Options financement multiples maintenant possibles via `SimulationOption`
+- **Comparaison instantanee avant activation** : survol option affiche impact visuel sans activer
+- **Comparaison cote a cote des options d'un meme groupe** desormais disponible dans l'onglet Options
+- **Historique des activations** desormais disponible dans l'onglet Historique avec avant/apres, auteur et deltas principaux
+- Deltas calcules backend sans modification donnees : cout, marge, mensualite, duree, score
+- Pas encore de comparaison multi-groupes ou exportable pour partage externe
+- Recommandation calculee mais criteres encore basiques
+
+**Mesure ecart hypothese vs realite encore peu exploitable :**
+- Conversion permet de creer projet depuis simulation
+- Mais suivi explicite de l'ecart initial vs reel pas encore implemente
+- Pas encore de tableau de bord "previsionnel vs reel"
+- Pas encore d'alertes sur derives par rapport a la simulation initiale
+
+### 4. Non implemente / prochaines etapes
+
+**Arbitrage multi-scenarios avance :**
+- Tableau comparatif avance multi-groupes ou exportable pour partage banque / associes
+- Historique des activations enrichi si besoin avec niveau de justification supplementaire
+- Export comparatif pour partage avec partenaires/banque
+
+**Mesure ecart previsionnel vs reel :**
+- Tableau de bord compare simulation initiale vs projet reel
+- Alertes sur derives significatives (travaux qui depassent, delais qui s'allongent)
+- Suivi KPI previsionnel vs realise
+- Apprentissage pour ameliorer futures simulations
+
+**Scoring contextualise :**
+- Score adapte au type d'operation (achat/revente vs locatif long terme)
+- Score adapte au profil investisseur (primo-accedant vs experimente)
+- Score explicable avec criteres detailles
+
+**Alertes anticipatives simulation :**
+- Alerte si marge trop faible par rapport au risque identifie
+- Alerte si financement tendu
+- Alerte si duree projet incompatible avec strategie
+
+**Robustesse conversion :**
+- Preview avant conversion avec resume des donnees transferees
+- Gestion propre des cas limites (conversion deja effectuee, simulation incomplete)
+- Historique conversions dans le dossier d'opportunite
+
+**Etat technique actuel :**
 
 - Le repo est scaffolded en monorepo avec `apps/landing`, `apps/web` et `apps/api`
 - Le backend expose deja : auth, dashboard global, organization courante, memberships, projects, lots, expenses, documents, exports CSV
@@ -345,8 +651,8 @@ Front :
 - Seed local : OK
 - Deux comptes seed locaux sont disponibles pour les tests : `admin@example.com` / `admin123` en `SUPER_ADMIN` et `user@example.com` / `user123` en utilisateur standard
 - Le seed local ajoute aussi deux idees de demonstration dans `demo-org` et marque `admin@example.com` comme utilisateur pilote avec acces beta pour faciliter les verifications manuelles
-- Les deployments Vercel actifs sont maintenant `https://immova-web.vercel.app/` pour le web et `https://immova-api.vercel.app` pour l'API et `https://axelys.vercel.app` pour la landing page.
-- Le front Vite de production doit pointer vers `https://immova-api.vercel.app/api` via `VITE_API_URL`
+- Les deployments Vercel actifs sont maintenant `https://axelys-web.vercel.app/` pour le web et `https://axelys-api.vercel.app` pour l'API et `https://axelys.vercel.app` pour la landing page.
+- Le front Vite de production doit pointer vers `https://axelys-api.vercel.app/api` via `VITE_API_URL`
 - L'API Vercel avec Prisma Postgres doit utiliser une `DATABASE_URL` poolée pour le runtime et une `DIRECT_URL` directe pour Prisma CLI, Prisma Studio et les migrations
 - Le `PrismaService` backend n'ouvre plus de connexion explicite au bootstrap afin d'eviter des connexions inutiles sur des requetes serverless qui ne touchent pas la base
 - Des fichiers helper `.env.prod` locaux et `.env.prod.example` versionnes existent maintenant dans `apps/api` et `apps/web` pour guider le remplissage des variables Vercel de production

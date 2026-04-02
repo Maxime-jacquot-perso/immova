@@ -13,6 +13,11 @@ import { ProjectLotsPage } from '../modules/lots/pages/project-lots-page';
 import { ProjectExpensesPage } from '../modules/expenses/pages/project-expenses-page';
 import { ProjectDocumentsPage } from '../modules/documents/pages/project-documents-page';
 import { ProjectExportPage } from '../modules/projects/pages/project-export-page';
+import { SimulationsFoldersPage } from '../modules/simulations/pages/simulations-folders-page';
+import { FolderDetailPage } from '../modules/simulations/pages/folder-detail-page';
+import { SimulationFormPage } from '../modules/simulations/pages/simulation-form-page';
+import { SimulationDetailPage } from '../modules/simulations/pages/simulation-detail-page';
+import { SimulationEditPage } from '../modules/simulations/pages/simulation-edit-page';
 import { SettingsPage } from '../modules/settings/pages/settings-page';
 import { AdminAdminsPage } from '../modules/admin/pages/admin-admins-page';
 import { AdminAuditLogsPage } from '../modules/admin/pages/admin-audit-logs-page';
@@ -60,6 +65,26 @@ export const router = createBrowserRouter([
               {
                 path: 'projects',
                 element: <ProjectsListPage />,
+              },
+              {
+                path: 'simulations',
+                element: <SimulationsFoldersPage />,
+              },
+              {
+                path: 'simulations/folders/:folderId',
+                element: <FolderDetailPage />,
+              },
+              {
+                path: 'simulations/new',
+                element: <SimulationFormPage />,
+              },
+              {
+                path: 'simulations/:simulationId',
+                element: <SimulationDetailPage />,
+              },
+              {
+                path: 'simulations/:simulationId/edit',
+                element: <SimulationEditPage />,
               },
               {
                 path: 'ideas',

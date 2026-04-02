@@ -233,6 +233,11 @@ button:disabled {
   resize: vertical;
 }
 
+.field__hint {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
 .field__error {
   color: var(--danger);
   font-size: 0.88rem;
@@ -489,6 +494,175 @@ th {
   align-self: end;
   min-height: 46px;
   color: var(--muted);
+}
+
+.simulation-form {
+  display: grid;
+  gap: 20px;
+}
+
+.simulation-form__section {
+  gap: 20px;
+}
+
+.simulation-form__section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.simulation-form__summary {
+  min-width: min(100%, 280px);
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: #f8fafc;
+}
+
+.simulation-form__summary-label {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.simulation-form__grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.simulation-form__grid--context {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.simulation-form__field--wide {
+  grid-column: span 2;
+}
+
+.simulation-form__field--full {
+  grid-column: 1 / -1;
+}
+
+.simulation-form__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.simulation-form__help {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.simulation-form__help-button {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: white;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1;
+}
+
+.simulation-form__help-bubble {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 20;
+  width: min(260px, 80vw);
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #0f172a;
+  color: white;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.18);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-4px);
+  transition:
+    opacity 0.16s ease,
+    transform 0.16s ease;
+}
+
+.simulation-form__help:hover .simulation-form__help-bubble,
+.simulation-form__help:focus-within .simulation-form__help-bubble {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.simulation-form__readonly-field {
+  width: 100%;
+  border: 1px solid var(--border);
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 12px 14px;
+  color: var(--text);
+}
+
+.simulation-form__checkbox {
+  width: 100%;
+  align-items: flex-start;
+  align-self: stretch;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: #f8fafc;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.simulation-form__checkbox input {
+  margin-top: 2px;
+}
+
+.simulation-form__loan-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.simulation-form__mode-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.simulation-form__mode-badge--auto {
+  background: #eef4ff;
+  color: #315efb;
+}
+
+.simulation-form__mode-badge--manual {
+  background: #fff3e8;
+  color: #b54708;
+}
+
+.simulation-form__empty-note {
+  padding: 16px 18px;
+  border-radius: 16px;
+  border: 1px dashed var(--border);
+  background: #fbfcfd;
+  color: var(--muted);
+}
+
+.simulation-form__actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
 .row-actions {
@@ -818,7 +992,9 @@ th {
   .grid--2,
   .grid--3,
   .form-grid,
-  .split {
+  .split,
+  .simulation-form__grid,
+  .simulation-form__grid--context {
     grid-template-columns: 1fr;
   }
 
@@ -834,6 +1010,19 @@ th {
 
   .feedback-message__actions {
     justify-content: flex-start;
+  }
+
+  .simulation-form__field--wide,
+  .simulation-form__field--full {
+    grid-column: auto;
+  }
+
+  .simulation-form__summary {
+    min-width: 100%;
+  }
+
+  .simulation-form__actions {
+    align-items: stretch;
   }
 
   .admin-audit-item__top,
