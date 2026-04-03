@@ -124,6 +124,76 @@ async function createSimulationWithPurchaseOption(
   };
 }
 
+async function createSimulationForConversion(
+  request: APIRequestContext,
+  suffix: string,
+  options?: {
+    archived?: boolean;
+  },
+) {
+  const authHeaders = await getAuthHeaders(request);
+  const folder = await createFolder(request, suffix);
+  const simulationName = `Simulation conversion ${suffix}`;
+
+  const simulationResponse = await request.post(
+    'http://localhost:3000/api/simulations',
+    {
+      headers: authHeaders,
+      data: {
+        folderId: folder.id,
+        name: simulationName,
+        address: '18 rue de la Conversion',
+        strategy: 'RENTAL',
+        propertyType: 'ANCIEN',
+        departmentCode: '68',
+        purchasePrice: 185000,
+        worksBudget: 24000,
+        financingMode: 'LOAN',
+        downPayment: 40000,
+        loanAmount: 185000,
+        interestRate: 3.5,
+        loanDurationMonths: 240,
+        targetMonthlyRent: 980,
+      },
+    },
+  );
+
+  expect(simulationResponse.ok()).toBeTruthy();
+  const simulation = (await simulationResponse.json()) as { id: string };
+
+  const lotResponse = await request.post(
+    `http://localhost:3000/api/simulations/${simulation.id}/lots`,
+    {
+      headers: authHeaders,
+      data: {
+        name: `Lot conversion ${suffix}`,
+        type: 'APARTMENT',
+        surface: 52,
+        estimatedRent: 980,
+      },
+    },
+  );
+
+  expect(lotResponse.ok()).toBeTruthy();
+
+  if (options?.archived) {
+    const archiveResponse = await request.post(
+      `http://localhost:3000/api/simulations/${simulation.id}/archive`,
+      {
+        headers: authHeaders,
+      },
+    );
+
+    expect(archiveResponse.ok()).toBeTruthy();
+  }
+
+  return {
+    simulationId: simulation.id,
+    simulationName,
+    lotName: `Lot conversion ${suffix}`,
+  };
+}
+
 test('simulation form structures the input and lets the user switch loan amount mode', async ({
   page,
   request,
@@ -198,4 +268,55 @@ test('activating an option refreshes the simulation overview', async ({
   await expect(activeValuesPanel).toContainText(formatCurrency(240000));
   await expect(activeValuesPanel).toContainText(`OPTION: ${simulation.optionLabel}`);
   await expect(resultsPanel).toContainText(formatCurrency(308719.25));
+});
+
+test('conversion preview shows transferred data before creating the project', async ({
+  page,
+  request,
+}) => {
+  const suffix = uniqueSuffix();
+  const simulation = await createSimulationForConversion(request, suffix);
+
+  await loginAsDemoAdmin(page);
+  await page.goto(`/simulations/${simulation.simulationId}`);
+
+  await page.getByRole('button', { name: 'Prévisualiser la conversion' }).click();
+
+  await expect(page.getByText('Preview de conversion')).toBeVisible();
+  await expect(page.getByText('Champs transferes au projet')).toBeVisible();
+  await expect(page.getByText('Snapshot previsionnel fige')).toBeVisible();
+  await expect(page.getByText('Lots qui seront crees')).toBeVisible();
+  await expect(page.getByText(simulation.lotName)).toBeVisible();
+
+  await page.getByRole('button', { name: 'Confirmer la conversion' }).click();
+
+  await expect(page).toHaveURL(/\/projects\/[^/]+$/);
+  await expect(page.getByText('Simulation convertie')).toBeVisible();
+  await expect(page.getByText('Previsionnel vs reel')).toBeVisible();
+  await expect(page.getByText('Simulation source')).toBeVisible();
+});
+
+test('conversion preview blocks archived simulations', async ({
+  page,
+  request,
+}) => {
+  const suffix = uniqueSuffix();
+  const simulation = await createSimulationForConversion(request, suffix, {
+    archived: true,
+  });
+
+  await loginAsDemoAdmin(page);
+  await page.goto(`/simulations/${simulation.simulationId}`);
+
+  await page.getByRole('button', { name: 'Prévisualiser la conversion' }).click();
+
+  await expect(page.getByText('Blocage de conversion')).toBeVisible();
+  await expect(
+    page.getByText(
+      'La simulation est archivee. Reactivez-la ou dupliquez-la avant de creer un projet.',
+    ),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Confirmer la conversion' }),
+  ).toBeDisabled();
 });

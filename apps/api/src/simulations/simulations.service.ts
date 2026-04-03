@@ -1,18 +1,16 @@
 import {
-  BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
+  UnprocessableEntityException,
 } from '@nestjs/common';
-import {
-  LotType,
-  OptionStatus,
-  Prisma,
-  ProjectStatus,
-  ProjectType,
-  SimulationLotType,
-} from '@prisma/client';
+import { OptionStatus, Prisma } from '@prisma/client';
 import { toNumber } from '../common/utils/decimal.util';
 import { PrismaService } from '../prisma/prisma.service';
+import {
+  buildSimulationConversionPlan,
+  type ConversionIssue,
+} from './simulation-conversion.util';
 import { CreateOpportunityEventDto } from './dto/create-opportunity-event.dto';
 import { CreateSimulationDto } from './dto/create-simulation.dto';
 import { CreateSimulationLotDto } from './dto/create-simulation-lot.dto';
@@ -26,19 +24,6 @@ import { UpdateWorkItemOptionDto } from './dto/update-work-item-option.dto';
 import { buildSimulationResults } from './simulation-metrics.util';
 import { normalizeDepartmentCode } from './simulation-notary-fees.util';
 import { buildSimulationRuntimeState } from './simulation-resolver.util';
-
-function mapSimulationLotTypeToLotType(simType: SimulationLotType): LotType {
-  switch (simType) {
-    case SimulationLotType.APARTMENT:
-      return LotType.APARTMENT;
-    case SimulationLotType.GARAGE:
-      return LotType.GARAGE;
-    case SimulationLotType.CELLAR:
-      return LotType.CELLAR;
-    default:
-      return LotType.OTHER;
-  }
-}
 
 function mapSimulation(simulation: {
   id: string;
@@ -196,9 +181,90 @@ function mapWorkItemOption(option: {
   };
 }
 
+function pickPrimaryConversionBlockingIssue(issues: ConversionIssue[]) {
+  return (
+    issues.find((issue) => issue.code === 'SIMULATION_ALREADY_CONVERTED') ??
+    issues[0] ??
+    null
+  );
+}
+
+function throwConversionBlockingIssue(issue: ConversionIssue | null): never {
+  if (!issue) {
+    throw new UnprocessableEntityException({
+      code: 'SIMULATION_CONVERSION_BLOCKED',
+      message: 'Cette simulation ne peut pas etre convertie en projet.',
+    });
+  }
+
+  if (issue.code === 'SIMULATION_ALREADY_CONVERTED') {
+    throw new ConflictException({
+      code: issue.code,
+      message: issue.message,
+    });
+  }
+
+  throw new UnprocessableEntityException({
+    code: issue.code,
+    message: issue.message,
+  });
+}
+
 @Injectable()
 export class SimulationsService {
   constructor(private readonly prisma: PrismaService) {}
+
+  private async getSimulationForConversion(
+    organizationId: string,
+    simulationId: string,
+  ) {
+    const simulation = await this.prisma.simulation.findFirst({
+      where: {
+        id: simulationId,
+        organizationId,
+      },
+      include: {
+        lots: {
+          orderBy: { position: 'asc' },
+        },
+        workItems: {
+          include: {
+            options: true,
+          },
+          orderBy: { position: 'asc' },
+        },
+        optionGroups: {
+          include: {
+            activeOption: true,
+          },
+          orderBy: { createdAt: 'asc' },
+        },
+        conversionRecord: {
+          select: {
+            projectId: true,
+            project: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+        convertedProject: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    if (!simulation) {
+      throw new NotFoundException('Simulation not found');
+    }
+
+    return simulation;
+  }
 
   async listByFolder(organizationId: string, folderId: string) {
     const simulations = await this.prisma.simulation.findMany({
@@ -614,69 +680,91 @@ export class SimulationsService {
       });
   }
 
-  async convertToProject(organizationId: string, simulationId: string) {
-    const simulation = await this.prisma.simulation.findFirst({
-      where: {
-        id: simulationId,
-        organizationId,
-      },
-      include: {
-        lots: {
-          orderBy: { position: 'asc' },
-        },
-      },
-    });
+  async getConversionPreview(organizationId: string, simulationId: string) {
+    const simulation = await this.getSimulationForConversion(
+      organizationId,
+      simulationId,
+    );
 
-    if (!simulation) {
-      throw new NotFoundException('Simulation not found');
-    }
+    return buildSimulationConversionPlan(organizationId, simulation).preview;
+  }
 
-    if (simulation.convertedProjectId) {
-      throw new BadRequestException(
-        'This simulation has already been converted to a project',
+  async convertToProject(
+    organizationId: string,
+    userId: string,
+    simulationId: string,
+  ) {
+    const simulation = await this.getSimulationForConversion(
+      organizationId,
+      simulationId,
+    );
+    const plan = buildSimulationConversionPlan(organizationId, simulation);
+
+    if (!plan.preview.canConvert) {
+      throwConversionBlockingIssue(
+        pickPrimaryConversionBlockingIssue(plan.preview.blockingIssues),
       );
     }
 
-    const project = await this.prisma.project.create({
-      data: {
-        organizationId,
-        name: simulation.name,
-        addressLine1: simulation.address,
-        type: ProjectType.OTHER,
-        status: ProjectStatus.DRAFT,
-        purchasePrice: simulation.purchasePrice,
-        notaryFees: simulation.notaryFees ?? simulation.acquisitionFees,
-        acquisitionFees: null,
-        worksBudget: simulation.worksBudget,
-        notes: simulation.notes
-          ? `Converti depuis simulation\n\n${simulation.notes}`
-          : 'Converti depuis simulation',
-      },
-    });
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        const project = await tx.project.create({
+          data: plan.projectData,
+        });
 
-    if (simulation.lots.length > 0) {
-      await this.prisma.lot.createMany({
-        data: simulation.lots.map((lot) => ({
-          organizationId,
+        if (plan.lotDraftData.length > 0) {
+          await tx.lot.createMany({
+            data: plan.lotDraftData.map((lot) => ({
+              ...lot,
+              projectId: project.id,
+            })),
+          });
+        }
+
+        const conversion = await tx.simulationConversion.create({
+          data: {
+            organizationId,
+            simulationId,
+            projectId: project.id,
+            createdByUserId: userId,
+            status: 'COMPLETED',
+          },
+        });
+
+        await tx.projectForecastSnapshot.create({
+          data: {
+            organizationId,
+            projectId: project.id,
+            simulationId,
+            conversionId: conversion.id,
+            ...plan.snapshotData,
+          },
+        });
+
+        await tx.simulation.update({
+          where: { id: simulationId },
+          data: { convertedProjectId: project.id },
+        });
+
+        return {
           projectId: project.id,
-          name: lot.name,
-          type: mapSimulationLotTypeToLotType(lot.type),
-          status: 'DRAFT',
-          surface: lot.surface,
-          estimatedRent: lot.estimatedRent,
-          notes: lot.notes,
-        })),
+          conversionId: conversion.id,
+        };
       });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException({
+          code: 'SIMULATION_ALREADY_CONVERTED',
+          message:
+            'Cette simulation a deja ete convertie. Axelys bloque volontairement les reconversions pour eviter les doublons silencieux.',
+        });
+      }
+
+      throw error;
     }
-
-    await this.prisma.simulation.update({
-      where: { id: simulationId },
-      data: { convertedProjectId: project.id },
-    });
-
-    return {
-      projectId: project.id,
-    };
   }
 
   async listLots(organizationId: string, simulationId: string) {

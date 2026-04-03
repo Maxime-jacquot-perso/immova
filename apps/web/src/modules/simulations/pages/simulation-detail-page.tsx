@@ -3,15 +3,23 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../auth/auth-context";
 import {
-  getSimulation,
   convertToProject,
+  getConversionPreview,
+  getSimulation,
+  type SimulationConversionPreview,
+  type SimulationConversionPreviewField,
   type SimulationDecision,
   type SimulationMetrics,
   type SimulationResultSummary,
 } from "../api";
 import { LoadingBlock } from "../../../shared/ui/loading-block";
 import { ErrorState } from "../../../shared/ui/error-state";
-import { formatCurrency, formatPercent } from "../../../shared/ui/formatters";
+import { FeedbackMessage } from "../../../shared/ui/feedback-message";
+import {
+  formatCount,
+  formatCurrency,
+  formatPercent,
+} from "../../../shared/ui/formatters";
 import { OpportunityJournal } from "../components/opportunity-journal";
 import { ActiveValuesCard } from "../components/active-values-card";
 import { LotsSection } from "../components/lots-section";
@@ -27,17 +35,71 @@ type TabType =
   | "history"
   | "journal";
 
+function formatPreviewFieldValue(field: SimulationConversionPreviewField) {
+  if (field.kind === "currency") {
+    return formatCurrency(
+      typeof field.value === "number" ? field.value : null,
+    );
+  }
+
+  if (field.kind === "percent") {
+    return formatPercent(
+      typeof field.value === "number" ? field.value : null,
+    );
+  }
+
+  if (field.kind === "number") {
+    return formatCount(typeof field.value === "number" ? field.value : null);
+  }
+
+  return field.value ?? "—";
+}
+
+function PreviewFieldList({
+  fields,
+}: {
+  fields: SimulationConversionPreviewField[];
+}) {
+  return (
+    <div className="stack stack--sm">
+      {fields.map((field) => (
+        <div className="dashboard-activity-item" key={field.key}>
+          <div className="dashboard-activity-item__content">
+            <div className="dashboard-activity-item__meta">
+              <span className="meta">{field.label}</span>
+            </div>
+            <strong>{formatPreviewFieldValue(field)}</strong>
+            {field.reason ? <div className="meta">{field.reason}</div> : null}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function SimulationDetailPage() {
   const { simulationId } = useParams<{ simulationId: string }>();
   const { session } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<TabType>("overview");
+  const [isConversionPreviewVisible, setIsConversionPreviewVisible] =
+    useState(false);
+  const [conversionFeedback, setConversionFeedback] = useState<{
+    type: "success" | "error" | "info";
+    title: string;
+    message?: string;
+  } | null>(null);
 
   const simulationQuery = useQuery({
     queryKey: ["simulation", simulationId],
     queryFn: () => getSimulation(session, simulationId!),
     enabled: !!simulationId,
+  });
+  const conversionPreviewQuery = useQuery({
+    queryKey: ["simulation-conversion-preview", simulationId],
+    queryFn: () => getConversionPreview(session, simulationId!),
+    enabled: !!simulationId && isConversionPreviewVisible,
   });
 
   const convertMutation = useMutation({
@@ -46,11 +108,26 @@ export function SimulationDetailPage() {
       void queryClient.invalidateQueries({
         queryKey: ["simulation", simulationId],
       });
-      alert("Simulation convertie en projet avec succès");
-      navigate(`/projects/${data.projectId}`);
+      void queryClient.invalidateQueries({
+        queryKey: ["simulation-conversion-preview", simulationId],
+      });
+      navigate(`/projects/${data.projectId}`, {
+        state: {
+          feedback: {
+            type: "success",
+            title: "Simulation convertie",
+            message:
+              "Le projet a ete cree avec son snapshot previsionnel de reference.",
+          },
+        },
+      });
     },
     onError: (error: Error) => {
-      alert(error.message || "Une erreur est survenue");
+      setConversionFeedback({
+        type: "error",
+        title: "Conversion impossible",
+        message: error.message || "Une erreur est survenue",
+      });
     },
   });
 
@@ -74,6 +151,9 @@ export function SimulationDetailPage() {
   const notaryFees =
     result?.notaryFees ?? simulation.notaryFeesBreakdown ?? null;
   const financingPlan = result?.financingPlan;
+  const conversionPreview = conversionPreviewQuery.data as
+    | SimulationConversionPreview
+    | undefined;
 
   const getDecisionColor = (status?: string) => {
     if (status === "GOOD") return "green";
@@ -87,6 +167,15 @@ export function SimulationDetailPage() {
 
   return (
     <div className="stack">
+      {conversionFeedback ? (
+        <FeedbackMessage
+          type={conversionFeedback.type}
+          title={conversionFeedback.title}
+          message={conversionFeedback.message}
+          onDismiss={() => setConversionFeedback(null)}
+        />
+      ) : null}
+
       <header className="page-header">
         <div>
           <h1>{simulation.name}</h1>
@@ -113,12 +202,14 @@ export function SimulationDetailPage() {
               </Link>
               <button
                 className="button"
-                onClick={() => convertMutation.mutate()}
-                disabled={convertMutation.isPending}
+                onClick={() => {
+                  setConversionFeedback(null);
+                  setIsConversionPreviewVisible((current) => !current);
+                }}
               >
-                {convertMutation.isPending
-                  ? "Conversion..."
-                  : "Convertir en projet"}
+                {isConversionPreviewVisible
+                  ? "Masquer la preview"
+                  : "Prévisualiser la conversion"}
               </button>
             </>
           )}
@@ -136,6 +227,181 @@ export function SimulationDetailPage() {
               Voir le projet
             </Link>
           </p>
+        </section>
+      )}
+
+      {!simulation.convertedProjectId && isConversionPreviewVisible && (
+        <section className="panel stack">
+          <div className="panel-header">
+            <div>
+              <h2 className="section-title">Preview de conversion</h2>
+              <div className="section-subtitle">
+                Axelys vous montre exactement ce qui va creer le projet,
+                figer le snapshot previsionnel et rester uniquement sur la
+                simulation.
+              </div>
+            </div>
+          </div>
+
+          {conversionPreviewQuery.isLoading ? (
+            <LoadingBlock />
+          ) : null}
+
+          {conversionPreviewQuery.isError ? (
+            <FeedbackMessage
+              type="error"
+              title="Impossible de charger la preview"
+              message={
+                conversionPreviewQuery.error instanceof Error
+                  ? conversionPreviewQuery.error.message
+                  : "Une erreur est survenue"
+              }
+            />
+          ) : null}
+
+          {conversionPreview ? (
+            <>
+              <div className="grid grid--3">
+                <div className="summary-strip__item">
+                  <div className="meta">Futur projet</div>
+                  <strong>{conversionPreview.project.name}</strong>
+                </div>
+                <div className="summary-strip__item">
+                  <div className="meta">Statut initial</div>
+                  <strong>{conversionPreview.project.status}</strong>
+                </div>
+                <div className="summary-strip__item">
+                  <div className="meta">Lots crees</div>
+                  <strong>{formatCount(conversionPreview.lots.length)}</strong>
+                </div>
+                <div className="summary-strip__item">
+                  <div className="meta">Prix achat retenu</div>
+                  <strong>
+                    {formatCurrency(conversionPreview.project.purchasePrice)}
+                  </strong>
+                </div>
+                <div className="summary-strip__item">
+                  <div className="meta">Frais de notaire</div>
+                  <strong>
+                    {formatCurrency(conversionPreview.project.notaryFees)}
+                  </strong>
+                </div>
+                <div className="summary-strip__item">
+                  <div className="meta">Budget travaux retenu</div>
+                  <strong>
+                    {formatCurrency(conversionPreview.project.worksBudget)}
+                  </strong>
+                </div>
+              </div>
+
+              {conversionPreview.blockingIssues.length > 0 ? (
+                <div className="stack stack--sm">
+                  {conversionPreview.blockingIssues.map((issue) => (
+                    <FeedbackMessage
+                      key={issue.code}
+                      type="error"
+                      title="Blocage de conversion"
+                      message={issue.message}
+                    />
+                  ))}
+                  {conversionPreview.existingProject ? (
+                    <div className="meta">
+                      Projet deja lie :{" "}
+                      <Link
+                        to={`/projects/${conversionPreview.existingProject.id}`}
+                      >
+                        {conversionPreview.existingProject.name}
+                      </Link>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {conversionPreview.warnings.length > 0 ? (
+                <div className="stack stack--sm">
+                  {conversionPreview.warnings.map((warning) => (
+                    <FeedbackMessage
+                      key={warning.code}
+                      type="info"
+                      title="Point a verifier"
+                      message={warning.message}
+                    />
+                  ))}
+                </div>
+              ) : null}
+
+              <div className="split">
+                <section className="panel">
+                  <h3 className="section-title">Champs transferes au projet</h3>
+                  <PreviewFieldList fields={conversionPreview.projectFields} />
+                </section>
+                <section className="panel">
+                  <h3 className="section-title">Snapshot previsionnel fige</h3>
+                  <div className="section-subtitle">
+                    Ces valeurs servent ensuite de reference pour le suivi
+                    previsionnel vs reel.
+                  </div>
+                  <PreviewFieldList fields={conversionPreview.snapshotFields} />
+                </section>
+              </div>
+
+              <div className="split">
+                <section className="panel">
+                  <h3 className="section-title">Lots qui seront crees</h3>
+                  {conversionPreview.lots.length === 0 ? (
+                    <div className="meta">
+                      Aucun lot n'est prepare dans la simulation.
+                    </div>
+                  ) : (
+                    <div className="stack stack--sm">
+                      {conversionPreview.lots.map((lot, index) => (
+                        <div className="dashboard-activity-item" key={`${lot.name}-${index}`}>
+                          <div className="dashboard-activity-item__content">
+                            <div className="dashboard-activity-item__meta">
+                              <span className="meta">{lot.type}</span>
+                            </div>
+                            <strong>{lot.name}</strong>
+                            <div className="meta">
+                              Surface : {formatCount(lot.surface)} • Loyer :{" "}
+                              {formatCurrency(lot.estimatedRent)}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </section>
+                <section className="panel">
+                  <h3 className="section-title">Ce qui n'est pas repris</h3>
+                  <PreviewFieldList
+                    fields={conversionPreview.nonTransferredFields}
+                  />
+                </section>
+              </div>
+
+              <div className="row-actions">
+                <button
+                  type="button"
+                  className="button button--secondary"
+                  onClick={() => setIsConversionPreviewVisible(false)}
+                >
+                  Fermer
+                </button>
+                <button
+                  type="button"
+                  className="button"
+                  onClick={() => convertMutation.mutate()}
+                  disabled={
+                    convertMutation.isPending || !conversionPreview.canConvert
+                  }
+                >
+                  {convertMutation.isPending
+                    ? "Conversion..."
+                    : "Confirmer la conversion"}
+                </button>
+              </div>
+            </>
+          ) : null}
         </section>
       )}
 

@@ -17,7 +17,7 @@ Le produit couvre 2 temps :
 - estimation detaillee des frais de notaire calculee backend : base taxable, droits / TPF, contribution de securite immobiliere, debours et emoluments
 - **recommandation claire par simulation : interessant / a negocier / trop risque**
 - comparaison entre plusieurs simulations au sein d'un meme dossier pour decider
-- **objectif zero double saisie** : reutilisation des donnees de simulation lors de la creation du projet reel (en cours d'amelioration)
+- **objectif zero double saisie** : reutilisation des donnees de simulation lors de la creation du projet reel, desormais consolidee sur le flux standard de conversion
 
 **Pilotage apres achat :**
 - projets convertis depuis simulation ou crees directement
@@ -44,7 +44,12 @@ Le **module de simulation decisionnelle avant achat** est partiellement implemen
 - resultats decisionnels calcules backend
 - calcul detaille des frais de notaire centralise dans `apps/api/src/simulations/simulation-notary-fees.util.ts`
 - recommandation explicite par simulation : interessant / a negocier / trop risque
-- conversion de base simulation vers projet avec reutilisation des donnees principales
+- **preview de conversion** avant creation du projet, avec resume des donnees transferees, lots futurs, champs non repris, warnings et blocages metier
+- **conversion robuste** regie par une regle simple : `1 simulation = 1 projet cree`
+- **tracabilite de conversion** via `SimulationConversion` avec simulation source, projet cree, acteur, date et statut
+- **snapshot previsionnel immutable** via `ProjectForecastSnapshot` cree au moment de la conversion pour figer les hypotheses de reference
+- **tableau de bord projet "Previsionnel vs reel"** sur les projets convertis, calcule cote backend
+- **alertes de derive V1** simples et explicables sur budget travaux, cout total, comptage de lots, loyer et rendement quand la donnee existe
 - journal d'opportunite pour documenter evenements structurants (visite, negociation, changement hypothese)
 - **options actives pour arbitrer avec donnees terrain reelles** :
   - gestion de plusieurs hypotheses par categorie (prix d'achat, travaux, financement)
@@ -60,9 +65,10 @@ Le **module de simulation decisionnelle avant achat** est partiellement implemen
 
 **Limites actuelles :**
 - UX encore perfectible sur certains ecrans
-- conversion simulation → projet presente mais a consolider dans tous les cas
 - comparaison encore simple : un seul groupe a la fois, pas d'export comparatif, pas de vue multi-groupes
-- mesure ecart previsionnel vs reel pas encore exploitable (pas de tableau de bord compare, pas d'alertes sur derives)
+- les projets convertis avant l'ajout du snapshot n'ont pas de reference previsionnelle retroactive
+- le suivi previsionnel vs reel V1 reste volontairement sobre : pas de portefeuille transverse, pas d'export de derives, pas de versioning complexe du snapshot
+- certains KPI restent volontairement `non disponibles` tant qu'aucune source fiable n'existe cote projet actuel (capital mobilise reel, marge reelle de revente, cash-flow reel complet)
 
 **Garde-fous respectes V1 :**
 - moins de 15 champs critiques obligatoires
@@ -73,11 +79,54 @@ Le **module de simulation decisionnelle avant achat** est partiellement implemen
 - taux departementaux sur l'ancien geres via une configuration centralisee par code departement, basee sur la grille officielle DGFiP DMTO au 1er fevrier 2026
 - statut primo-accedant stocke dans la simulation pour preparer la logique reglementaire, sans modulation automatique appliquee a ce stade
 
+## Conversion robuste et previsionnel vs reel
+
+**Regle metier retenue :**
+- une simulation ne peut etre convertie qu'une seule fois
+- si une conversion existe deja, l'API bloque explicitement une nouvelle conversion avec un conflit metier au lieu de creer un doublon silencieux
+- la conversion standard cree en une transaction le `Project`, ses `Lot` issus de la simulation, la trace `SimulationConversion` et le snapshot `ProjectForecastSnapshot`
+- `SimulationConversion` est la source de verite metier de la conversion ; `Simulation.convertedProjectId` reste un raccourci de lecture maintenu pour les vues rapides et la compatibilite
+
+**Endpoints concernes :**
+- `GET /api/simulations/:simulationId/conversion-preview` : preview de conversion avec donnees transferees, lots, champs non repris, warnings, blocages et indicateur `canConvert`
+- `POST /api/simulations/:simulationId/convert-to-project` : conversion effective avec regle stricte anti-doublon
+- `GET /api/projects/:projectId/overview` : inclut maintenant un bloc `forecastComparison` quand le projet provient d'une conversion avec snapshot
+
+**Semantique HTTP sur les blocages de conversion :**
+- `SIMULATION_ALREADY_CONVERTED` retourne `409 Conflict`
+- `SIMULATION_ARCHIVED` retourne `422 Unprocessable Entity`
+- les autres blocages metier de conversion retournent `422 Unprocessable Entity`
+- les reponses d'erreur exposent aussi un `code` metier pour rester lisibles cote client et cote tests
+
+**Modeles Prisma ajoutes / modifies :**
+- `SimulationConversion` : trace minimale et exploitable de la conversion
+- `ProjectForecastSnapshot` : reference immutable du previsionnel au moment de la conversion
+- `Project.strategy` : conserve la strategie d'origine (`FLIP` ou `RENTAL`) sur le projet converti
+
+**Snapshot previsionnel V1 :**
+- stocke notamment prix d'achat, cout d'acquisition utile, frais de notaire, budget travaux, apport, montant du pret, mensualite estimee, duree estimee, revenu cible, marge/rendement/score/recommandation si disponibles, nombre et nature des lots, strategie et date de reference
+- sert de base unique pour les comparaisons futures sans reinterpretion de la simulation
+- reste immutable en V1 : pas de versioning, pas de recalcul retrospectif silencieux
+
+**Tableau de bord "Previsionnel vs reel" V1 :**
+- indicateurs face a face avec ecart absolu et ecart en pourcentage quand pertinent
+- KPI actuellement calcules si la source existe : cout acquisition, budget travaux, cout total recalcule, nombre de lots, loyer mensuel, rendement brut
+- les KPI non calculables proprement restent affiches comme `non disponibles`
+- `acquisitionCost` est compare avec la meme definition des deux cotes
+- `totalProjectCost` et `grossYield` sont recalcules cote projet sur une base homogene : cout d'acquisition actuel + enveloppe travaux la plus prudente (`max(budget actuel, depenses travaux engagees)`) + buffer fige a la conversion
+- `lotsCount` compare les lots prepares au snapshot aux lots non archives actuellement presents sur le projet
+
+**Alertes de derive V1 :**
+- seuils simples et centralises cote backend
+- budget travaux et cout total : `a surveiller` au-dela de `5%`, `en derive` au-dela de `10%`
+- loyer et rendement : `a surveiller` au-dela de `10%` d'ecart defavorable, `en derive` au-dela de `15%`
+- lots : alerte si le nombre reel s'ecarte de la structure previsionnelle
+
 **Prochaines etapes prioritaires :**
 - comparaison multi-groupes ou exportable pour partage avec partenaires et financeurs
 - historique enrichi si besoin avec niveau de justification supplementaire
-- mesure ecart previsionnel vs reel avec tableau de bord et alertes
-- robustesse conversion avec preview et gestion cas limites
+- enrichissement du previsionnel vs reel avec de nouvelles sources fiables cote projet reel
+- eventuel backfill explicite des anciens projets convertis si le produit le valide
 - scoring contextualise selon type operation et profil investisseur
 
 ## Feedback produit et beta

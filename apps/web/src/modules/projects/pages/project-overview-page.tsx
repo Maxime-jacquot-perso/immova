@@ -20,7 +20,11 @@ import {
   formatDate,
   formatPercent,
 } from '../../../shared/ui/formatters';
-import type { ProjectCompleteness } from '../api';
+import type {
+  ForecastMetric,
+  ProjectCompleteness,
+  ProjectForecastComparison,
+} from '../api';
 
 function renderEstimatedYield(value: number | null | undefined) {
   if (typeof value !== 'number') {
@@ -57,6 +61,241 @@ function renderCompleteness(completeness: ProjectCompleteness) {
         {formatCount(completeness.totalCriteriaCount)} criteres utiles renseignes
       </div>
     </div>
+  );
+}
+
+function getForecastMetricTone(status: ForecastMetric['status']) {
+  if (status === 'drift') {
+    return 'critical';
+  }
+
+  if (status === 'watch') {
+    return 'warning';
+  }
+
+  if (status === 'neutral') {
+    return 'ok';
+  }
+
+  return 'info';
+}
+
+function getForecastMetricLabel(status: ForecastMetric['status']) {
+  if (status === 'drift') {
+    return 'En derive';
+  }
+
+  if (status === 'watch') {
+    return 'A surveiller';
+  }
+
+  if (status === 'neutral') {
+    return 'Neutre';
+  }
+
+  return 'Non disponible';
+}
+
+function formatForecastMetricValue(metric: ForecastMetric, value: number | null | undefined) {
+  if (metric.unit === 'currency') {
+    return formatCurrency(value);
+  }
+
+  if (metric.unit === 'percent') {
+    return formatPercent(value);
+  }
+
+  return formatCount(value);
+}
+
+function formatSignedMetricValue(metric: ForecastMetric, value: number | null | undefined) {
+  if (typeof value !== 'number') {
+    return 'Non disponible';
+  }
+
+  const prefix = value > 0 ? '+' : value < 0 ? '-' : '';
+  const absoluteValue = Math.abs(value);
+
+  if (metric.unit === 'currency') {
+    return `${prefix}${formatCurrency(absoluteValue)}`;
+  }
+
+  if (metric.unit === 'percent') {
+    return `${prefix}${formatPercent(absoluteValue)}`;
+  }
+
+  return `${prefix}${formatCount(absoluteValue)}`;
+}
+
+function renderForecastDelta(metric: ForecastMetric) {
+  if (typeof metric.deltaValue !== 'number') {
+    return 'Non disponible';
+  }
+
+  const deltaLabel = formatSignedMetricValue(metric, metric.deltaValue);
+  if (typeof metric.deltaPercent !== 'number') {
+    return deltaLabel;
+  }
+
+  const percentPrefix =
+    metric.deltaPercent > 0 ? '+' : metric.deltaPercent < 0 ? '-' : '';
+
+  return `${deltaLabel} (${percentPrefix}${formatPercent(
+    Math.abs(metric.deltaPercent),
+  )})`;
+}
+
+function ForecastComparisonSection({
+  comparison,
+}: {
+  comparison: ProjectForecastComparison;
+}) {
+  return (
+    <section className="panel">
+      <div className="panel-header">
+        <div>
+          <h2 className="section-title">Previsionnel vs reel</h2>
+          <div className="section-subtitle">
+            Lecture simple de l'ecart entre le snapshot fige a la conversion et
+            les donnees aujourd'hui saisies dans le projet.
+          </div>
+        </div>
+      </div>
+
+      {!comparison.available ? (
+        <EmptyState
+          description={comparison.reason}
+          title="Comparaison indisponible"
+          withPanel={false}
+        />
+      ) : (
+        <div className="stack">
+          {comparison.reference ? (
+            <div className="grid grid--3">
+              <div className="summary-strip__item">
+                <div className="meta">Simulation source</div>
+                <strong>{comparison.reference.simulationName}</strong>
+              </div>
+              <div className="summary-strip__item">
+                <div className="meta">Conversion</div>
+                <strong>{formatDate(comparison.reference.conversionDate)}</strong>
+              </div>
+              <div className="summary-strip__item">
+                <div className="meta">Recommendation initiale</div>
+                <strong>{comparison.reference.recommendation ?? '—'}</strong>
+              </div>
+            </div>
+          ) : null}
+
+          <section className="kpi-grid">
+            {comparison.metrics.map((metric) => (
+              <div className="card kpi-card" key={metric.key}>
+                <div className="inline-actions">
+                  <div className="kpi-card__label">{metric.label}</div>
+                  <span
+                    className={`tone-pill tone-pill--${getForecastMetricTone(
+                      metric.status,
+                    )}`}
+                  >
+                    {getForecastMetricLabel(metric.status)}
+                  </span>
+                </div>
+                <div className="meta">Previsionnel</div>
+                <div className="kpi-card__value">
+                  {formatForecastMetricValue(metric, metric.forecastValue)}
+                </div>
+                <div className="meta">{metric.actualLabel}</div>
+                <div className="kpi-card__hint">
+                  {formatForecastMetricValue(metric, metric.actualValue)}
+                </div>
+                <div className="meta">Ecart</div>
+                <strong>{renderForecastDelta(metric)}</strong>
+                {metric.note ? (
+                  <div className="kpi-card__hint">{metric.note}</div>
+                ) : null}
+              </div>
+            ))}
+          </section>
+
+          <div className="split dashboard-panels">
+            <section className="panel">
+              <div className="panel-header">
+                <div>
+                  <h3 className="section-title">Alertes de derive</h3>
+                  <div className="section-subtitle">
+                    Seulement les ecarts simples et expliquables avec les
+                    donnees actuellement disponibles.
+                  </div>
+                </div>
+              </div>
+
+              {comparison.alerts.length === 0 ? (
+                <EmptyState
+                  description="Aucune derive significative n'est detectee pour le moment."
+                  title="Rien a signaler"
+                  withPanel={false}
+                />
+              ) : (
+                <div className="dashboard-alert-list">
+                  {comparison.alerts.map((alert) => (
+                    <div
+                      className={`dashboard-alert dashboard-alert--${getAlertSeverityTone(
+                        alert.severity,
+                      )}`}
+                      key={alert.type}
+                    >
+                      <div className="dashboard-alert__content">
+                        <div className="dashboard-alert__meta">
+                          <span
+                            className={`tone-pill tone-pill--${getAlertSeverityTone(
+                              alert.severity,
+                            )}`}
+                          >
+                            {getAlertSeverityLabel(alert.severity)}
+                          </span>
+                        </div>
+                        <strong>{alert.message}</strong>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <section className="panel">
+              <div className="panel-header">
+                <div>
+                  <h3 className="section-title">Indicateurs encore hors scope</h3>
+                  <div className="section-subtitle">
+                    Axelys n'invente rien : ces ecarts resteront masques tant
+                    que le modele ne les calcule pas proprement.
+                  </div>
+                </div>
+              </div>
+
+              {comparison.unavailableMetrics.length === 0 ? (
+                <EmptyState
+                  description="Tous les indicateurs retenus dans cette V1 sont actuellement calculables."
+                  title="Aucune limite active"
+                  withPanel={false}
+                />
+              ) : (
+                <div className="stack stack--sm">
+                  {comparison.unavailableMetrics.map((metric) => (
+                    <div className="dashboard-activity-item" key={metric.key}>
+                      <div className="dashboard-activity-item__content">
+                        <strong>{metric.label}</strong>
+                        <div className="meta">{metric.reason}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          </div>
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -167,6 +406,8 @@ export function ProjectOverviewPage() {
           </div>
         </div>
       </section>
+
+      <ForecastComparisonSection comparison={overview.forecastComparison} />
 
       <div className="split dashboard-panels">
         <section className="panel">

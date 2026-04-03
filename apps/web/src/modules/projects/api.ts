@@ -31,6 +31,55 @@ export type ProjectDecisionStatus = {
   label: string;
 };
 
+export type ForecastMetricStatus =
+  | 'neutral'
+  | 'watch'
+  | 'drift'
+  | 'unavailable';
+
+export type ForecastMetric = {
+  key: string;
+  label: string;
+  unit: 'currency' | 'count' | 'percent';
+  forecastValue?: number | null;
+  actualValue?: number | null;
+  deltaValue?: number | null;
+  deltaPercent?: number | null;
+  status: ForecastMetricStatus;
+  actualLabel: string;
+  note?: string;
+};
+
+export type ForecastUnavailableMetric = {
+  key: string;
+  label: string;
+  reason: string;
+};
+
+export type ProjectForecastComparison = {
+  available: boolean;
+  reason?: string;
+  reference?: {
+    conversionDate: string;
+    simulationId: string;
+    simulationName: string;
+    strategy: 'FLIP' | 'RENTAL';
+    recommendation?: string | null;
+    decisionScore?: number | null;
+    decisionStatus?: 'GOOD' | 'REVIEW' | 'RISKY' | null;
+  };
+  metrics: ForecastMetric[];
+  alerts: ProjectAlert[];
+  unavailableMetrics: ForecastUnavailableMetric[];
+  snapshotLots: Array<{
+    name: string;
+    type: string;
+    surface?: number | null;
+    estimatedRent?: number | null;
+    notes?: string | null;
+  }>;
+};
+
 export type Project = {
   id: string;
   name: string;
@@ -40,6 +89,7 @@ export type Project = {
   city?: string | null;
   country: string;
   type: string;
+  strategy?: 'FLIP' | 'RENTAL' | null;
   status: string;
   purchasePrice?: number | null;
   notaryFees?: number | null;
@@ -93,6 +143,7 @@ export type ProjectOverview = {
   decisionStatus: ProjectDecisionStatus;
   alerts: ProjectAlert[];
   suggestions: ProjectSuggestion[];
+  forecastComparison: ProjectForecastComparison;
   recentExpenses: Array<{
     id: string;
     invoiceNumber?: string | null;

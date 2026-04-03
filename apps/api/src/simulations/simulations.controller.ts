@@ -53,6 +53,17 @@ export class SimulationsController {
     return this.simulationsService.findOne(user.organizationId!, simulationId);
   }
 
+  @Get(':simulationId/conversion-preview')
+  getConversionPreview(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('simulationId') simulationId: string,
+  ) {
+    return this.simulationsService.getConversionPreview(
+      user.organizationId!,
+      simulationId,
+    );
+  }
+
   @Patch(':simulationId')
   update(
     @CurrentUser() user: AuthenticatedUser,
@@ -92,6 +103,7 @@ export class SimulationsController {
   ) {
     return this.simulationsService.convertToProject(
       user.organizationId!,
+      user.userId,
       simulationId,
     );
   }

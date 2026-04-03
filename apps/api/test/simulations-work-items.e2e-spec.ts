@@ -535,7 +535,7 @@ describe('Simulations Work Items E2E', () => {
   });
 
   it('enforces multi-tenant isolation for work items and options', async () => {
-    await seedUser(prisma, {
+    const actor = await seedUser(prisma, {
       organizationName: 'Org Tenant A',
       organizationSlug: 'org-tenant-a',
       email: 'tenant-a@example.com',

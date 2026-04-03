@@ -161,6 +161,8 @@ model Organization {
   simulationOptionGroups         SimulationOptionGroup[]
   simulationOptions              SimulationOption[]
   simulationOptionActivationLogs SimulationOptionActivationLog[]
+  simulationConversions          SimulationConversion[]
+  projectForecastSnapshots       ProjectForecastSnapshot[]
 }
 
 model User {
@@ -188,6 +190,7 @@ model User {
   createdInvitations  UserInvitation[]     @relation("InvitationCreator")
   featureRequests     FeatureRequest[]     @relation("FeatureRequestAuthor")
   featureRequestVotes FeatureRequestVote[]
+  simulationConversionsTriggered SimulationConversion[] @relation("SimulationConversionActor")
 
   @@index([adminRole])
   @@index([isSuspended, subscriptionStatus])
@@ -246,6 +249,7 @@ model Project {
   city            String?
   country         String        @default("FR")
   type            ProjectType   @default(OTHER)
+  strategy        SimulationStrategy?
   status          ProjectStatus @default(DRAFT)
   purchasePrice   Decimal?      @db.Decimal(12, 2)
   notaryFees      Decimal?      @db.Decimal(12, 2)
@@ -260,6 +264,8 @@ model Project {
   expenses                Expense[]
   documents               Document[]
   convertedFromSimulation Simulation[] @relation("SimulationConvertedProject")
+  conversionRecord        SimulationConversion?
+  forecastSnapshot        ProjectForecastSnapshot?
 
   @@index([organizationId, status])
 }
@@ -502,10 +508,76 @@ model Simulation {
   events               OpportunityEvent[]              @relation("SimulationEvents")
   optionGroups         SimulationOptionGroup[]
   optionActivationLogs SimulationOptionActivationLog[]
+  conversionRecord     SimulationConversion?
+  forecastSnapshot     ProjectForecastSnapshot?
 
   @@index([organizationId, folderId, archivedAt])
   @@index([organizationId, strategy, decisionStatus])
   @@index([convertedProjectId])
+}
+
+enum SimulationConversionStatus {
+  COMPLETED
+}
+
+model SimulationConversion {
+  id              String                     @id @default(cuid())
+  organizationId  String
+  simulationId    String                     @unique
+  projectId       String                     @unique
+  createdByUserId String
+  status          SimulationConversionStatus @default(COMPLETED)
+  createdAt       DateTime                   @default(now())
+
+  organization Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  simulation   Simulation            @relation(fields: [simulationId], references: [id], onDelete: Cascade)
+  project      Project               @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdByUser User                 @relation("SimulationConversionActor", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  snapshot     ProjectForecastSnapshot?
+
+  @@index([organizationId, createdAt])
+  @@index([createdByUserId, createdAt])
+}
+
+model ProjectForecastSnapshot {
+  id                             String          @id @default(cuid())
+  organizationId                 String
+  projectId                      String          @unique
+  simulationId                   String          @unique
+  conversionId                   String          @unique
+  referenceDate                  DateTime
+  strategy                       SimulationStrategy
+  purchasePrice                  Decimal?        @db.Decimal(12, 2)
+  acquisitionCost                Decimal?        @db.Decimal(12, 2)
+  notaryFees                     Decimal?        @db.Decimal(12, 2)
+  worksBudget                    Decimal?        @db.Decimal(12, 2)
+  bufferAmount                   Decimal?        @db.Decimal(12, 2)
+  downPayment                    Decimal?        @db.Decimal(12, 2)
+  loanAmount                     Decimal?        @db.Decimal(12, 2)
+  interestRate                   Decimal?        @db.Decimal(5, 2)
+  loanDurationMonths             Int?
+  estimatedMonthlyPayment        Decimal?        @db.Decimal(10, 2)
+  estimatedProjectDurationMonths Int?
+  targetMonthlyRent              Decimal?        @db.Decimal(10, 2)
+  targetResalePrice              Decimal?        @db.Decimal(12, 2)
+  totalProjectCost               Decimal?        @db.Decimal(12, 2)
+  equityRequired                 Decimal?        @db.Decimal(12, 2)
+  grossMargin                    Decimal?        @db.Decimal(12, 2)
+  grossYield                     Decimal?        @db.Decimal(8, 2)
+  monthlyCashDelta               Decimal?        @db.Decimal(12, 2)
+  decisionScore                  Int?
+  decisionStatus                 DecisionStatus?
+  recommendation                 String?
+  lotsCount                      Int             @default(0)
+  lotsJson                       Json?
+  createdAt                      DateTime        @default(now())
+
+  organization Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project      Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  simulation   Simulation         @relation(fields: [simulationId], references: [id], onDelete: Cascade)
+  conversion   SimulationConversion @relation(fields: [conversionId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, referenceDate])
 }
 
 model SimulationLot {

@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { toNumber } from '../common/utils/decimal.util';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProjectDto } from './dto/create-project.dto';
+import { buildProjectForecastComparison } from './project-forecast.util';
 import { buildProjectInsights } from './project-metrics.util';
 import { UpdateProjectDto } from './dto/update-project.dto';
 
@@ -15,6 +16,7 @@ function mapProject(project: {
   city: string | null;
   country: string;
   type: string;
+  strategy: string | null;
   status: string;
   purchasePrice: Prisma.Decimal | null;
   notaryFees: Prisma.Decimal | null;
@@ -33,6 +35,7 @@ function mapProject(project: {
     city: project.city,
     country: project.country,
     type: project.type,
+    strategy: project.strategy,
     status: project.status,
     purchasePrice: toNumber(project.purchasePrice),
     notaryFees: toNumber(project.notaryFees),
@@ -61,6 +64,7 @@ export class ProjectsService {
         city: true,
         country: true,
         type: true,
+        strategy: true,
         status: true,
         purchasePrice: true,
         notaryFees: true,
@@ -153,6 +157,16 @@ export class ProjectsService {
       include: {
         lots: true,
         expenses: true,
+        forecastSnapshot: {
+          include: {
+            simulation: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
         _count: {
           select: {
             documents: true,
@@ -173,6 +187,43 @@ export class ProjectsService {
       ...project,
       documentsCount: project._count.documents,
     });
+    const forecastComparison = buildProjectForecastComparison({
+      project: {
+        purchasePrice: project.purchasePrice,
+        notaryFees: project.notaryFees,
+        acquisitionFees: project.acquisitionFees,
+        worksBudget: project.worksBudget,
+        lots: project.lots,
+        expenses: project.expenses,
+      },
+      snapshot: project.forecastSnapshot
+        ? {
+            referenceDate: project.forecastSnapshot.referenceDate,
+            strategy: project.forecastSnapshot.strategy,
+            purchasePrice: project.forecastSnapshot.purchasePrice,
+            acquisitionCost: project.forecastSnapshot.acquisitionCost,
+            bufferAmount: project.forecastSnapshot.bufferAmount,
+            worksBudget: project.forecastSnapshot.worksBudget,
+            totalProjectCost: project.forecastSnapshot.totalProjectCost,
+            targetMonthlyRent: project.forecastSnapshot.targetMonthlyRent,
+            grossYield: project.forecastSnapshot.grossYield,
+            equityRequired: project.forecastSnapshot.equityRequired,
+            grossMargin: project.forecastSnapshot.grossMargin,
+            decisionScore: project.forecastSnapshot.decisionScore,
+            decisionStatus: project.forecastSnapshot.decisionStatus,
+            recommendation: project.forecastSnapshot.recommendation,
+            lotsCount: project.forecastSnapshot.lotsCount,
+            lotsJson: project.forecastSnapshot.lotsJson as Array<{
+              name: string;
+              type: string;
+              surface: number | null;
+              estimatedRent: number | null;
+              notes: string | null;
+            }> | null,
+            simulation: project.forecastSnapshot.simulation,
+          }
+        : null,
+    });
 
     return {
       project: mapProject(project),
@@ -192,6 +243,7 @@ export class ProjectsService {
       decisionStatus: insights.decisionStatus,
       alerts: insights.alerts,
       suggestions: insights.suggestions,
+      forecastComparison,
       recentExpenses: project.expenses
         .sort(
           (left, right) => right.issueDate.getTime() - left.issueDate.getTime(),

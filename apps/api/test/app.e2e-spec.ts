@@ -1595,6 +1595,31 @@ describe('API e2e', () => {
       })
       .expect(201);
 
+    const previewResponse = await request(app.getHttpServer())
+      .get(`/api/simulations/${simulationId}/conversion-preview`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(previewResponse.body).toEqual(
+      expect.objectContaining({
+        canConvert: true,
+        blockingIssues: [],
+        project: expect.objectContaining({
+          name: 'Appartement Centre Ville Renove',
+          status: 'ACQUISITION',
+          strategy: 'RENTAL',
+          purchasePrice: 180000,
+          worksBudget: 28000,
+        }),
+        lots: [
+          expect.objectContaining({
+            name: 'Appartement principal',
+            type: LotType.APARTMENT,
+          }),
+        ],
+      }),
+    );
+
     // Convert to project
     const convertResponse = await request(app.getHttpServer())
       .post(`/api/simulations/${simulationId}/convert-to-project`)
@@ -1612,6 +1637,8 @@ describe('API e2e', () => {
     expect(project).toMatchObject({
       organizationId: actor.organization.id,
       name: 'Appartement Centre Ville Renove',
+      status: ProjectStatus.ACQUISITION,
+      strategy: 'RENTAL',
     });
     expect(project?.purchasePrice?.toString()).toBe('180000');
     expect(project?.worksBudget?.toString()).toBe('28000');
@@ -1627,8 +1654,219 @@ describe('API e2e', () => {
     const updatedSimulation = await prisma.simulation.findUnique({
       where: { id: simulationId },
     });
+    const conversion = await prisma.simulationConversion.findUnique({
+      where: { simulationId },
+    });
+    const snapshot = await prisma.projectForecastSnapshot.findUnique({
+      where: { simulationId },
+    });
 
     expect(updatedSimulation?.convertedProjectId).toBe(projectId);
+    expect(conversion).toEqual(
+      expect.objectContaining({
+        simulationId,
+        projectId,
+        organizationId: actor.organization.id,
+        createdByUserId: actor.user.id,
+        status: 'COMPLETED',
+      }),
+    );
+    expect(snapshot).toEqual(
+      expect.objectContaining({
+        simulationId,
+        projectId,
+        organizationId: actor.organization.id,
+        strategy: 'RENTAL',
+        recommendation: expect.any(String),
+        decisionScore: expect.any(Number),
+        lotsCount: 1,
+      }),
+    );
+
+    const initialOverviewResponse = await request(app.getHttpServer())
+      .get(`/api/projects/${projectId}/overview`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    const initialForecastMetrics = initialOverviewResponse.body
+      .forecastComparison.metrics as Array<{
+      key: string;
+      forecastValue: number | null;
+      actualValue: number | null;
+      status: string;
+      actualLabel?: string;
+    }>;
+    const initialAcquisitionMetric = initialForecastMetrics.find(
+      (metric) => metric.key === 'acquisitionCost',
+    );
+    const initialTotalCostMetric = initialForecastMetrics.find(
+      (metric) => metric.key === 'totalProjectCost',
+    );
+    const initialGrossYieldMetric = initialForecastMetrics.find(
+      (metric) => metric.key === 'grossYield',
+    );
+    const initialLotsCountMetric = initialForecastMetrics.find(
+      (metric) => metric.key === 'lotsCount',
+    );
+
+    expect(initialAcquisitionMetric).toEqual(
+      expect.objectContaining({
+        forecastValue: parseFloat(String(snapshot?.acquisitionCost)),
+        actualValue: parseFloat(String(snapshot?.acquisitionCost)),
+        status: 'neutral',
+      }),
+    );
+    expect(initialTotalCostMetric).toEqual(
+      expect.objectContaining({
+        forecastValue: parseFloat(String(snapshot?.totalProjectCost)),
+        actualValue: parseFloat(String(snapshot?.totalProjectCost)),
+        status: 'neutral',
+      }),
+    );
+    expect(initialGrossYieldMetric).toEqual(
+      expect.objectContaining({
+        status: 'neutral',
+      }),
+    );
+    expect(initialGrossYieldMetric?.actualValue).toBeCloseTo(
+      parseFloat(String(snapshot?.grossYield)),
+      2,
+    );
+    expect(initialLotsCountMetric).toEqual(
+      expect.objectContaining({
+        forecastValue: 1,
+        actualValue: 1,
+        status: 'neutral',
+        actualLabel: 'Lots non archives du projet',
+      }),
+    );
+
+    await request(app.getHttpServer())
+      .post(`/api/projects/${projectId}/expenses`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        issueDate: '2026-04-01',
+        amountHt: 54166.67,
+        vatAmount: 10833.33,
+        amountTtc: 65000,
+        category: ExpenseCategory.WORKS,
+        paymentStatus: PaymentStatus.PAID,
+        vendorName: 'Entreprise derive',
+      })
+      .expect(201);
+
+    const overviewResponse = await request(app.getHttpServer())
+      .get(`/api/projects/${projectId}/overview`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(overviewResponse.body.forecastComparison).toEqual(
+      expect.objectContaining({
+        available: true,
+        reference: expect.objectContaining({
+          simulationId,
+          simulationName: 'Appartement Centre Ville Renove',
+          strategy: 'RENTAL',
+        }),
+        alerts: expect.arrayContaining([
+          expect.objectContaining({
+            type: 'FORECAST_WORKS_BUDGET_DRIFT',
+          }),
+        ]),
+      }),
+    );
+    expect(overviewResponse.body.forecastComparison.metrics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          key: 'worksBudget',
+          forecastValue: 28000,
+          actualValue: 65000,
+          status: 'drift',
+        }),
+        expect.objectContaining({
+          key: 'totalProjectCost',
+          status: 'drift',
+        }),
+      ]),
+    );
+
+    const reconversionResponse = await request(app.getHttpServer())
+      .post(`/api/simulations/${simulationId}/convert-to-project`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(409);
+
+    expect(reconversionResponse.body).toEqual(
+      expect.objectContaining({
+        code: 'SIMULATION_ALREADY_CONVERTED',
+      }),
+    );
+  });
+
+  it('blocks conversion preview and conversion for an archived simulation', async () => {
+    await seedUser(prisma, {
+      organizationName: 'Org Archived Simulation',
+      organizationSlug: 'org-archived-simulation',
+      email: 'archived-simulation@example.com',
+      password: 'password123',
+    });
+
+    const token = await login('archived-simulation@example.com', 'password123');
+
+    const folderResponse = await request(app.getHttpServer())
+      .post('/api/simulation-folders')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        name: 'Dossier archive',
+      })
+      .expect(201);
+
+    const simulationResponse = await request(app.getHttpServer())
+      .post('/api/simulations')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        folderId: folderResponse.body.id,
+        name: 'Simulation archivee',
+        strategy: 'FLIP',
+        propertyType: 'ANCIEN',
+        departmentCode: '68',
+        purchasePrice: 150000,
+        worksBudget: 20000,
+        financingMode: 'CASH',
+        targetResalePrice: 210000,
+      })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post(`/api/simulations/${simulationResponse.body.id}/archive`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(201);
+
+    const previewResponse = await request(app.getHttpServer())
+      .get(`/api/simulations/${simulationResponse.body.id}/conversion-preview`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(previewResponse.body).toEqual(
+      expect.objectContaining({
+        canConvert: false,
+        blockingIssues: expect.arrayContaining([
+          expect.objectContaining({
+            code: 'SIMULATION_ARCHIVED',
+          }),
+        ]),
+      }),
+    );
+
+    const conversionResponse = await request(app.getHttpServer())
+      .post(`/api/simulations/${simulationResponse.body.id}/convert-to-project`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(422);
+
+    expect(conversionResponse.body).toEqual(
+      expect.objectContaining({
+        code: 'SIMULATION_ARCHIVED',
+      }),
+    );
   });
 
   it('creates and manages opportunity events for a simulation', async () => {

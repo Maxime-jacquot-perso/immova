@@ -35,7 +35,7 @@ Le coeur du produit couvre maintenant :
 - KPI projet simples et fiables
 - export CSV comptable simple
 
-## 3. MVP visible actuel et prochaine etape prioritaire
+## 3. MVP visible actuel et suite prioritaire
 
 **MVP visible actuel** (pilotage apres achat) :
 
@@ -48,9 +48,10 @@ Le coeur du produit couvre maintenant :
 - depenses
 - documents
 - dashboard projet
+- bloc `Previsionnel vs reel` sur projet converti avec snapshot disponible
 - export CSV
 
-**Prochaine etape prioritaire actee** (decision avant achat) :
+**Suite prioritaire actee** :
 
 - module de simulation decisionnelle
 - dossiers d'opportunites pour regrouper plusieurs simulations par intention d'achat
@@ -59,7 +60,9 @@ Le coeur du produit couvre maintenant :
 - comparaison entre plusieurs simulations au sein d'un meme dossier
 - resultats decisionnels simples et fiables calcules backend
 - recommandation explicite par simulation : interessant / a negocier / trop risque
-- conversion obligatoire d'une simulation retenue en projet reel sans ressaisie manuelle (prevu, non encore implemente)
+- conversion d'une simulation retenue en projet reel sans ressaisie manuelle complete
+- lecture simple et exploitable de l'ecart `previsionnel vs reel`
+- alertes de derive simples, explicables et actionnables
 
 ## 4. Hors scope explicite
 
@@ -155,6 +158,11 @@ Entites additionnelles activees pour le feedback produit MVP :
 - `FeatureRequest`
 - `FeatureRequestVote`
 
+Entites additionnelles actives pour la conversion robuste et le suivi previsionnel :
+
+- `SimulationConversion` : trace la conversion effective d'une simulation vers un projet, avec acteur, date et statut ; constitue la source de verite metier de la conversion
+- `ProjectForecastSnapshot` : fige les hypotheses previsionnelles au moment de la conversion pour servir de reference immutable
+
 **Entites prevues / prioritaires (decision avant achat) :**
 
 - `SimulationFolder` : entite dediee pour regrouper des opportunites par intention d'achat
@@ -172,8 +180,8 @@ Entites additionnelles activees pour le feedback produit MVP :
   - doit permettre la comparaison entre plusieurs simulations au sein d'un meme dossier
   - doit calculer cote backend : cout total, fonds propres mobilises, mensualite estimee, marge brute, marge nette simplifiee, rendement brut si locatif, effort mensuel, duree projet estimee, statut decisionnel, indicateurs de risque/tension, score explicable
   - doit produire une recommandation claire : `interessant` / `a negocier` / `trop risque`
-  - **doit prevoir une conversion obligatoire en `Project` reel si l'opportunite est retenue, sans ressaisie manuelle complete** (prevu, non encore implemente)
-  - la conversion doit reutiliser les donnees existantes et la structure de lots preparee si elle existe
+  - **convertit une seule fois vers un `Project` reel si l'opportunite est retenue, sans ressaisie manuelle complete**
+  - la conversion reutilise les donnees existantes, la structure de lots preparee si elle existe, puis cree un snapshot previsionnel immutable de reference
 
 - `SimulationLot` : entite optionnelle pour preparer la structure de lots d'une simulation
   - doit porter `organizationId` et `simulationId` pour rester strictement multi-tenant
@@ -203,6 +211,11 @@ Entites additionnelles activees pour le feedback produit MVP :
   - porte `sourceEventId` nullable pour lier une option a un evenement du journal
   - **activation explicite par l'utilisateur** : pas de selection automatique du "meilleur choix"
   - **les calculs utilisent uniquement l'option active** (fallback sur valeur initiale simulation si aucune option active)
+
+- `Project` : entite centrale du pilotage apres achat
+  - porte desormais `strategy` quand il provient d'une conversion de simulation
+  - peut porter un lien 1:1 avec `SimulationConversion` et `ProjectForecastSnapshot` pour le suivi `previsionnel vs reel`
+  - `convertedProjectId` cote `Simulation` reste un raccourci de lecture / compatibilite, sans remplacer `SimulationConversion` comme source de verite
 
 Entites repoussees :
 
@@ -236,7 +249,7 @@ Entites repoussees :
 - `/simulations/folders/new` : creation d'un nouveau dossier d'opportunites
 - `/simulations/folders/:folderId` : vue d'un dossier avec liste des simulations associees et comparaison simple entre simulations du meme dossier
 - `/simulations/new` : creation d'une nouvelle simulation d'opportunite dans un dossier existant
-- `/simulations/:simulationId` : detail d'une simulation avec resultats decisionnels, recommandation explicite, possibilite d'edition, preparation optionnelle de lots et action de conversion en projet reel
+- `/simulations/:simulationId` : detail d'une simulation avec resultats decisionnels, recommandation explicite, possibilite d'edition, preparation optionnelle de lots, preview de conversion et action de conversion en projet reel
 
 ## 10. Conventions de code
 
@@ -304,7 +317,7 @@ Back :
 - `GET /api/organizations/current`
 - `GET/POST/PATCH /api/memberships`
 - `GET/POST/PATCH /api/projects`
-- `GET /api/projects/:projectId/overview`
+- `GET /api/projects/:projectId/overview` avec bloc `forecastComparison` si un snapshot previsionnel existe
 - `GET/POST/PATCH /api/projects/:projectId/lots`
 - `GET/POST/PATCH /api/projects/:projectId/expenses`
 - `GET/POST /api/projects/:projectId/documents`
@@ -342,10 +355,11 @@ Back :
 - `GET /api/simulations/folders/:folderId/simulations`
 - `POST /api/simulations`
 - `GET /api/simulations/:simulationId`
+- `GET /api/simulations/:simulationId/conversion-preview`
 - `PATCH /api/simulations/:simulationId`
 - `POST /api/simulations/:simulationId/archive`
 - `GET /api/simulations/folders/:folderId/comparison`
-- `POST /api/simulations/:simulationId/convert-to-project`
+- `POST /api/simulations/:simulationId/convert-to-project` avec blocage explicite si une conversion existe deja (`409` si deja convertie, `422` pour les autres blocages metier)
 - `GET /api/simulations/:simulationId/lots`
 - `POST /api/simulations/:simulationId/lots`
 - `PATCH /api/simulations/:simulationId/lots/:lotId`
@@ -409,10 +423,13 @@ Front :
 - gestion des administrateurs avec creation de compte interne et changement de role selon le niveau autorise
 - audit log admin exploitable depuis l'UI interne
 - landing marketing Next.js avec hero, sections marketing, pricing, FAQ et SEO de base
-- module simulations decision avant achat avec `/simulations` liste dossiers, `/simulations/folders/:folderId` detail dossier et comparaison, `/simulations/new` formulaire creation, `/simulations/:simulationId` detail avec resultats decisionnels, options actives, historique d'activation, journal d'opportunite et conversion projet, `/simulations/:simulationId/edit` edition simulation
+- module simulations decision avant achat avec `/simulations` liste dossiers, `/simulations/folders/:folderId` detail dossier et comparaison, `/simulations/new` formulaire creation, `/simulations/:simulationId` detail avec resultats decisionnels, options actives, historique d'activation, journal d'opportunite, preview de conversion et conversion projet, `/simulations/:simulationId/edit` edition simulation
+- preview de conversion cote web avec resume du futur projet, lots, hypotheses transferees, champs non repris, warnings et blocages metier
+- bloc `Previsionnel vs reel` sur l'overview projet pour les projets issus d'une conversion avec snapshot disponible
+- alertes de derive V1 sur l'overview projet converti avec statuts `neutre / a surveiller / en derive`
 - route error boundary pour eviter l'ecran technique React Router
 - tests e2e API des flows critiques MVP
-- smoke tests UI Playwright : login, projet, lot, depense, document, export et settings
+- smoke tests UI Playwright : login, projet, lot, depense, document, export, settings, preview de conversion et projet converti
 - workflow GitHub Actions `ci.yml` pour installation, lint et build du monorepo sur `push` et `pull_request` vers `main`
 - workflow GitHub Actions `e2e-api.yml` separe pour `pnpm test:e2e:api` avec PostgreSQL de CI
 
@@ -425,9 +442,9 @@ Front :
 - **Promesse centrale** : arbitrer entre opportunites AVANT achat + mesurer l'ecart hypothese vs realite APRES acquisition
 - Le produit couvre desormais 2 temps : decision avant achat via simulateur decisionnel simple + pilotage apres achat via projets/lots/depenses/documents
 
-**Objectif structurant (non encore atteint) :**
+**Objectif structurant (en consolidation continue) :**
 - **ZERO DOUBLE SAISIE** : objectif produit central consistant a eviter toute ressaisie manuelle complete entre simulation et projet reel
-- Cet objectif guide la conception mais n'est pas encore garanti dans tous les cas
+- Cet objectif guide la conception et est maintenant consolide sur le flux standard `1 simulation -> 1 projet converti`, avec snapshot previsionnel cree automatiquement
 
 **Doctrine produit renforcee :**
 - Alertes anticipatives (pas seulement descriptives)
@@ -444,7 +461,7 @@ Front :
 ### 2. Implemente (fonctionnel aujourd'hui)
 
 **Module simulation - structure de base :**
-- Entites `SimulationFolder`, `Simulation`, `SimulationLot`, `OpportunityEvent` presentes dans le schema Prisma
+- Entites `SimulationFolder`, `Simulation`, `SimulationLot`, `OpportunityEvent`, `SimulationConversion` et `ProjectForecastSnapshot` presentes dans le schema Prisma
 - Routes API simulation-folders et simulations fonctionnelles
 - Ecrans frontend `/simulations`, `/simulations/folders/:folderId`, `/simulations/new`, `/simulations/:simulationId`, `/simulations/:simulationId/edit`
 - Dossiers d'opportunites : creation, edition, archivage, regroupement de simulations
@@ -482,10 +499,27 @@ Front :
 - **Le journal documente mais ne modifie PAS les hypotheses actives utilisees dans le calcul**
 
 **Conversion simulation vers projet :**
-- Route API `POST /api/simulations/:simulationId/convert-to-project` presente
-- Logique de conversion de base en place
-- Reutilisation des donnees principales (nom, strategie, prix, frais, travaux)
+- Route API `GET /api/simulations/:simulationId/conversion-preview` implementee
+- Route API `POST /api/simulations/:simulationId/convert-to-project` durcie et transactionnelle
+- **Regle metier retenue** : une simulation ne peut etre convertie qu'une seule fois ; toute reconversion est bloquee explicitement pour eviter les doublons silencieux
+- **Semantique HTTP retenue** : `SIMULATION_ALREADY_CONVERTED` -> `409 Conflict`, `SIMULATION_ARCHIVED` et autres blocages metier -> `422 Unprocessable Entity`
+- Preview de conversion avec futur projet, futurs lots, hypotheses transferees, champs non repris, warnings et blocages metier
+- Reutilisation des donnees principales utiles (nom, strategie, prix, frais, travaux, financement utile, lots prepares)
 - Mapping `SimulationLotType` vers `LotType` implemente pour conversion lots
+- Creation systematique d'une trace `SimulationConversion` avec simulation source, projet cree, acteur, date et statut
+- Creation systematique d'un snapshot `ProjectForecastSnapshot` immutable au moment de la conversion
+- `SimulationConversion` sert de trace metier principale ; `Simulation.convertedProjectId` reste un raccourci maintenu pour les lectures rapides de l'UI et la compatibilite
+
+**Suivi previsionnel vs reel :**
+- L'overview projet expose maintenant un bloc `Previsionnel vs reel` pour les projets convertis avec snapshot disponible
+- Endpoint `GET /api/projects/:projectId/overview` enrichi avec `forecastComparison`
+- KPI V1 calcules si la source existe : cout acquisition, budget travaux, cout total recalcule, nombre de lots, loyer mensuel, rendement brut
+- `acquisitionCost` est compare avec la meme definition cote snapshot et cote projet
+- `totalProjectCost` et `grossYield` sont recalcules cote projet sur une base homogene : cout d'acquisition actuel + enveloppe travaux la plus prudente (`max(budget actuel, depenses travaux engagees)`) + buffer fige a la conversion
+- `lotsCount` compare les lots prepares au snapshot aux lots non archives actuellement presents sur le projet
+- Les KPI non calculables proprement restent `non disponibles` plutot que d'etre extrapoles artificiellement
+- Les alertes de derive sont centralisees cote backend avec seuils simples et explicables
+- Alertes V1 disponibles : depassement budget travaux, depassement cout total, incoherence nombre de lots, loyer inferieur au previsionnel, rendement brut degrade
 
 **Options actives (arbitrage avec donnees terrain) :**
 - Entites `SimulationOptionGroup` et `SimulationOption` implementees dans schema Prisma
@@ -532,10 +566,10 @@ Front :
 - L'option creee peut ensuite etre activee pour impacter les calculs
 - **Pas de parsing automatique** : creation manuelle, controle explicite
 
-**Conversion simulation → projet encore a consolider :**
-- Logique de conversion presente mais non encore robuste dans tous les cas
-- Cas limites possibles : conversions multiples, gestion erreurs, validation complete
-- UX conversion basique : pas encore de preview avant conversion, pas de gestion explicite des ecarts
+**Conversion simulation -> projet V1 robuste mais volontairement simple :**
+- La regle `1 simulation = 1 projet` est stricte et assumee en V1
+- La preview couvre les cas courants mais ne propose pas encore de configuration fine ou de reconversion controlee
+- Les donnees non utiles au pilotage apres achat restent volontairement hors transfert pour eviter de polluer le projet reel
 
 **Arbitrage base sur options actives avec comparaison instantanee :**
 - Options prix d'achat multiples maintenant possibles via `SimulationOption`
@@ -547,11 +581,11 @@ Front :
 - Pas encore de comparaison multi-groupes ou exportable pour partage externe
 - Recommandation calculee mais criteres encore basiques
 
-**Mesure ecart hypothese vs realite encore peu exploitable :**
-- Conversion permet de creer projet depuis simulation
-- Mais suivi explicite de l'ecart initial vs reel pas encore implemente
-- Pas encore de tableau de bord "previsionnel vs reel"
-- Pas encore d'alertes sur derives par rapport a la simulation initiale
+**Mesure ecart hypothese vs realite maintenant disponible en V1, avec limites assumees :**
+- Les projets convertis avant l'ajout de `ProjectForecastSnapshot` n'ont pas de reference previsionnelle retroactive
+- Le suivi reste projet par projet : pas encore de vision portefeuille consolidee des derives
+- Certains KPI restent hors scope tant qu'aucune source fiable n'existe cote reel : capital mobilise constate, marge reelle de revente, cash-flow reel detaille
+- La logique locative reste simple : loyer issu des lots si disponible, sinon fallback sur la valeur projet/simulation
 
 ### 4. Non implemente / prochaines etapes
 
@@ -561,10 +595,10 @@ Front :
 - Export comparatif pour partage avec partenaires/banque
 
 **Mesure ecart previsionnel vs reel :**
-- Tableau de bord compare simulation initiale vs projet reel
-- Alertes sur derives significatives (travaux qui depassent, delais qui s'allongent)
-- Suivi KPI previsionnel vs realise
-- Apprentissage pour ameliorer futures simulations
+- Enrichir les KPI reels uniquement quand une source metier fiable existe dans le projet
+- Etendre la lecture des derives a l'echelle portefeuille si la priorite produit le justifie
+- Eventuellement backfiller les anciens projets convertis via une action explicite et non silencieuse
+- Ajouter des alertes de delai seulement si une source calendrier robuste est introduite
 
 **Scoring contextualise :**
 - Score adapte au type d'operation (achat/revente vs locatif long terme)
@@ -577,9 +611,9 @@ Front :
 - Alerte si duree projet incompatible avec strategie
 
 **Robustesse conversion :**
-- Preview avant conversion avec resume des donnees transferees
-- Gestion propre des cas limites (conversion deja effectuee, simulation incomplete)
-- Historique conversions dans le dossier d'opportunite
+- Preview plus riche si besoin avec diff visuelle par champ et resume encore plus oriente action
+- Historique de conversion rendu visible dans le dossier d'opportunite si la lecture utilisateur en a besoin
+- Eventuelle preview d'ecarts post-conversion plus detaillee avant creation du projet
 
 **Etat technique actuel :**
 
@@ -648,6 +682,7 @@ Front :
 - Migration Prisma `admin_backoffice` : ajoutee
 - Migration Prisma `user_invitations_admin_flow` : ajoutee
 - Migration Prisma `personal_invitation_spaces` : ajoutee
+- Migration Prisma `robust_conversion_forecast_v1` : ajoutee
 - Seed local : OK
 - Deux comptes seed locaux sont disponibles pour les tests : `admin@example.com` / `admin123` en `SUPER_ADMIN` et `user@example.com` / `user123` en utilisateur standard
 - Le seed local ajoute aussi deux idees de demonstration dans `demo-org` et marque `admin@example.com` comme utilisateur pilote avec acces beta pour faciliter les verifications manuelles
@@ -660,9 +695,9 @@ Front :
 - Les comptes seed demo restent strictement reserves au local et aux tests ; la production ne doit pas embarquer de donnees de demonstration
 - Tests e2e API : OK
 - Smoke tests UI Playwright : en place
-- Couverture Playwright actuelle : login, dashboard global, navigation dashboard vers projet, comparaison projets, statut decisionnel, suggestions d'action, empty state projets, creation projet, empty states d'un projet neuf, edition / archivage projet, creation lot, edition / archivage lot, creation depense avec justificatif, edition depense, verification du score de completude / fiabilite et des alertes dans l'overview, export CSV, verification document lie, upload document manuel, settings / ajout membre, invitation admin utilisateur vers organisation existante, invitation admin vers espace personnel, cas sans organisation disponible et page `setup-password`
-- Validation rejouee pendant cette session : audit CI monorepo, `pnpm lint`, `pnpm build`, `pnpm test:e2e:api` et `CI=1 pnpm test:e2e -- tests/e2e/invitations.spec.ts` = OK
-- Tests UI Playwright non relances pendant cette session : le reste de `test:e2e:web` hors spec `invitations`
+- Couverture Playwright actuelle : login, dashboard global, navigation dashboard vers projet, comparaison projets, statut decisionnel, suggestions d'action, empty state projets, creation projet, empty states d'un projet neuf, edition / archivage projet, creation lot, edition / archivage lot, creation depense avec justificatif, edition depense, verification du score de completude / fiabilite et des alertes dans l'overview, export CSV, verification document lie, upload document manuel, settings / ajout membre, invitation admin utilisateur vers organisation existante, invitation admin vers espace personnel, cas sans organisation disponible, page `setup-password`, preview de conversion simulation, affichage du bloc `Previsionnel vs reel` sur projet converti, cas `forecastComparison.available = false` et rendu propre quand `deltaPercent = null`
+- Validation rejouee pendant cette session : `cd apps/api && pnpm prisma generate`, `pnpm exec tsc --noEmit`, `pnpm test -- --runInBand src/projects/project-forecast.util.spec.ts`, `pnpm lint`, `pnpm build`, `pnpm test:e2e -- --runInBand app.e2e-spec.ts`, puis `cd apps/web && pnpm lint`, `pnpm build`, `pnpm exec playwright test tests/e2e/project-operations.spec.ts -g "project overview shows a clean empty state when no forecast comparison is available|project overview renders null delta percent and unavailable metrics without misleading output"` et `pnpm test:e2e -- simulations.spec.ts --grep "conversion preview|archived simulations"` = OK
+- Le setup e2e backend aligne maintenant `DIRECT_URL` sur la base e2e pour eviter des resets ou migrations pointant vers une autre base que `DATABASE_URL_E2E`
 - Les documents de cadrage vivent dans `docs/`
 
 ## 14. Demarrage local de reference

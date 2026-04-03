@@ -189,6 +189,58 @@ export type SimulationWithDetails = SimulationWithLots & {
   activeValues?: ActiveValues;
 };
 
+export type SimulationConversionIssue = {
+  code: string;
+  message: string;
+};
+
+export type SimulationConversionPreviewField = {
+  key: string;
+  label: string;
+  kind: "currency" | "percent" | "number" | "text";
+  value: number | string | null;
+  reason?: string;
+};
+
+export type SimulationConversionPreview = {
+  simulation: {
+    id: string;
+    name: string;
+    strategy: "FLIP" | "RENTAL";
+    archivedAt?: string | null;
+    convertedProjectId?: string | null;
+  };
+  project: {
+    name: string;
+    addressLine1?: string | null;
+    country: string;
+    type: string;
+    strategy: "FLIP" | "RENTAL";
+    status: string;
+    purchasePrice: number;
+    notaryFees?: number | null;
+    worksBudget: number;
+    notes?: string | null;
+  };
+  lots: Array<{
+    name: string;
+    type: string;
+    surface?: number | null;
+    estimatedRent?: number | null;
+    notes?: string | null;
+  }>;
+  projectFields: SimulationConversionPreviewField[];
+  snapshotFields: SimulationConversionPreviewField[];
+  nonTransferredFields: SimulationConversionPreviewField[];
+  warnings: SimulationConversionIssue[];
+  blockingIssues: SimulationConversionIssue[];
+  canConvert: boolean;
+  existingProject?: {
+    id: string;
+    name: string;
+  } | null;
+};
+
 function token(session: Session | null) {
   if (!session) {
     throw new Error("Missing session");
@@ -299,11 +351,23 @@ export function compareSimulations(session: Session | null, folderId: string) {
   );
 }
 
+export function getConversionPreview(
+  session: Session | null,
+  simulationId: string,
+) {
+  return apiFetch<SimulationConversionPreview>(
+    `/simulations/${simulationId}/conversion-preview`,
+    {
+      token: token(session),
+    },
+  );
+}
+
 export function convertToProject(
   session: Session | null,
   simulationId: string,
 ) {
-  return apiFetch<{ projectId: string }>(
+  return apiFetch<{ projectId: string; conversionId?: string }>(
     `/simulations/${simulationId}/convert-to-project`,
     {
       method: "POST",

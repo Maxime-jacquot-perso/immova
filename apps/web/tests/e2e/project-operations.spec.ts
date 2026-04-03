@@ -33,7 +33,9 @@ async function createProject(page: Page, suffix: string) {
   await expect(page).toHaveURL(/\/projects\/[^/]+$/);
   await expect(page.getByRole('heading', { name: projectName })).toBeVisible();
 
-  return { projectName };
+  const projectId = page.url().split('/').at(-1) ?? '';
+
+  return { projectName, projectId };
 }
 
 async function createLot(page: Page, suffix: string) {
@@ -131,6 +133,204 @@ test('new project shows helpful empty states across MVP screens', async ({
   await expect(
     page.getByRole('button', { name: 'Exporter les depenses en CSV' }),
   ).toBeDisabled();
+});
+
+test('project overview shows a clean empty state when no forecast comparison is available', async ({
+  page,
+}) => {
+  const suffix = uniqueSuffix();
+
+  await loginAsDemoAdmin(page);
+  const { projectId } = await createProject(page, suffix);
+
+  await page.route(new RegExp(`/api/projects/${projectId}/overview$`), async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        project: {
+          id: projectId,
+          name: `Projet Ops ${suffix}`,
+          country: 'FR',
+          type: 'OTHER',
+          status: 'DRAFT',
+        },
+        kpis: {
+          acquisitionCost: 185000,
+          worksBudget: 32000,
+          worksExpenses: 0,
+          totalExpenses: 0,
+          totalCostToDate: 185000,
+          worksBudgetDelta: 32000,
+          lotsCount: 1,
+          totalSurface: 52,
+          estimatedRentTotal: 900,
+          grossYieldEstimated: 5.4,
+        },
+        completeness: {
+          score: 75,
+          level: 'warning',
+          label: 'Projet partiellement renseigne',
+          missingItems: [],
+          completedCriteriaCount: 6,
+          totalCriteriaCount: 8,
+        },
+        decisionStatus: {
+          level: 'warning',
+          label: 'A surveiller',
+        },
+        alerts: [],
+        suggestions: [],
+        forecastComparison: {
+          available: false,
+          reason:
+            "Aucun snapshot previsionnel n'est disponible pour ce projet.",
+          metrics: [],
+          alerts: [],
+          unavailableMetrics: [],
+          snapshotLots: [],
+        },
+        recentExpenses: [],
+        recentDocuments: [],
+      }),
+    });
+  });
+
+  await page.goto(`/projects/${projectId}`);
+
+  await expect(page.getByText('Comparaison indisponible')).toBeVisible();
+  await expect(
+    page.getByText("Aucun snapshot previsionnel n'est disponible pour ce projet."),
+  ).toBeVisible();
+});
+
+test('project overview renders null delta percent and unavailable metrics without misleading output', async ({
+  page,
+}) => {
+  const suffix = uniqueSuffix();
+
+  await loginAsDemoAdmin(page);
+  const { projectId } = await createProject(page, suffix);
+
+  await page.route(new RegExp(`/api/projects/${projectId}/overview$`), async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        project: {
+          id: projectId,
+          name: `Projet Ops ${suffix}`,
+          country: 'FR',
+          type: 'OTHER',
+          status: 'DRAFT',
+        },
+        kpis: {
+          acquisitionCost: 185000,
+          worksBudget: 32000,
+          worksExpenses: 0,
+          totalExpenses: 0,
+          totalCostToDate: 185000,
+          worksBudgetDelta: 32000,
+          lotsCount: 1,
+          totalSurface: 52,
+          estimatedRentTotal: 900,
+          grossYieldEstimated: 5.4,
+        },
+        completeness: {
+          score: 75,
+          level: 'warning',
+          label: 'Projet partiellement renseigne',
+          missingItems: [],
+          completedCriteriaCount: 6,
+          totalCriteriaCount: 8,
+        },
+        decisionStatus: {
+          level: 'warning',
+          label: 'A surveiller',
+        },
+        alerts: [],
+        suggestions: [],
+        forecastComparison: {
+          available: true,
+          reference: {
+            conversionDate: '2026-04-03T10:00:00.000Z',
+            simulationId: 'sim_mock',
+            simulationName: 'Simulation mock',
+            strategy: 'RENTAL',
+            recommendation: 'interessant',
+            decisionScore: 72,
+            decisionStatus: 'GOOD',
+          },
+          metrics: [
+            {
+              key: 'lotsCount',
+              label: 'Nombre de lots',
+              unit: 'count',
+              forecastValue: 0,
+              actualValue: 1,
+              deltaValue: 1,
+              deltaPercent: null,
+              status: 'watch',
+              actualLabel: 'Lots non archives du projet',
+            },
+            {
+              key: 'grossYield',
+              label: 'Rendement brut',
+              unit: 'percent',
+              forecastValue: 5.4,
+              actualValue: null,
+              deltaValue: null,
+              deltaPercent: null,
+              status: 'unavailable',
+              actualLabel: 'Rendement recalcule',
+              note:
+                'Le rendement comparable reste indisponible tant que cout total actuel et loyers saisis sont insuffisants.',
+            },
+          ],
+          alerts: [],
+          unavailableMetrics: [
+            {
+              key: 'equityRequired',
+              label: 'Capital mobilise reel',
+              reason: "Le financement reel n'est pas encore structure dans le modele Project V1.",
+            },
+          ],
+          snapshotLots: [],
+        },
+        recentExpenses: [],
+        recentDocuments: [],
+      }),
+    });
+  });
+
+  await page.goto(`/projects/${projectId}`);
+
+  const lotsCard = page
+    .locator('.card.kpi-card')
+    .filter({
+      has: page.locator('.kpi-card__label', {
+        hasText: /^Nombre de lots$/,
+      }),
+    });
+  await expect(lotsCard).toContainText('A surveiller');
+  await expect(lotsCard).toContainText('Lots non archives du projet');
+  await expect(lotsCard).toContainText('+1');
+  await expect(lotsCard).not.toContainText('NaN');
+  await expect(lotsCard).not.toContainText('undefined');
+
+  const yieldCard = page
+    .locator('.card.kpi-card')
+    .filter({
+      has: page.locator('.kpi-card__label', {
+        hasText: /^Rendement brut$/,
+      }),
+    });
+  await expect(yieldCard).toContainText('Non disponible');
+  await expect(yieldCard).toContainText(
+    'Le rendement comparable reste indisponible tant que cout total actuel et loyers saisis sont insuffisants.',
+  );
+  await expect(yieldCard).not.toContainText('NaN');
+  await expect(yieldCard).not.toContainText('undefined');
 });
 
 test('admin can create an expense with justificatif and see the linked document', async ({
