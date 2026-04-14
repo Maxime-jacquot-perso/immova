@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { PilotApplicationForm } from './components/pilot-application-form';
 import styles from './page.module.css';
 import {
+  appUrl,
   defaultDescription,
   seoKeywords,
   siteName,
@@ -201,6 +202,7 @@ export default function Home() {
           <a href="#solution">Comment ça aide</a>
           <a href="#pilot">Offre pilote</a>
           <a href="#faq">FAQ</a>
+          <a href={appUrl}>Se connecter</a>
         </nav>
 
         <a className={styles.buttonPrimary} href="#access">
@@ -498,7 +500,7 @@ export default function Home() {
         <footer className={styles.footer}>
           <p>
             {siteName} - Outil de pilotage d’opérations immobilières pour agir
-            sur des faits.
+            sur des faits. <a href={appUrl}>Ouvrir l’application</a>.
           </p>
         </footer>
       </main>

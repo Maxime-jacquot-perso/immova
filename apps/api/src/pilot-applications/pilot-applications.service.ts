@@ -6,7 +6,7 @@ import { CreatePilotApplicationDto } from './dto/create-pilot-application.dto';
 export class PilotApplicationsService {
   private readonly logger = new Logger(PilotApplicationsService.name);
   private readonly notificationEmail =
-    process.env.PILOT_NOTIFICATION_EMAIL || 'contact@axelys.fr';
+    process.env.PILOT_NOTIFICATION_EMAIL || 'contact@axelys.app';
 
   constructor(private readonly mailService: MailService) {}
 

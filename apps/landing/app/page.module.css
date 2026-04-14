@@ -193,6 +193,11 @@
   font-size: 1.04rem;
 }
 
+.footer a {
+  color: var(--text);
+  font-weight: 600;
+}
+
 .heroList,
 .fitCard ul,
 .offerCard ul,

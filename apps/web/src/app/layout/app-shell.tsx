@@ -10,7 +10,7 @@ export function AppShell() {
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <div className="sidebar__brand">Pilotage Immo</div>
+        <div className="sidebar__brand">Axelys</div>
         <div className="meta">{session?.organization?.name}</div>
         <nav className="sidebar__nav" style={{ marginTop: 24 }}>
           <NavLink

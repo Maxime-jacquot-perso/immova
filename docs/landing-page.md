@@ -38,6 +38,28 @@ Choix retenu :
 
 L application produit continue de vivre dans `apps/web` avec React + Vite.
 
+## 2.1. Domaines publics et variables
+
+Références publiques à conserver :
+
+- landing : `https://axelys.app`
+- application produit : `https://app.axelys.app`
+- API : `https://api.axelys.app`
+- expéditeur transactionnel : `Axelys <no-reply@axelys.app>`
+
+Variables attendues sur la landing :
+
+- `NEXT_PUBLIC_SITE_URL=https://axelys.app`
+- `NEXT_PUBLIC_APP_URL=https://app.axelys.app`
+- `API_URL=https://api.axelys.app/api`
+
+Points de vigilance :
+
+- la landing doit garder `https://axelys.app` comme URL canonique
+- `robots`, `sitemap`, `metadata`, Open Graph et structured data doivent toujours sortir avec le domaine `axelys.app`
+- tout lien vers l espace connecté doit pointer vers `https://app.axelys.app`
+- aucun ancien domaine de preview ou ancien email ne doit être réintroduit dans le copy, les CTA ou les helpers
+
 ## 3. Direction visuelle
 
 La landing doit reprendre les codes de l’app existante tout en assumant une lecture plus tranchée :

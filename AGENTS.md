@@ -114,6 +114,16 @@ Ne pas remettre dans le scope sans validation explicite :
 - API admin dediee sous `/api/admin/*` avec guards, permissions et audit log distincts des routes produit
 - RBAC admin global porte par `User.adminRole` avec mapping `role -> permissions` centralise cote backend pour rester simple sur le MVP
 
+**Domaines publics et liens externes de reference :**
+
+- domaine principal public : `https://axelys.app`
+- application produit : `https://app.axelys.app`
+- API publique : `https://api.axelys.app`
+- expediteur transactionnel cible : `Axelys <no-reply@axelys.app>`
+- la landing garde `https://axelys.app` comme URL canonique et source de verite pour metadata, sitemap, robots et Open Graph
+- tout lien utilisateur genere par le backend (invitation, setup-password, reset futur, callback visible, notification) doit pointer vers `APP_WEB_URL`, donc vers `https://app.axelys.app` en production
+- les futurs liens externes, callbacks, URLs absolues et emails ne doivent jamais introduire une URL en dur si une variable dediee existe deja (`NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_APP_URL`, `API_URL`, `APP_WEB_URL`, `ALLOWED_ORIGINS`, `VITE_API_URL`, `MAIL_FROM`)
+
 ## 6. Regles multi-tenant
 
 - Toutes les tables metier portent `organizationId`
@@ -707,12 +717,14 @@ Front :
 - Le seed principal est concentre sur `Noroit Invest` (`noroit-invest`) avec 6 projets contrastes, 2 tenants secondaires minimaux, des simulations structurees, des options actives, des logs d'activation et des projets convertis avec snapshots pour alimenter les derives portefeuille
 - Trois comptes seed locaux sont disponibles pour les tests et la demo : `admin@example.com` / `admin123` en `SUPER_ADMIN`, `user@example.com` / `user123` en collaborateur standard et `reader@example.com` / `reader123` en lecture seule
 - Le seed local ajoute aussi deux idees de demonstration dans `Noroit Invest` et marque `admin@example.com` comme utilisateur pilote avec acces beta pour faciliter les verifications manuelles
-- Les deployments Vercel actifs sont maintenant `https://axelys-web.vercel.app/` pour le web et `https://axelys-api.vercel.app` pour l'API et `https://axelys.vercel.app` pour la landing page.
-- Le front Vite de production doit pointer vers `https://axelys-api.vercel.app/api` via `VITE_API_URL`
+- Les URLs publiques de reference sont maintenant `https://axelys.app` pour la landing, `https://app.axelys.app` pour l'application produit et `https://api.axelys.app` pour l'API.
+- Le front Vite de production doit pointer vers `https://api.axelys.app/api` via `VITE_API_URL`
 - L'API Vercel avec Prisma Postgres doit utiliser une `DATABASE_URL` poolée pour le runtime et une `DIRECT_URL` directe pour Prisma CLI, Prisma Studio et les migrations
 - Le `PrismaService` backend n'ouvre plus de connexion explicite au bootstrap afin d'eviter des connexions inutiles sur des requetes serverless qui ne touchent pas la base
-- Des fichiers helper `.env.prod` locaux et `.env.prod.example` versionnes existent maintenant dans `apps/api` et `apps/web` pour guider le remplissage des variables Vercel de production
-- Les variables backend utiles au flow d invitation sont maintenant `APP_WEB_URL`, `USER_INVITATION_TTL_HOURS`, `MAIL_FROM`, les variables `SMTP_*` pour un SMTP simple et, en option, `RESEND_API_KEY`
+- Des fichiers helper versionnes existent maintenant dans `apps/landing/.env.example`, `apps/api/.env.example` et `apps/web/.env.prod.example` pour guider le remplissage des variables de deploiement
+- Les variables backend utiles au flow d invitation et aux liens externes sont maintenant `APP_WEB_URL`, `ALLOWED_ORIGINS`, `USER_INVITATION_TTL_HOURS`, `MAIL_FROM`, `PILOT_NOTIFICATION_EMAIL`, les variables `SMTP_*` pour un SMTP simple et, en option, `RESEND_API_KEY`
+- Les variables landing utiles aux URLs publiques sont `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_APP_URL` et `API_URL`
+- Le `MAIL_FROM` de reference est `Axelys <no-reply@axelys.app>` et les emails transactionnels ne doivent plus exposer d ancienne marque ou d ancien domaine
 - Les comptes seed demo restent strictement reserves au local et aux tests ; la production ne doit pas embarquer de donnees de demonstration
 - Tests e2e API : OK
 - Smoke tests UI Playwright : en place

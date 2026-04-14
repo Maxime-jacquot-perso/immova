@@ -47,7 +47,7 @@ export class MailService {
   async sendUserInvitation(
     input: SendUserInvitationMailInput,
   ): Promise<MailDeliveryResult> {
-    const subject = 'Votre acces a Immova';
+    const subject = 'Votre acces Axelys';
     const text = this.buildInvitationText(input);
     const html = this.buildInvitationHtml(input);
     const smtpConfig = this.getSmtpConfig();
@@ -238,7 +238,7 @@ export class MailService {
       : 'Utilisez ce lien pour confirmer votre acces, puis connectez-vous avec votre mot de passe habituel.';
 
     return [
-      'Un administrateur a cree un acces Immova pour votre compte.',
+      'Un administrateur a cree votre acces Axelys.',
       '',
       `Organisation : ${input.organizationName}`,
       `Role : ${input.membershipRole}`,
@@ -259,7 +259,7 @@ export class MailService {
 
     return `
       <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #111827;">
-        <p>Un administrateur a cree un acces Immova pour votre compte.</p>
+        <p>Un administrateur a cree votre acces Axelys.</p>
         <p>
           <strong>Organisation :</strong> ${this.escapeHtml(input.organizationName)}<br />
           <strong>Role :</strong> ${this.escapeHtml(input.membershipRole)}

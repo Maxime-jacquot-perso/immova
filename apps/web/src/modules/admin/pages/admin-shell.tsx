@@ -9,7 +9,7 @@ export function AdminShell() {
   return (
     <div className="admin-shell">
       <aside className="admin-sidebar">
-        <div className="admin-sidebar__brand">Immova Admin</div>
+        <div className="admin-sidebar__brand">Axelys Admin</div>
         <div className="meta">
           Back-office interne, audit&eacute; et s&eacute;par&eacute; de l&apos;app utilisateur.
         </div>

@@ -160,7 +160,7 @@ export function IdeasPage() {
           <h1>Boite a idees</h1>
           <div className="page-subtitle">
             Une liste simple pour signaler les besoins terrain sans transformer
-            Immova en forum.
+            Axelys en forum.
           </div>
         </div>
       </header>

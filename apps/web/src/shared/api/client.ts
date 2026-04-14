@@ -5,7 +5,10 @@ type RequestOptions = {
   headers?: Record<string, string>;
 };
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+const API_BASE_URL = (import.meta.env.VITE_API_URL || '/api').replace(
+  /\/$/,
+  '',
+);
 
 async function parseResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {

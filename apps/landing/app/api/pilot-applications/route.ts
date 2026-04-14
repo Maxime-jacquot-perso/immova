@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-const API_URL = process.env.API_URL || 'http://localhost:3000/api';
+import { apiUrl } from '../../site-config';
 
 export async function POST(request: NextRequest) {
   try {
@@ -32,7 +31,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const response = await fetch(`${API_URL}/pilot-applications`, {
+    const response = await fetch(`${apiUrl}/pilot-applications`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -2,11 +2,11 @@
 
 ## Objectif
 
-Ajouter une boucle de feedback tres simple et coherent avec Immova :
+Ajouter une boucle de feedback tres simple et coherente avec Axelys :
 
 1. un utilisateur propose une idee
 2. les autres utilisateurs de la meme organisation votent
-3. l equipe Immova decide du statut
+3. l equipe Axelys decide du statut
 4. une idee peut passer en beta pour les clients pilotes
 5. validation
 6. release globale

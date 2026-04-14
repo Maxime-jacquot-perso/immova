@@ -35,7 +35,7 @@ export function LoginPage() {
 
   return (
     <div className="auth-screen">
-      <img src="/logo-text-bleu.svg" alt="Immova" className="auth-screen__logo" />
+      <img src="/logo-text-bleu.svg" alt="Axelys" className="auth-screen__logo" />
       <div className="panel auth-card stack">
         {invitationAccepted ? (
           <FeedbackMessage
@@ -46,7 +46,7 @@ export function LoginPage() {
         ) : null}
 
         <div>
-          <h1 style={{ margin: 0 }}>Pilotage Immo</h1>
+          <h1 style={{ margin: 0 }}>Axelys</h1>
           <p className="page-subtitle">
             Connectez-vous pour acceder a l'application et au back-office admin.
           </p>

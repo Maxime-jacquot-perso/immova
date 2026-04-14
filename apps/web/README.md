@@ -7,24 +7,25 @@ Cette application contient :
 
 ## URL de production
 
-- Web Vercel : [https://immova-web.vercel.app/](https://immova-web.vercel.app/)
+- Application publique : [https://app.axelys.app](https://app.axelys.app)
+- API publique : [https://api.axelys.app](https://api.axelys.app)
+- Landing publique : [https://axelys.app](https://axelys.app)
 
 ## Configuration API
 
 - en local, le proxy Vite redirige `/api` vers `http://localhost:3000`
-- en build / production, definir `VITE_API_URL=https://immova-api.vercel.app/api`
+- en build / production, definir `VITE_API_URL=https://api.axelys.app/api`
 
-## Variables Vercel
+## Variables de deploiement
 
-Dans le projet Vercel `immova-web`, renseigner :
+Variables attendues pour l'app :
 
 ```env
-VITE_API_URL=https://immova-api.vercel.app/api
+VITE_API_URL=https://api.axelys.app/api
 ```
 
 Repere dans le repo :
 
-- `apps/web/.env.prod` : helper local pret a copier-coller
 - `apps/web/.env.prod.example` : template versionne
 
 ## Commandes utiles

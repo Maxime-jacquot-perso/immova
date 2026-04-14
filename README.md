@@ -220,7 +220,7 @@ Fonctionnement du formulaire et des CTA :
 - la micro-promesse associée est : `Vous saurez rapidement si Axelys est utile pour vos projets.`
 - le formulaire demande : prénom, email, profil, nombre de projets actifs, message libre et acceptation du cadre pilote
 - le submit passe par la route Next.js `apps/landing/app/api/pilot-applications/route.ts`, qui relaie ensuite vers l’API Nest `POST /api/pilot-applications`
-- la landing peut être reliée à l’API via `API_URL` ; par défaut local, la route utilise `http://localhost:3000/api`
+- la landing utilise `API_URL` pour joindre l’API Nest ; en production, la valeur attendue est `https://api.axelys.app/api`
 
 ## Stack et architecture
 
@@ -230,29 +230,48 @@ Fonctionnement du formulaire et des CTA :
 - Base de donnees : PostgreSQL
 - Architecture : monolithe modulaire multi-tenant
 
-## Deploiements Vercel
+## URLs publiques de reference
 
-- Web production : [https://axelys-web.vercel.app/](https://axelys-web.vercel.app/)
-- API production : [https://axelys-api.vercel.app](https://axelys-api.vercel.app)
-- Landing production :[https://axelys.vercel.app](https://axelys.vercel.app)
+- Landing publique : [https://axelys.app](https://axelys.app)
+- Application produit : [https://app.axelys.app](https://app.axelys.app)
+- API publique : [https://api.axelys.app](https://api.axelys.app)
+- Expediteur transactionnel cible : `Axelys <no-reply@axelys.app>`
 
 Notes utiles :
 
-- l'application web Vite doit pointer vers `https://axelys-api.vercel.app/api` via `VITE_API_URL`
+- l'application web Vite doit pointer vers `https://api.axelys.app/api` via `VITE_API_URL`
+- l'API doit generer les liens utilisateur vers `https://app.axelys.app/...` via `APP_WEB_URL`
+- la landing doit garder `https://axelys.app` comme URL canonique et source pour `metadata`, `robots` et `sitemap`
 - l'API de production doit utiliser une `DATABASE_URL` poolée pour le runtime et une `DIRECT_URL` pour Prisma CLI / Studio
 - la production ne doit pas utiliser de comptes seed ou de donnees de demonstration
 - les comptes seed du repo restent reserves au local et aux tests
 
-## Variables Vercel
+## Variables de deploiement
 
-Projet Vercel `axelys-api` :
+Landing (`apps/landing`) :
+
+- `NEXT_PUBLIC_SITE_URL` : URL canonique publique de la landing
+- `NEXT_PUBLIC_APP_URL` : URL publique de l application produit pour les liens de navigation depuis la landing
+- `API_URL` : URL publique de l API Nest avec le prefixe `/api`, utilisee par la route serveur `apps/landing/app/api/pilot-applications/route.ts`
+
+Valeurs de reference :
+
+```env
+NEXT_PUBLIC_SITE_URL=https://axelys.app
+NEXT_PUBLIC_APP_URL=https://app.axelys.app
+API_URL=https://api.axelys.app/api
+```
+
+API (`apps/api`) :
 
 - `DATABASE_URL` : URL Prisma Postgres poolée pour le runtime
 - `DIRECT_URL` : URL Prisma Postgres directe pour `prisma migrate deploy` et Prisma Studio
 - `JWT_SECRET` : secret JWT long et aleatoire
 - `APP_WEB_URL` : URL publique de `apps/web`, utilisee dans les emails d invitation admin
+- `ALLOWED_ORIGINS` : liste CSV des origines navigateur autorisees en CORS
 - `USER_INVITATION_TTL_HOURS` : duree de validite d un lien d invitation
 - `MAIL_FROM` : expediteur transactionnel utilise par SMTP ou Resend
+- `PILOT_NOTIFICATION_EMAIL` : boite qui recoit les candidatures client pilote
 - `SMTP_HOST` : serveur SMTP optionnel
 - `SMTP_PORT` : port SMTP optionnel
 - `SMTP_USER` : identifiant SMTP optionnel
@@ -263,36 +282,37 @@ Projet Vercel `axelys-api` :
 Valeurs de reference :
 
 ```env
-DATABASE_URL=postgres://USER:PASSWORD@db.prisma.io:5432/postgres?sslmode=require&pool=true
-DIRECT_URL=postgres://USER:PASSWORD@db.prisma.io:5432/postgres?sslmode=require
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/immo_ops?schema=public
+DIRECT_URL=postgresql://postgres:postgres@localhost:5432/immo_ops?schema=public
 JWT_SECRET=replace-with-a-long-random-secret
-APP_WEB_URL=https://axelys-web.vercel.app
+APP_WEB_URL=https://app.axelys.app
+ALLOWED_ORIGINS=https://app.axelys.app,https://axelys.app
 USER_INVITATION_TTL_HOURS=72
-# MAIL_FROM="Axelys <votre-adresse@gmail.com>"
-# SMTP_HOST="smtp.gmail.com"
+MAIL_FROM="Axelys <no-reply@axelys.app>"
+PILOT_NOTIFICATION_EMAIL=contact@axelys.app
+# SMTP_HOST="smtp.example.com"
 # SMTP_PORT=465
-# SMTP_USER="votre-adresse@gmail.com"
-# SMTP_PASS="mot-de-passe-d-application"
+# SMTP_USER="smtp-user"
+# SMTP_PASS="smtp-password"
 # SMTP_SECURE=true
 # RESEND_API_KEY=re_xxx
 ```
 
-Projet Vercel `axelys-web` :
+App web (`apps/web`) :
 
-- `VITE_API_URL` : URL publique de l'API avec le prefixe `/api`
+- `VITE_API_URL` : URL publique de l API avec le prefixe `/api`
 
 Valeur de reference :
 
 ```env
-VITE_API_URL=https://axelys-api.vercel.app/api
+VITE_API_URL=https://api.axelys.app/api
 ```
 
-Fichiers helper :
+Fichiers helper versionnes :
 
-- `apps/api/.env.prod` : helper local pret a copier-coller pour `axelys-api`
-- `apps/api/.env.prod.example` : template versionne pour les futurs setups
-- `apps/web/.env.prod` : helper local pret a copier-coller pour `axelys-web`
-- `apps/web/.env.prod.example` : template versionne pour les futurs setups
+- `apps/landing/.env.example`
+- `apps/api/.env.example`
+- `apps/web/.env.prod.example`
 
 ## Structure du repo
 
@@ -397,7 +417,7 @@ Le back-office `/admin` permet maintenant de :
 - inviter un utilisateur avec `email + role membership` vers :
   - une organisation existante
   - ou un espace personnel
-- envoyer un lien unique vers `apps/web` sur `/setup-password`
+- envoyer un lien unique vers `https://app.axelys.app/setup-password`
 - laisser l invite definir son mot de passe si le compte est nouveau
 - rattacher le membership cible au moment de l acceptation
 - tracer invitation initiale et renvois dans l audit log admin
@@ -417,6 +437,8 @@ Notes utiles :
   1. SMTP si `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` et `MAIL_FROM` sont definis
   2. Resend si `RESEND_API_KEY` et `MAIL_FROM` sont definis
   3. fallback console sinon
+- en production, `MAIL_FROM` doit rester `Axelys <no-reply@axelys.app>`
+- toute future feature qui genere des emails, callbacks, liens de reset, invitations ou URLs absolues doit reutiliser `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_APP_URL`, `API_URL`, `APP_WEB_URL`, `ALLOWED_ORIGINS` et `VITE_API_URL` au lieu d une URL codée en dur
 - Gmail fonctionne en SMTP simple avec `smtp.gmail.com`, le port `465` et un mot de passe d application
 - le login existant reste en place ; l activation redirige ensuite vers `/login`
 

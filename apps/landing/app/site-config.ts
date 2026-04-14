@@ -1,5 +1,24 @@
+const defaultSiteUrl = 'https://axelys.app';
+const defaultAppUrl = 'https://app.axelys.app';
+const defaultApiUrl = 'https://api.axelys.app/api';
+
+function stripTrailingSlash(value: string) {
+  return value.replace(/\/$/, '');
+}
+
 export const siteName = 'Axelys';
-export const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
+export const siteUrl = stripTrailingSlash(
+  process.env.NEXT_PUBLIC_SITE_URL ?? defaultSiteUrl,
+);
+export const appUrl = stripTrailingSlash(
+  process.env.NEXT_PUBLIC_APP_URL ?? defaultAppUrl,
+);
+export const apiUrl = stripTrailingSlash(
+  process.env.API_URL ??
+    (process.env.NODE_ENV === 'development'
+      ? 'http://localhost:3000/api'
+      : defaultApiUrl),
+);
 
 export const defaultDescription =
   "Axelys aide les investisseurs immobiliers actifs et les marchands de biens à voir quels projets sont OK, à surveiller ou problématiques, avec des KPI calculés sur des données réelles.";
