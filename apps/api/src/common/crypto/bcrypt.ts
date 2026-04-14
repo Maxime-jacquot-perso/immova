@@ -1,16 +1,10 @@
-type BcryptModule = typeof import('bcryptjs');
+type BcryptModule = {
+  compareSync: (password: string, hash: string) => boolean;
+  hashSync: (password: string, saltOrRounds: string | number) => string;
+};
 
-let bcrypt: BcryptModule;
-
-try {
-  // Vercel can run the compiled entrypoint from /apps/api/src.
-  // prettier-ignore
-  bcrypt = require('../../../node_modules/bcryptjs/umd/index.js') as BcryptModule; // eslint-disable-line @typescript-eslint/no-require-imports
-} catch {
-  // Nest start:prod resolves from /apps/api/dist/src.
-  // prettier-ignore
-  bcrypt = require('../../../../node_modules/bcryptjs/umd/index.js') as BcryptModule; // eslint-disable-line @typescript-eslint/no-require-imports
-}
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const bcrypt = require('../vendor/bcryptjs-vendor') as BcryptModule;
 
 export const compareSync = bcrypt.compareSync;
 export const hashSync = bcrypt.hashSync;
