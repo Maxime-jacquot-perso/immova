@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { MembershipRole } from '@prisma/client';
-import { hashSync } from 'bcryptjs';
+import { hashSync } from '../common/crypto/bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateMembershipDto } from './dto/create-membership.dto';
 import { UpdateMembershipRoleDto } from './dto/update-membership-role.dto';

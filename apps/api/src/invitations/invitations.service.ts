@@ -9,8 +9,8 @@ import {
   MembershipRole,
   Prisma,
 } from '@prisma/client';
-import { hashSync } from 'bcryptjs';
 import { createHash, randomBytes } from 'node:crypto';
+import { hashSync } from '../common/crypto/bcrypt';
 import { MailService } from '../mail/mail.service';
 import { PrismaService } from '../prisma/prisma.service';
 import {

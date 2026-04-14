@@ -4,7 +4,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { compareSync } from 'bcryptjs';
+import { compareSync } from '../common/crypto/bcrypt';
 import {
   getAdminPermissions,
   getAssignableAdminRoles,

@@ -5,8 +5,8 @@ import {
   AdminRole,
   Prisma,
 } from '@prisma/client';
-import { hashSync } from 'bcryptjs';
 import type { AuthenticatedUser } from '../common/interfaces/authenticated-user.interface';
+import { hashSync } from '../common/crypto/bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { AdminAuditService } from './admin-audit.service';
 import { AdminPolicyService } from './admin-policy.service';
