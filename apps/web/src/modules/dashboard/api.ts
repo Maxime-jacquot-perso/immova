@@ -61,6 +61,30 @@ export type DashboardActivityItem = {
   href: string;
 };
 
+export type DashboardDriftIssue = {
+  metricKey: string;
+  label: string;
+  status: 'watch' | 'drift';
+  deltaPercent: number | null;
+  deltaValue: number | null;
+};
+
+export type DashboardDriftProject = {
+  projectId: string;
+  name: string;
+  status: 'watch' | 'drift';
+  driftScore: number;
+  mainIssues: DashboardDriftIssue[];
+};
+
+export type DashboardDriftsPayload = {
+  totalProjects: number;
+  projectsWithDrift: number;
+  projectsWithWatch: number;
+  projectsWithoutForecastReference: number;
+  criticalProjects: DashboardDriftProject[];
+};
+
 export type DashboardPayload = {
   summary: {
     activeProjectsCount: number;
@@ -85,6 +109,12 @@ function token(session: Session | null) {
 
 export function getDashboard(session: Session | null) {
   return apiFetch<DashboardPayload>('/dashboard', {
+    token: token(session),
+  });
+}
+
+export function getDashboardDrifts(session: Session | null) {
+  return apiFetch<DashboardDriftsPayload>('/dashboard/drifts', {
     token: token(session),
   });
 }

@@ -30,6 +30,8 @@ pnpm start:dev
 pnpm build
 pnpm lint
 pnpm prisma:migrate
+pnpm db:reset
+pnpm db:demo-seed
 pnpm prisma:seed
 pnpm test:e2e
 ```
@@ -40,6 +42,7 @@ pnpm test:e2e
 - adapter `DATABASE_URL` a votre PostgreSQL local si besoin
 - `DIRECT_URL` doit pointer vers la connexion directe utilisee par Prisma CLI
 - `UPLOAD_DIR` pointe par defaut vers `./uploads`
+- `pnpm db:demo-seed` reset les donnees metier sans drop schema puis recree le seed de demonstration produit
 
 Les fichiers d'upload et les temporaires de test sont locaux et ignores par Git.
 

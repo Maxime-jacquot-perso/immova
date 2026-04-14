@@ -14,4 +14,9 @@ export class DashboardController {
   getDashboard(@CurrentUser() user: AuthenticatedUser) {
     return this.dashboardService.getDashboard(user.organizationId!);
   }
+
+  @Get('drifts')
+  getDashboardDrifts(@CurrentUser() user: AuthenticatedUser) {
+    return this.dashboardService.getDashboardDrifts(user.organizationId!);
+  }
 }

@@ -314,6 +314,7 @@ Back :
 - `GET /api/auth/invitations/verify`
 - `POST /api/auth/invitations/accept`
 - `GET /api/dashboard`
+- `GET /api/dashboard/drifts`
 - `GET /api/organizations/current`
 - `GET/POST/PATCH /api/memberships`
 - `GET/POST/PATCH /api/projects`
@@ -422,14 +423,15 @@ Front :
 - gestion admin des idees produit avec changement de statut audite
 - gestion des administrateurs avec creation de compte interne et changement de role selon le niveau autorise
 - audit log admin exploitable depuis l'UI interne
-- landing marketing Next.js avec hero, sections marketing, pricing, FAQ et SEO de base
+- landing marketing Next.js refondue en V2 avec hero cible/promesse, bloc `Pour qui / Pas pour qui`, bloc `Probleme`, bloc `Comment Axelys aide a decider`, apercu produit contextualise, offre client pilote selective, FAQ resserree, CTA final avec vrai formulaire integre et SEO
 - module simulations decision avant achat avec `/simulations` liste dossiers, `/simulations/folders/:folderId` detail dossier et comparaison, `/simulations/new` formulaire creation, `/simulations/:simulationId` detail avec resultats decisionnels, options actives, historique d'activation, journal d'opportunite, preview de conversion et conversion projet, `/simulations/:simulationId/edit` edition simulation
 - preview de conversion cote web avec resume du futur projet, lots, hypotheses transferees, champs non repris, warnings et blocages metier
 - bloc `Previsionnel vs reel` sur l'overview projet pour les projets issus d'une conversion avec snapshot disponible
 - alertes de derive V1 sur l'overview projet converti avec statuts `neutre / a surveiller / en derive`
+- bloc dashboard `Derives portefeuille` avec compteurs projets lus / en derive / a surveiller / sans reference et top 3 projets a ouvrir
 - route error boundary pour eviter l'ecran technique React Router
 - tests e2e API des flows critiques MVP
-- smoke tests UI Playwright : login, projet, lot, depense, document, export, settings, preview de conversion et projet converti
+- smoke tests UI Playwright : login, dashboard, projet, lot, depense, document, export, settings, preview de conversion et projet converti
 - workflow GitHub Actions `ci.yml` pour installation, lint et build du monorepo sur `push` et `pull_request` vers `main`
 - workflow GitHub Actions `e2e-api.yml` separe pour `pnpm test:e2e:api` avec PostgreSQL de CI
 
@@ -520,6 +522,8 @@ Front :
 - Les KPI non calculables proprement restent `non disponibles` plutot que d'etre extrapoles artificiellement
 - Les alertes de derive sont centralisees cote backend avec seuils simples et explicables
 - Alertes V1 disponibles : depassement budget travaux, depassement cout total, incoherence nombre de lots, loyer inferieur au previsionnel, rendement brut degrade
+- Le dashboard global expose maintenant un bloc `Derives portefeuille` alimente par `GET /api/dashboard/drifts`, qui reagrege les projets actifs sur la base du `forecastComparison` existant
+- La lecture portefeuille reste volontairement simple : compteurs `en derive / a surveiller / sans reference` + top 3 projets critiques avec causes principales
 
 **Options actives (arbitrage avec donnees terrain) :**
 - Entites `SimulationOptionGroup` et `SimulationOption` implementees dans schema Prisma
@@ -583,7 +587,7 @@ Front :
 
 **Mesure ecart hypothese vs realite maintenant disponible en V1, avec limites assumees :**
 - Les projets convertis avant l'ajout de `ProjectForecastSnapshot` n'ont pas de reference previsionnelle retroactive
-- Le suivi reste projet par projet : pas encore de vision portefeuille consolidee des derives
+- Une lecture portefeuille simple des derives existe maintenant sur le dashboard, mais reste volontairement sobre : pas de filtres avances, pas d'export et pas de BI lourde
 - Certains KPI restent hors scope tant qu'aucune source fiable n'existe cote reel : capital mobilise constate, marge reelle de revente, cash-flow reel detaille
 - La logique locative reste simple : loyer issu des lots si disponible, sinon fallback sur la valeur projet/simulation
 
@@ -596,7 +600,7 @@ Front :
 
 **Mesure ecart previsionnel vs reel :**
 - Enrichir les KPI reels uniquement quand une source metier fiable existe dans le projet
-- Etendre la lecture des derives a l'echelle portefeuille si la priorite produit le justifie
+- Enrichir la lecture portefeuille existante seulement si cela reste simple, fiable et utile : filtres legers, export leger ou drill-down plus direct, sans vue analytics lourde
 - Eventuellement backfiller les anciens projets convertis via une action explicite et non silencieuse
 - Ajouter des alertes de delai seulement si une source calendrier robuste est introduite
 
@@ -644,19 +648,31 @@ Front :
 - Une invitation admin peut maintenant viser une organisation existante ou un espace personnel ; si besoin, l organisation personnelle est creee a l acceptation pour conserver un multi-tenant strict sans tenant orphelin inutile
 - Un utilisateur solo reste donc strictement multi-tenant via `1 user + 1 organization personnelle + 1 membership`
 - Les garde-fous admin couvrent notamment : impossibilite de suspendre son propre compte, impossibilite de changer son propre role admin, blocage de la suppression/degradation du dernier `SUPER_ADMIN`, restrictions d'elevation pour `ADMIN` et limites de trial par role
-- La landing marketing Next.js a ete refondue avec un message plus concret, un hero probleme/promesse, des sections marketing completes, un pricing plus credible et une FAQ visible
+- La landing marketing Next.js adopte maintenant un positionnement plus tranché et plus sélectif : elle parle d’abord aux investisseurs immobiliers actifs et marchands de biens qui pilotent plusieurs opérations en parallèle
+- La promesse visible de la landing est désormais : piloter avec des faits plutôt qu’avec des impressions, et voir rapidement quels projets sont `OK`, `À surveiller` ou `Problématique`
+- La landing V2.1 conserve cette ossature mais avec un copy plus court, moins répétitif et plus rigoureux
+- Règle copywriting landing : une section = une information nouvelle ; phrases courtes ; pas de storytelling inutile ; pas de répétition des mêmes promesses dans plusieurs blocs
+- Règle ton landing : direct et sélectif, mais jamais condescendant ; si le produit n’est pas adapté, on le dit simplement
+- Règle crédibilité landing : aucune promesse d’intégration, d’application mobile, de sécurité, de conformité ou de délai support si elle n’est pas documentable
+- Règle rareté landing : pas de compteur public ni de chiffre de places restantes tant que la donnée n’est pas dynamique et réelle
+- Règle typographique landing : accents français, apostrophes typographiques et statuts affichés proprement (`À surveiller`, `Problématique`, `aperçu`, `accès`, etc.)
+- La structure retenue pour la landing V2.1 est stabilisée : hero cible/promesse + aperçu produit, bloc `Pour qui / Pas pour qui`, bloc `Problème`, CTA intermédiaire, bloc `Comment Axelys aide à décider`, bloc `Aperçu produit`, bloc `Offre client pilote` fusionné, bloc `Crédibilité`, FAQ resserrée, CTA final avec formulaire
 - La landing marketing embarque des metadata SEO, Open Graph, Twitter et du JSON-LD `SoftwareApplication` + `FAQPage`
-- Le pricing initial affiche `Free`, `Pro` a `29 EUR` et `Business` a `59 EUR`
-- Le detail des fonctionnalites par offre reste a arbitrer, mais la logique de niveaux d acces par plan est actee
+- La landing publique ne pousse plus un comparatif de plans ; elle met en avant un programme `client pilote` sélectif à `15 EUR / mois`, avec référence publique visée à `29 EUR / mois` hors programme
+- Le programme `client pilote` reste volontairement borné : pas de compteur public, sélection humaine, pas de signup automatique, et conservation du tarif pilote pour les profils retenus
+- Le CTA principal de la landing mène maintenant au formulaire intégré en bas de page ; la route `/apply` expose le même formulaire dans une page dédiée
+- Le formulaire de la landing collecte `firstname`, `email`, `profileType`, `projectCount`, `problemDescription` et l’acceptation du cadre pilote, puis relaie vers `POST /api/pilot-applications` via la route Next.js `apps/landing/app/api/pilot-applications/route.ts`
 - Le choix cible pour les paiements futurs est Revolut, documente sans implementation a ce stade
 - Le dashboard global est la page d'entree post-login et synthetise le portefeuille avec agregats fiables, alertes utiles, projets a surveiller et activite recente
 - Le dashboard global s'appuie sur un endpoint backend dedie et sur une base de calcul KPI partagee avec l'overview projet pour eviter la duplication de logique
+- Un endpoint dedie `GET /api/dashboard/drifts` agrege maintenant les derives portefeuille en reexploitant `forecastComparison`, sans logique metier parallele
 - Le backend centralise desormais, pour chaque projet, les KPI, le score de completude / fiabilite, les donnees manquantes, les alertes metier hierarchisees, les suggestions d'action et le statut decisionnel
 - Le score de completude / fiabilite projet repose uniquement sur les donnees MVP presentes : prix achat, frais d'acquisition, budget travaux, lots, surfaces, loyers estimes, depenses et documents
 - Le statut decisionnel projet suit une logique simple et explicable : `OK` sans alerte critique ni warning, `A surveiller` si completude moyenne ou alertes warning, `Problematique` en presence d'alerte critique ou de completude tres faible
 - L'overview projet est desormais oriente decision avec un resume de pilotage, des alertes triees par gravite, des suggestions d'action et un bloc explicite des donnees manquantes
 - Les projets a surveiller du dashboard global sont maintenant tries d'abord par alertes critiques, puis par completude la plus faible, puis par mise a jour recente
 - Le dashboard global ajoute une comparaison simple entre projets actifs et des actions prioritaires pour les projets critiques
+- Le dashboard global ajoute maintenant un bloc `Derives portefeuille` avec compteurs derives/watch/sans reference et les 3 projets convertis les plus critiques a ouvrir en priorite
 - Les listes projet, lots et depenses ont des filtres simples cote UI
 - Les listes projet et lots peuvent masquer les archives par defaut
 - Les projets et lots peuvent etre archives rapidement depuis l'UI
@@ -683,9 +699,11 @@ Front :
 - Migration Prisma `user_invitations_admin_flow` : ajoutee
 - Migration Prisma `personal_invitation_spaces` : ajoutee
 - Migration Prisma `robust_conversion_forecast_v1` : ajoutee
-- Seed local : OK
-- Deux comptes seed locaux sont disponibles pour les tests : `admin@example.com` / `admin123` en `SUPER_ADMIN` et `user@example.com` / `user123` en utilisateur standard
-- Le seed local ajoute aussi deux idees de demonstration dans `demo-org` et marque `admin@example.com` comme utilisateur pilote avec acces beta pour faciliter les verifications manuelles
+- Seed local de demonstration produit : OK
+- Une commande unique `pnpm db:demo-seed` reset les donnees metier sans drop schema, purge les uploads seedes puis recree un dataset de demonstration commerciale
+- Le seed principal est concentre sur `Noroit Invest` (`noroit-invest`) avec 6 projets contrastes, 2 tenants secondaires minimaux, des simulations structurees, des options actives, des logs d'activation et des projets convertis avec snapshots pour alimenter les derives portefeuille
+- Trois comptes seed locaux sont disponibles pour les tests et la demo : `admin@example.com` / `admin123` en `SUPER_ADMIN`, `user@example.com` / `user123` en collaborateur standard et `reader@example.com` / `reader123` en lecture seule
+- Le seed local ajoute aussi deux idees de demonstration dans `Noroit Invest` et marque `admin@example.com` comme utilisateur pilote avec acces beta pour faciliter les verifications manuelles
 - Les deployments Vercel actifs sont maintenant `https://axelys-web.vercel.app/` pour le web et `https://axelys-api.vercel.app` pour l'API et `https://axelys.vercel.app` pour la landing page.
 - Le front Vite de production doit pointer vers `https://axelys-api.vercel.app/api` via `VITE_API_URL`
 - L'API Vercel avec Prisma Postgres doit utiliser une `DATABASE_URL` poolée pour le runtime et une `DIRECT_URL` directe pour Prisma CLI, Prisma Studio et les migrations
@@ -695,8 +713,8 @@ Front :
 - Les comptes seed demo restent strictement reserves au local et aux tests ; la production ne doit pas embarquer de donnees de demonstration
 - Tests e2e API : OK
 - Smoke tests UI Playwright : en place
-- Couverture Playwright actuelle : login, dashboard global, navigation dashboard vers projet, comparaison projets, statut decisionnel, suggestions d'action, empty state projets, creation projet, empty states d'un projet neuf, edition / archivage projet, creation lot, edition / archivage lot, creation depense avec justificatif, edition depense, verification du score de completude / fiabilite et des alertes dans l'overview, export CSV, verification document lie, upload document manuel, settings / ajout membre, invitation admin utilisateur vers organisation existante, invitation admin vers espace personnel, cas sans organisation disponible, page `setup-password`, preview de conversion simulation, affichage du bloc `Previsionnel vs reel` sur projet converti, cas `forecastComparison.available = false` et rendu propre quand `deltaPercent = null`
-- Validation rejouee pendant cette session : `cd apps/api && pnpm prisma generate`, `pnpm exec tsc --noEmit`, `pnpm test -- --runInBand src/projects/project-forecast.util.spec.ts`, `pnpm lint`, `pnpm build`, `pnpm test:e2e -- --runInBand app.e2e-spec.ts`, puis `cd apps/web && pnpm lint`, `pnpm build`, `pnpm exec playwright test tests/e2e/project-operations.spec.ts -g "project overview shows a clean empty state when no forecast comparison is available|project overview renders null delta percent and unavailable metrics without misleading output"` et `pnpm test:e2e -- simulations.spec.ts --grep "conversion preview|archived simulations"` = OK
+- Couverture Playwright actuelle : login, dashboard global, bloc `Derives portefeuille`, navigation dashboard vers projet, comparaison projets, statut decisionnel, suggestions d'action, empty state projets, creation projet, empty states d'un projet neuf, edition / archivage projet, creation lot, edition / archivage lot, creation depense avec justificatif, edition depense, verification du score de completude / fiabilite et des alertes dans l'overview, export CSV, verification document lie, upload document manuel, settings / ajout membre, invitation admin utilisateur vers organisation existante, invitation admin vers espace personnel, cas sans organisation disponible, page `setup-password`, preview de conversion simulation, affichage du bloc `Previsionnel vs reel` sur projet converti, cas `forecastComparison.available = false` et rendu propre quand `deltaPercent = null`
+- Validation rejouee pendant cette session : `pnpm db:demo-seed`, `pnpm lint`, `pnpm build`, verification manuelle des endpoints `POST /api/auth/login`, `GET /api/dashboard`, `GET /api/dashboard/drifts`, `GET /api/simulation-folders`, `GET /api/simulations/folders/folder-yield-lille/comparison`, `GET /api/simulations/simulation-tourcoing-division/options/activation-history`, puis `pnpm --dir apps/web test:e2e -- tests/e2e/auth-and-projects.spec.ts tests/e2e/invitations.spec.ts tests/e2e/ideas.spec.ts` et `pnpm --dir apps/web test:e2e -- tests/e2e/project-operations.spec.ts -g "admin can view settings and add a member|activating an option refreshes the simulation overview" tests/e2e/simulations.spec.ts` = OK
 - Le setup e2e backend aligne maintenant `DIRECT_URL` sur la base e2e pour eviter des resets ou migrations pointant vers une autre base que `DATABASE_URL_E2E`
 - Les documents de cadrage vivent dans `docs/`
 
@@ -705,9 +723,10 @@ Front :
 - Lancer la landing : `pnpm dev:landing`
 - Copier `apps/api/.env.example` vers `apps/api/.env`
 - Adapter `DATABASE_URL` si le PostgreSQL local n'utilise pas l'utilisateur `postgres`
-- Lancer migration et seed dans `apps/api`
+- Lancer la migration puis `pnpm db:demo-seed` depuis la racine
 - Login demo seed admin : `admin@example.com` / `admin123`
 - Login demo seed utilisateur : `user@example.com` / `user123`
+- Login demo seed lecture seule : `reader@example.com` / `reader123`
 - Commandes equivalentes a la CI de base : `pnpm lint` puis `pnpm build`
 - Commande tests e2e API : `pnpm test:e2e:api`
 - Commande tests UI Playwright : `pnpm test:e2e:web`

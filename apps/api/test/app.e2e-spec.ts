@@ -1401,6 +1401,299 @@ describe('API e2e', () => {
     );
   });
 
+  it('aggregates portfolio drifts from forecast comparisons and keeps tenant isolation', async () => {
+    const actor = await seedUser(prisma, {
+      organizationName: 'Org Dashboard Drifts',
+      organizationSlug: 'org-dashboard-drifts',
+      email: 'dashboard-drifts@example.com',
+      password: 'password123',
+    });
+    const outsider = await seedUser(prisma, {
+      organizationName: 'Org Dashboard Drifts Outside',
+      organizationSlug: 'org-dashboard-drifts-outside',
+      email: 'dashboard-drifts-outside@example.com',
+      password: 'password123',
+    });
+
+    const actorFolder = await prisma.simulationFolder.create({
+      data: {
+        organizationId: actor.organization.id,
+        name: 'Dossier derives',
+      },
+    });
+    const outsiderFolder = await prisma.simulationFolder.create({
+      data: {
+        organizationId: outsider.organization.id,
+        name: 'Dossier derives externe',
+      },
+    });
+
+    const driftProject = await prisma.project.create({
+      data: {
+        organizationId: actor.organization.id,
+        name: 'Projet Budget en derive',
+        status: ProjectStatus.WORKS,
+        purchasePrice: 180000,
+        notaryFees: 10000,
+        worksBudget: 10000,
+      },
+    });
+    const watchProject = await prisma.project.create({
+      data: {
+        organizationId: actor.organization.id,
+        name: 'Projet Loyer a surveiller',
+        status: ProjectStatus.ACTIVE,
+        purchasePrice: 180000,
+        notaryFees: 10000,
+        worksBudget: 10000,
+      },
+    });
+    await prisma.project.create({
+      data: {
+        organizationId: actor.organization.id,
+        name: 'Projet sans snapshot',
+        status: ProjectStatus.ACQUISITION,
+      },
+    });
+    const outsiderProject = await prisma.project.create({
+      data: {
+        organizationId: outsider.organization.id,
+        name: 'Projet Externe en derive',
+        status: ProjectStatus.WORKS,
+        purchasePrice: 180000,
+        notaryFees: 10000,
+        worksBudget: 10000,
+      },
+    });
+
+    await prisma.lot.createMany({
+      data: [
+        {
+          organizationId: actor.organization.id,
+          projectId: driftProject.id,
+          name: 'Lot derive',
+          status: LotStatus.AVAILABLE,
+          estimatedRent: 830,
+        },
+        {
+          organizationId: actor.organization.id,
+          projectId: watchProject.id,
+          name: 'Lot watch',
+          status: LotStatus.AVAILABLE,
+          estimatedRent: 890,
+        },
+        {
+          organizationId: outsider.organization.id,
+          projectId: outsiderProject.id,
+          name: 'Lot externe',
+          status: LotStatus.AVAILABLE,
+          estimatedRent: 780,
+        },
+      ],
+    });
+
+    await prisma.expense.create({
+      data: {
+        organizationId: actor.organization.id,
+        projectId: driftProject.id,
+        issueDate: new Date('2026-04-01'),
+        amountHt: 25000,
+        vatAmount: 5000,
+        amountTtc: 30000,
+        category: ExpenseCategory.WORKS,
+        paymentStatus: PaymentStatus.PAID,
+        vendorName: 'Entreprise derive',
+      },
+    });
+    await prisma.expense.create({
+      data: {
+        organizationId: outsider.organization.id,
+        projectId: outsiderProject.id,
+        issueDate: new Date('2026-04-01'),
+        amountHt: 25000,
+        vatAmount: 5000,
+        amountTtc: 30000,
+        category: ExpenseCategory.WORKS,
+        paymentStatus: PaymentStatus.PAID,
+        vendorName: 'Entreprise externe',
+      },
+    });
+
+    const actorDriftSimulation = await prisma.simulation.create({
+      data: {
+        organizationId: actor.organization.id,
+        folderId: actorFolder.id,
+        name: 'Simulation derive',
+        strategy: 'RENTAL',
+        purchasePrice: 180000,
+        acquisitionFees: 10000,
+        worksBudget: 10000,
+        financingMode: 'LOAN',
+      },
+    });
+    const actorWatchSimulation = await prisma.simulation.create({
+      data: {
+        organizationId: actor.organization.id,
+        folderId: actorFolder.id,
+        name: 'Simulation watch',
+        strategy: 'RENTAL',
+        purchasePrice: 180000,
+        acquisitionFees: 10000,
+        worksBudget: 10000,
+        financingMode: 'LOAN',
+      },
+    });
+    const outsiderSimulation = await prisma.simulation.create({
+      data: {
+        organizationId: outsider.organization.id,
+        folderId: outsiderFolder.id,
+        name: 'Simulation externe',
+        strategy: 'RENTAL',
+        purchasePrice: 180000,
+        acquisitionFees: 10000,
+        worksBudget: 10000,
+        financingMode: 'LOAN',
+      },
+    });
+
+    await prisma.simulation.update({
+      where: { id: actorDriftSimulation.id },
+      data: { convertedProjectId: driftProject.id },
+    });
+    await prisma.simulation.update({
+      where: { id: actorWatchSimulation.id },
+      data: { convertedProjectId: watchProject.id },
+    });
+    await prisma.simulation.update({
+      where: { id: outsiderSimulation.id },
+      data: { convertedProjectId: outsiderProject.id },
+    });
+
+    const actorDriftConversion = await prisma.simulationConversion.create({
+      data: {
+        organizationId: actor.organization.id,
+        simulationId: actorDriftSimulation.id,
+        projectId: driftProject.id,
+        createdByUserId: actor.user.id,
+      },
+    });
+    const actorWatchConversion = await prisma.simulationConversion.create({
+      data: {
+        organizationId: actor.organization.id,
+        simulationId: actorWatchSimulation.id,
+        projectId: watchProject.id,
+        createdByUserId: actor.user.id,
+      },
+    });
+    const outsiderConversion = await prisma.simulationConversion.create({
+      data: {
+        organizationId: outsider.organization.id,
+        simulationId: outsiderSimulation.id,
+        projectId: outsiderProject.id,
+        createdByUserId: outsider.user.id,
+      },
+    });
+
+    await prisma.projectForecastSnapshot.create({
+      data: {
+        organizationId: actor.organization.id,
+        projectId: driftProject.id,
+        simulationId: actorDriftSimulation.id,
+        conversionId: actorDriftConversion.id,
+        referenceDate: new Date('2026-04-02T10:00:00.000Z'),
+        strategy: 'RENTAL',
+        acquisitionCost: 190000,
+        worksBudget: 10000,
+        totalProjectCost: 200000,
+        targetMonthlyRent: 1000,
+        grossYield: 6,
+        equityRequired: 59000,
+        lotsCount: 1,
+      },
+    });
+    await prisma.projectForecastSnapshot.create({
+      data: {
+        organizationId: actor.organization.id,
+        projectId: watchProject.id,
+        simulationId: actorWatchSimulation.id,
+        conversionId: actorWatchConversion.id,
+        referenceDate: new Date('2026-04-02T10:00:00.000Z'),
+        strategy: 'RENTAL',
+        acquisitionCost: 190000,
+        worksBudget: 10000,
+        totalProjectCost: 200000,
+        targetMonthlyRent: 1000,
+        grossYield: 6,
+        equityRequired: 59000,
+        lotsCount: 1,
+      },
+    });
+    await prisma.projectForecastSnapshot.create({
+      data: {
+        organizationId: outsider.organization.id,
+        projectId: outsiderProject.id,
+        simulationId: outsiderSimulation.id,
+        conversionId: outsiderConversion.id,
+        referenceDate: new Date('2026-04-02T10:00:00.000Z'),
+        strategy: 'RENTAL',
+        acquisitionCost: 190000,
+        worksBudget: 10000,
+        totalProjectCost: 200000,
+        targetMonthlyRent: 1000,
+        grossYield: 6,
+        equityRequired: 59000,
+        lotsCount: 1,
+      },
+    });
+
+    const token = await login('dashboard-drifts@example.com', 'password123');
+
+    const response = await request(app.getHttpServer())
+      .get('/api/dashboard/drifts')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(response.body.totalProjects).toBe(3);
+    expect(response.body.projectsWithDrift).toBe(1);
+    expect(response.body.projectsWithWatch).toBe(1);
+    expect(response.body.projectsWithoutForecastReference).toBe(1);
+    expect(response.body.criticalProjects).toEqual([
+      expect.objectContaining({
+        projectId: driftProject.id,
+        name: 'Projet Budget en derive',
+        status: 'drift',
+        mainIssues: expect.arrayContaining([
+          expect.objectContaining({
+            metricKey: 'worksBudget',
+            status: 'drift',
+          }),
+          expect.objectContaining({
+            metricKey: 'grossYield',
+            status: 'drift',
+          }),
+        ]),
+      }),
+      expect.objectContaining({
+        projectId: watchProject.id,
+        name: 'Projet Loyer a surveiller',
+        status: 'watch',
+        mainIssues: expect.arrayContaining([
+          expect.objectContaining({
+            metricKey: 'monthlyRent',
+            status: 'watch',
+          }),
+          expect.objectContaining({
+            metricKey: 'grossYield',
+            status: 'watch',
+          }),
+        ]),
+      }),
+    ]);
+
+    const payload = JSON.stringify(response.body);
+    expect(payload).not.toContain('Projet Externe en derive');
+  });
+
   it('updates pilot access and unlocks beta ideas only for activated pilot users', async () => {
     const actor = await seedUser(prisma, {
       organizationName: 'Org Pilot',

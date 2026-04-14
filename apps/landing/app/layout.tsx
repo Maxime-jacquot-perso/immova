@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import { IBM_Plex_Sans } from 'next/font/google';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import { defaultDescription, siteName, siteUrl } from './site-config';
 import './globals.css';
-import { SpeedInsights } from "@vercel/speed-insights/next" 
 
 const ibmPlexSans = IBM_Plex_Sans({
   subsets: ['latin'],
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   applicationName: siteName,
   title: {
-    default: `Outil de pilotage projet immobilier pour decisions fiables | ${siteName}`,
+    default: `Pilotage d’opérations immobilières pour décider sur des faits | ${siteName}`,
     template: `%s | ${siteName}`,
   },
   description: defaultDescription,
@@ -39,8 +39,10 @@ export default function RootLayout({
 }>) {
   return (
     <html className={ibmPlexSans.variable} lang="fr">
-      <body>{children}</body>
-      <SpeedInsights />
+      <body>
+        {children}
+        <SpeedInsights />
+      </body>
     </html>
   );
 }

@@ -25,6 +25,7 @@ Le produit couvre 2 temps :
 - depenses / factures
 - documents
 - KPI projet simples et fiables
+- lecture portefeuille simple des derives sur le dashboard pour savoir quels projets demandent une action rapide
 - export CSV comptable simple
 
 Le produit n'est ni un logiciel de gestion locative classique, ni un ERP immobilier, ni une usine a gaz de simulation financiere complexe.
@@ -50,6 +51,7 @@ Le **module de simulation decisionnelle avant achat** est partiellement implemen
 - **snapshot previsionnel immutable** via `ProjectForecastSnapshot` cree au moment de la conversion pour figer les hypotheses de reference
 - **tableau de bord projet "Previsionnel vs reel"** sur les projets convertis, calcule cote backend
 - **alertes de derive V1** simples et explicables sur budget travaux, cout total, comptage de lots, loyer et rendement quand la donnee existe
+- **lecture portefeuille des derives sur le dashboard** : compteur des projets en derive / a surveiller / sans reference previsionnelle et top 3 projets a ouvrir en priorite
 - journal d'opportunite pour documenter evenements structurants (visite, negociation, changement hypothese)
 - **options actives pour arbitrer avec donnees terrain reelles** :
   - gestion de plusieurs hypotheses par categorie (prix d'achat, travaux, financement)
@@ -67,7 +69,7 @@ Le **module de simulation decisionnelle avant achat** est partiellement implemen
 - UX encore perfectible sur certains ecrans
 - comparaison encore simple : un seul groupe a la fois, pas d'export comparatif, pas de vue multi-groupes
 - les projets convertis avant l'ajout du snapshot n'ont pas de reference previsionnelle retroactive
-- le suivi previsionnel vs reel V1 reste volontairement sobre : pas de portefeuille transverse, pas d'export de derives, pas de versioning complexe du snapshot
+- le suivi previsionnel vs reel V1 reste volontairement sobre : lecture portefeuille simple disponible, mais pas d'export de derives, pas de vue BI lourde et pas de versioning complexe du snapshot
 - certains KPI restent volontairement `non disponibles` tant qu'aucune source fiable n'existe cote projet actuel (capital mobilise reel, marge reelle de revente, cash-flow reel complet)
 
 **Garde-fous respectes V1 :**
@@ -91,6 +93,7 @@ Le **module de simulation decisionnelle avant achat** est partiellement implemen
 - `GET /api/simulations/:simulationId/conversion-preview` : preview de conversion avec donnees transferees, lots, champs non repris, warnings, blocages et indicateur `canConvert`
 - `POST /api/simulations/:simulationId/convert-to-project` : conversion effective avec regle stricte anti-doublon
 - `GET /api/projects/:projectId/overview` : inclut maintenant un bloc `forecastComparison` quand le projet provient d'une conversion avec snapshot
+- `GET /api/dashboard/drifts` : agrege les derives portefeuille a partir des comparaisons projet existantes, sans recalcul metier parallele
 
 **Semantique HTTP sur les blocages de conversion :**
 - `SIMULATION_ALREADY_CONVERTED` retourne `409 Conflict`
@@ -121,8 +124,10 @@ Le **module de simulation decisionnelle avant achat** est partiellement implemen
 - budget travaux et cout total : `a surveiller` au-dela de `5%`, `en derive` au-dela de `10%`
 - loyer et rendement : `a surveiller` au-dela de `10%` d'ecart defavorable, `en derive` au-dela de `15%`
 - lots : alerte si le nombre reel s'ecarte de la structure previsionnelle
+- dashboard portefeuille : `GET /api/dashboard/drifts` recompte les projets actifs en derive, a surveiller et sans reference, puis remonte les 3 projets les plus critiques avec leurs causes principales
 
 **Prochaines etapes prioritaires :**
+- enrichir la lecture portefeuille existante seulement si la source reste fiable et utile : filtres simples, drill-down plus direct ou export leger, sans basculer vers une vue analytics lourde
 - comparaison multi-groupes ou exportable pour partage avec partenaires et financeurs
 - historique enrichi si besoin avec niveau de justification supplementaire
 - enrichissement du previsionnel vs reel avec de nouvelles sources fiables cote projet reel
@@ -145,6 +150,67 @@ Choix multi-tenant :
 - les idees et les votes sont scopes par `organizationId`
 - l application produit ne prend jamais `organizationId` depuis le body
 - le back-office admin garde une vue transverse pour la gestion interne
+
+## Landing publique et programme client pilote
+
+La landing publique ne cherche pas à ressembler à une page marketing générique.
+Le positionnement retenu reste volontairement direct :
+
+- cible explicite dès le hero : investisseurs immobiliers actifs, marchands de biens et petites structures qui pilotent plusieurs opérations en parallèle
+- promesse centrale : piloter avec des faits plutôt qu’avec des impressions
+- lecture immédiate de la valeur : voir quels projets sont `OK`, `À surveiller` ou `Problématique` à partir de données réelles
+- ton sélectif mais respectueux : pas de sur-promesse, pas d’arrogance, pas de faux signaux de rareté
+
+Principes de copywriting retenus pour la V2.1 :
+
+- réduire fortement le volume de texte et éviter les redites
+- une idée utile par bloc, sans répétition de la même promesse
+- phrases courtes, ton direct, pas de storytelling décoratif
+- bloc offre fusionné en un seul ensemble clair
+- CTA intermédiaire après le problème + CTA final avec formulaire
+
+Décisions prises sur la crédibilité et le ton :
+
+- aucune promesse d’intégration, d’application mobile ou de fonctionnalité future non disponible
+- aucune affirmation juridique ou sécurité non documentée sur la landing
+- pas de compteur public ni de chiffre de rareté tant qu’il n’est pas piloté dynamiquement
+- sélection assumée, mais sans formules condescendantes ou agressives
+
+Règles typographiques appliquées :
+
+- accents français rétablis sur tout le copy visible
+- apostrophes typographiques `’` sur la landing et les textes associés
+- correction des statuts et formulations visibles : `À surveiller`, `Problématique`, `aperçu`, `accès`, etc.
+- ponctuation française relue sur les textes marketing et les CTA
+
+Structure retenue pour la landing V2.1 :
+
+- hero resserré avec cible explicite, promesse concrète, aperçu produit et CTA principal vers la demande d’accès
+- bloc `Pour qui / Pas pour qui` pour auto-qualification rapide
+- bloc `Problème` avec 4 douleurs terrain compactes
+- CTA intermédiaire après le problème
+- bloc `Comment Axelys aide à décider`
+- bloc `Aperçu produit` contextualisé
+- bloc `Offre client pilote` fusionné avec prix, cadre, attentes réciproques et raison de la limitation
+- bloc `Crédibilité` sobre avec formulation prudente
+- FAQ resserrée
+- CTA final sous forme de vrai formulaire intégré
+
+Principe du programme client pilote :
+
+- programme volontairement limité à un petit nombre de profils actifs
+- tarif pilote : `15 € / mois`
+- prix public visé hors programme : `29 € / mois`
+- si un profil entre dans le programme pilote, il conserve son tarif pilote ensuite
+- sélection humaine : le but est de trouver le bon contexte, pas d’ouvrir un signup massif
+
+Fonctionnement du formulaire et des CTA :
+
+- le CTA principal de la landing pointe vers le formulaire intégré en bas de page (`#access`)
+- la route `/apply` expose le même formulaire dans une page dédiée pour partage direct
+- le formulaire demande : prénom, email, profil, nombre de projets actifs, message libre et acceptation du cadre pilote
+- le submit passe par la route Next.js `apps/landing/app/api/pilot-applications/route.ts`, qui relaie ensuite vers l’API Nest `POST /api/pilot-applications`
+- la landing peut être reliée à l’API via `API_URL` ; par défaut local, la route utilise `http://localhost:3000/api`
 
 ## Stack et architecture
 
@@ -261,12 +327,11 @@ cp apps/api/.env.example apps/api/.env
 docker compose up -d postgres
 ```
 
-4. Initialiser la base :
+4. Initialiser la base de demonstration :
 
 ```bash
-cd apps/api
-pnpm prisma migrate dev
-pnpm prisma db seed
+pnpm prisma:migrate
+pnpm db:demo-seed
 ```
 
 5. Lancer les applications dans des terminaux separes depuis la racine :
@@ -277,14 +342,40 @@ pnpm dev:web
 pnpm dev:api
 ```
 
+## Seed de demo produit
+
+`pnpm db:demo-seed` relance un reset complet des donnees metier sans supprimer le schema PostgreSQL, nettoie les uploads seedes, puis recree un dataset de demonstration commerciale pense pour une demo produit.
+
+Le dataset principal est concentre sur `Noroit Invest` avec :
+
+- 6 projets volontairement contrastes pour montrer un portefeuille vivant
+- des simulations structurees par dossiers d'opportunites
+- des options actives et un historique de decisions sur plusieurs opportunites
+- des projets convertis avec snapshot previsionnel pour alimenter les derives portefeuille
+- 2 tenants secondaires tres legers pour verifier le multi-tenant sans polluer la demo principale
+
+Le seed n'est donc pas un simple remplissage technique : il sert explicitement a illustrer l'aide a la decision avant achat puis le pilotage apres achat en moins de 3 minutes.
+
 ## Comptes de demo locaux
 
-Apres le seed Prisma :
+Apres `pnpm db:demo-seed` :
 
 - `admin@example.com` / `admin123` : compte `SUPER_ADMIN`, acces a l'application produit et au back-office `/admin`, utilisateur pilote avec acces beta
-- `user@example.com` / `user123` : utilisateur standard, acces a l'application produit
+- `user@example.com` / `user123` : collaborateur standard, acces a l'application produit
+- `reader@example.com` / `reader123` : membre lecture seule
 
-Le seed ajoute aussi deux idees de demonstration dans `demo-org` pour verifier rapidement la page `/ideas` et le panneau beta pilote.
+Organisation principale de demo : `Noroit Invest` (`noroit-invest`)
+
+Portefeuille principal seed :
+
+- `Immeuble de rapport - Roubaix Centre` : projet sain et complet
+- `T2 meuble - Lille Fives` : projet a surveiller
+- `Division pavillonnaire - Tourcoing` : projet problematique avec derive
+- `Local commercial + logement - Arras` : projet incomplet
+- `Colocation 4 chambres - Valenciennes` : projet issu d'un arbitrage de scenarios
+- `Maison a renover - Lens` : derive portefeuille tres lisible
+
+Le seed ajoute aussi deux idees de demonstration dans `Noroit Invest` pour verifier rapidement la page `/ideas` et le panneau beta pilote.
 
 Ces comptes sont uniquement destines au developpement local et aux tests. Ils ne doivent pas etre recrees ni utilises en production.
 
@@ -332,6 +423,7 @@ pnpm build:api
 pnpm lint:landing
 pnpm lint:web
 pnpm lint:api
+pnpm db:demo-seed
 pnpm test:e2e:api
 pnpm test:e2e:web
 ```

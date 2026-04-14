@@ -20,7 +20,7 @@ test('demo admin lands on dashboard and can open the seeded project', async ({ p
   await expect(page.getByText('Projets actifs', { exact: true })).toBeVisible();
   await expect(page.getByText('Comparaison projets')).toBeVisible();
 
-  const projectRow = page.locator('tbody tr', { hasText: 'Immeuble rue Victor Hugo' });
+  const projectRow = page.locator('tbody tr', { hasText: 'Immeuble de rapport - Roubaix Centre' });
   await expect(projectRow).toBeVisible();
   await expect(projectRow).toContainText(
     /Problematique|A surveiller|OK/,
@@ -29,12 +29,12 @@ test('demo admin lands on dashboard and can open the seeded project', async ({ p
   await projectRow.getByRole('link', { name: 'Voir' }).click();
 
   await expect(page).toHaveURL(/\/projects\/demo-project-seed-id$/);
-  await expect(page.getByRole('heading', { name: 'Immeuble rue Victor Hugo' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Immeuble de rapport - Roubaix Centre' })).toBeVisible();
   await expect(page.getByText('Resume de pilotage')).toBeVisible();
   await expect(page.getByText('Statut decisionnel')).toBeVisible();
 
   await openProjects(page);
-  const projectCard = page.locator('.project-card', { hasText: 'Immeuble rue Victor Hugo' });
+  const projectCard = page.locator('.project-card', { hasText: 'Immeuble de rapport - Roubaix Centre' });
   await expect(projectCard).toBeVisible();
   await expect(projectCard).toContainText(/Problematique|A surveiller|OK/);
 });

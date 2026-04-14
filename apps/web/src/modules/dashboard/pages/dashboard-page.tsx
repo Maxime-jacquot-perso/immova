@@ -1,7 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../auth/auth-context';
-import { getDashboard } from '../api';
+import {
+  getDashboard,
+  getDashboardDrifts,
+  type DashboardDriftIssue,
+} from '../api';
 import { EmptyState } from '../../../shared/ui/empty-state';
 import { ErrorState } from '../../../shared/ui/error-state';
 import { LoadingBlock } from '../../../shared/ui/loading-block';
@@ -39,11 +43,73 @@ function renderEstimatedYield(value: number | null | undefined) {
   );
 }
 
+function getDriftStatusTone(status: DashboardDriftIssue['status']) {
+  return status === 'drift' ? 'critical' : 'warning';
+}
+
+function getDriftStatusLabel(status: DashboardDriftIssue['status']) {
+  return status === 'drift' ? 'En derive' : 'A surveiller';
+}
+
+function getDriftIssueUnit(metricKey: string) {
+  if (metricKey === 'grossYield') {
+    return 'percent';
+  }
+
+  if (metricKey === 'lotsCount') {
+    return 'count';
+  }
+
+  return 'currency';
+}
+
+function formatSignedValue(
+  metricKey: string,
+  value: number | null | undefined,
+) {
+  if (typeof value !== 'number') {
+    return 'Non disponible';
+  }
+
+  const prefix = value > 0 ? '+' : value < 0 ? '-' : '';
+  const absoluteValue = Math.abs(value);
+  const unit = getDriftIssueUnit(metricKey);
+
+  if (unit === 'percent') {
+    return `${prefix}${formatPercent(absoluteValue)}`;
+  }
+
+  if (unit === 'count') {
+    return `${prefix}${formatCount(absoluteValue)}`;
+  }
+
+  return `${prefix}${formatCurrency(absoluteValue)}`;
+}
+
+function formatDriftIssue(issue: DashboardDriftIssue) {
+  const signedValue = formatSignedValue(issue.metricKey, issue.deltaValue);
+
+  if (typeof issue.deltaPercent !== 'number') {
+    return `${issue.label} : ${signedValue}`;
+  }
+
+  const percentPrefix =
+    issue.deltaPercent > 0 ? '+' : issue.deltaPercent < 0 ? '-' : '';
+
+  return `${issue.label} : ${signedValue} (${percentPrefix}${formatPercent(
+    Math.abs(issue.deltaPercent),
+  )})`;
+}
+
 export function DashboardPage() {
   const { session } = useAuth();
   const dashboardQuery = useQuery({
     queryKey: ['dashboard'],
     queryFn: () => getDashboard(session),
+  });
+  const driftsQuery = useQuery({
+    queryKey: ['dashboard', 'drifts'],
+    queryFn: () => getDashboardDrifts(session),
   });
 
   if (dashboardQuery.isLoading) {
@@ -145,6 +211,118 @@ export function DashboardPage() {
         />
       ) : (
         <>
+          <section className="panel">
+            <div className="panel-header">
+              <div>
+                <h2 className="section-title">Derives portefeuille</h2>
+                <div className="section-subtitle">
+                  Une lecture immediate pour savoir quels projets convertis
+                  demandent votre attention maintenant.
+                </div>
+              </div>
+            </div>
+
+            {driftsQuery.isLoading ? (
+              <LoadingBlock label="Chargement des derives portefeuille..." />
+            ) : driftsQuery.isError ? (
+              <ErrorState
+                error={driftsQuery.error}
+                onRetry={() => {
+                  void driftsQuery.refetch();
+                }}
+                title="Impossible de charger les derives portefeuille"
+                withPanel={false}
+              />
+            ) : driftsQuery.data ? (
+              <div className="stack">
+                <section className="kpi-grid">
+                  <div className="card kpi-card">
+                    <div className="kpi-card__label">Projets lus</div>
+                    <div className="kpi-card__value">
+                      {formatCount(driftsQuery.data.totalProjects)}
+                    </div>
+                    <div className="kpi-card__hint">Projets actifs du portefeuille</div>
+                  </div>
+                  <div className="card kpi-card">
+                    <div className="kpi-card__label">En derive</div>
+                    <div className="kpi-card__value">
+                      {formatCount(driftsQuery.data.projectsWithDrift)}
+                    </div>
+                    <div className="kpi-card__hint">Au moins un ecart critique</div>
+                  </div>
+                  <div className="card kpi-card">
+                    <div className="kpi-card__label">A surveiller</div>
+                    <div className="kpi-card__value">
+                      {formatCount(driftsQuery.data.projectsWithWatch)}
+                    </div>
+                    <div className="kpi-card__hint">Ecarts moderes sans derive critique</div>
+                  </div>
+                  <div className="card kpi-card">
+                    <div className="kpi-card__label">Sans reference</div>
+                    <div className="kpi-card__value">
+                      {formatCount(driftsQuery.data.projectsWithoutForecastReference)}
+                    </div>
+                    <div className="kpi-card__hint">
+                      Projets sans snapshot previsionnel exploitable
+                    </div>
+                  </div>
+                </section>
+
+                {driftsQuery.data.criticalProjects.length === 0 ? (
+                  <EmptyState
+                    description={
+                      driftsQuery.data.projectsWithoutForecastReference > 0
+                        ? `${formatCount(driftsQuery.data.projectsWithoutForecastReference)} projet(s) restent encore sans reference previsionnelle, mais aucune derive active n'est detectee sur les autres.`
+                        : "Aucune derive active n'est detectee sur les projets convertis actuellement comparables."
+                    }
+                    title="Rien a prioriser"
+                    withPanel={false}
+                  />
+                ) : (
+                  <div className="dashboard-alert-list">
+                    {driftsQuery.data.criticalProjects.map((project) => (
+                      <div
+                        className={`dashboard-alert dashboard-alert--${getDriftStatusTone(
+                          project.status,
+                        )}`}
+                        key={project.projectId}
+                      >
+                        <div className="dashboard-alert__content">
+                          <div className="dashboard-alert__meta">
+                            <span
+                              className={`tone-pill tone-pill--${getDriftStatusTone(
+                                project.status,
+                              )}`}
+                            >
+                              {getDriftStatusLabel(project.status)}
+                            </span>
+                            <span className="meta">Lecture portefeuille</span>
+                          </div>
+                          <strong>{project.name}</strong>
+                          <div className="stack stack--sm">
+                            {project.mainIssues.map((issue) => (
+                              <div className="meta" key={`${project.projectId}-${issue.metricKey}`}>
+                                {formatDriftIssue(issue)}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <Link
+                          className="button button--secondary button--small"
+                          to={`/projects/${project.projectId}`}
+                        >
+                          Ouvrir
+                        </Link>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="meta">Derives portefeuille indisponibles.</div>
+            )}
+          </section>
+
           <section className="panel">
             <div className="panel-header">
               <div>

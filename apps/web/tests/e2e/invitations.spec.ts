@@ -24,7 +24,7 @@ test("admin can invite a user from the admin users screen", async ({
   await page.getByLabel("Cible du compte").selectOption("existing");
   await page
     .getByLabel("Organisation")
-    .selectOption({ label: "Demo Invest · demo-org" });
+    .selectOption({ label: "Noroit Invest · noroit-invest" });
   await page.getByLabel("Role membership").selectOption("MANAGER");
   await page
     .getByLabel("Motif")
@@ -166,8 +166,8 @@ test("setup-password lets the invitee define a password and redirects to login",
         requiresPasswordSetup: true,
         organization: {
           id: "org_demo",
-          name: "Demo Invest",
-          slug: "demo-org",
+          name: "Noroit Invest",
+          slug: "noroit-invest",
         },
       }),
     });

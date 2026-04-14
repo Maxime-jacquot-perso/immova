@@ -96,6 +96,117 @@ test('admin can create a lot inside a project', async ({ page }) => {
   await expect(lotRow).toContainText('Disponible');
 });
 
+test('dashboard highlights portfolio drifts with the main issues to review first', async ({
+  page,
+}) => {
+  await page.route(new RegExp('/api/dashboard/drifts$'), async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        totalProjects: 3,
+        projectsWithDrift: 1,
+        projectsWithWatch: 1,
+        projectsWithoutForecastReference: 1,
+        criticalProjects: [
+          {
+            projectId: 'project-drift',
+            name: 'Projet Budget en derive',
+            status: 'drift',
+            driftScore: 178,
+            mainIssues: [
+              {
+                metricKey: 'worksBudget',
+                label: 'Budget travaux',
+                status: 'drift',
+                deltaPercent: 200,
+                deltaValue: 20000,
+              },
+              {
+                metricKey: 'grossYield',
+                label: 'Rendement brut',
+                status: 'drift',
+                deltaPercent: -24.5,
+                deltaValue: -1.47,
+              },
+            ],
+          },
+          {
+            projectId: 'project-watch',
+            name: 'Projet Loyer a surveiller',
+            status: 'watch',
+            driftScore: 51,
+            mainIssues: [
+              {
+                metricKey: 'monthlyRent',
+                label: 'Loyer mensuel',
+                status: 'watch',
+                deltaPercent: -11,
+                deltaValue: -110,
+              },
+            ],
+          },
+        ],
+      }),
+    });
+  });
+
+  await page.route(new RegExp('/api/dashboard$'), async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        summary: {
+          activeProjectsCount: 3,
+          archivedProjectsCount: 0,
+          nonArchivedLotsCount: 4,
+          totalExpensesAmount: 30000,
+          estimatedMonthlyRentTotal: 1720,
+        },
+        alerts: [],
+        watchlist: [],
+        comparison: [
+          {
+            id: 'project-drift',
+            name: 'Projet Budget en derive',
+            status: 'WORKS',
+            totalCostToDate: 220000,
+            estimatedRentTotal: 830,
+            grossYieldEstimated: 4.53,
+            completeness: {
+              score: 100,
+              level: 'info',
+              label: 'Projet suffisamment renseigne',
+              missingItems: [],
+              completedCriteriaCount: 8,
+              totalCriteriaCount: 8,
+            },
+            decisionStatus: {
+              level: 'warning',
+              label: 'A surveiller',
+            },
+            href: '/projects/project-drift',
+          },
+        ],
+        recentActivity: [],
+      }),
+    });
+  });
+
+  await loginAsDemoAdmin(page);
+
+  const driftPanel = page.locator('.panel').filter({
+    has: page.getByRole('heading', { name: 'Derives portefeuille' }),
+  });
+
+  await expect(driftPanel).toBeVisible();
+  await expect(driftPanel).toContainText('Projets lus');
+  await expect(driftPanel).toContainText('Projet Budget en derive');
+  await expect(driftPanel).toContainText(/\+20.?000 \u20ac \(\+200 ?%\)/);
+  await expect(driftPanel).toContainText('Projet Loyer a surveiller');
+  await expect(driftPanel).toContainText(/-110 \u20ac \(-11 ?%\)/);
+});
+
 test('new project shows helpful empty states across MVP screens', async ({
   page,
 }) => {
@@ -523,8 +634,8 @@ test('admin can view settings and add a member', async ({ page }) => {
   await page.getByRole('link', { name: 'Settings' }).click();
   await expect(page).toHaveURL(/\/settings$/);
 
-  await expect(page.getByText('Demo Invest')).toBeVisible();
-  await expect(page.getByText('demo-org')).toBeVisible();
+  await expect(page.getByText('Noroit Invest')).toBeVisible();
+  await expect(page.getByText('noroit-invest')).toBeVisible();
 
   await page.getByLabel('Email').fill(email);
   await page.locator('#member-first').fill('Marie');

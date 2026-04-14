@@ -18,6 +18,7 @@
     "lint:web": "cd apps/web && pnpm lint",
     "lint:api": "cd apps/api && pnpm lint",
     "prisma:generate": "cd apps/api && pnpm prisma generate",
-    "prisma:migrate": "cd apps/api && pnpm prisma migrate dev"
+    "prisma:migrate": "cd apps/api && pnpm prisma migrate dev",
+    "db:demo-seed": "pnpm --dir apps/api db:demo-seed"
   }
 }

@@ -1,21 +1,30 @@
 # Landing page et go-to-market
 
-## 1. Role de la landing
+## 1. Rôle de la landing
 
-La landing marketing sert a presenter clairement le positionnement du produit sans elargir le scope du MVP visible.
+La landing marketing sert à qualifier vite les bons profils, montrer clairement la valeur visible du produit et convertir vers une demande d’accès `client pilote` crédible.
 
-Elle doit rester alignee avec l application :
+Positionnement retenu :
 
-- detail projet comme centre de gravite
-- projets, lots, depenses, documents, KPI fiables et export CSV comme coeur visible
-- ton sobre, credible, orientee pilotage
+- cible explicite : investisseurs immobiliers actifs, marchands de biens et petites structures qui pilotent plusieurs opérations en parallèle
+- promesse visible en quelques secondes : piloter avec des faits, pas avec des impressions
+- angle de lecture : voir rapidement quels projets sont `OK`, `À surveiller` ou `Problématique`
+- ton direct, sobre, sélectif, sans sur-promesse ni verbiage
+
+Elle doit rester alignée avec l’application :
+
+- détail projet comme centre de gravité
+- projets, lots, dépenses, documents, KPI fiables et alertes comme cœur visible
+- aide à la décision avant storytelling marketing
 
 La landing ne doit pas promettre :
 
-- gestion locative avancee
+- gestion locative avancée
 - ERP immobilier
-- automatisations avancees
+- automatisations avancées
 - reporting portefeuille complexe
+- import Excel automatique s’il n’existe pas encore
+- application mobile ou intégrations qui ne sont pas disponibles
 
 ## 2. Stack retenue
 
@@ -31,35 +40,60 @@ L application produit continue de vivre dans `apps/web` avec React + Vite.
 
 ## 3. Direction visuelle
 
-La landing doit reprendre les codes de l app existante :
+La landing doit reprendre les codes de l’app existante tout en assumant une lecture plus tranchée :
 
-- fond clair texture
-- cartes blanches legerement translucides
-- accent bleu
-- hierarchy simple et lisible
-- focus sur les chiffres, les contenus utiles et la clarte
+- fond clair travaillé, sans effet gadget
+- cartes lisibles et sobres
+- accent bleu conservé
+- hiérarchie visuelle nette, peu de texte avant les CTA
+- focus sur la décision, les preuves utiles et la qualification rapide
 
-## 4. Pricing de depart
+## 4. Principes de copywriting V2.1
 
-La structure commerciale initiale retient 3 offres :
+- réduire le volume de texte et supprimer les répétitions
+- une section = une idée nouvelle
+- phrases courtes et lisibles sur mobile
+- ton direct mais respectueux
+- aucune affirmation juridique, sécurité ou roadmap qui ne peut pas être soutenue
+- typographie française correcte sur tout le copy visible
 
-- Free
-- Pro : 29 EUR / mois
-- Business : 59 EUR / mois
+## 5. Structure retenue pour la landing V2.1
 
-Le detail exact de ce que chaque offre debloque sera arbitre plus tard.
+- hero cible/promesse avec CTA principal vers le formulaire et CTA secondaire vers l’aperçu produit
+- bloc `Pour qui / Pas pour qui`
+- bloc `Problème`
+- CTA intermédiaire
+- bloc `Comment Axelys aide à décider`
+- bloc `Aperçu produit` contextualisé
+- bloc `Offre client pilote` fusionné
+- bloc `Crédibilité`
+- FAQ resserrée
+- CTA final avec vrai formulaire intégré
 
-Point deja acte :
+## 6. Programme client pilote
 
-- tous les utilisateurs n auront pas acces aux memes fonctionnalites selon leur offre
-- la logique de limitation par plan devra etre prise en compte dans le produit et la communication
+Le programme client pilote n’est pas un faux waitlist marketing.
 
-## 5. Paiements
+- programme limité à un petit nombre de profils actifs
+- tarif pilote : `15 € / mois`
+- prix public visé hors programme : `29 € / mois`
+- les profils retenus conservent leur tarif pilote ensuite
+- aucun compteur public de places restantes sur la landing tant que la donnée n’est pas dynamique
 
-Le paiement n est pas implemente a ce stade.
+## 7. Formulaire et CTA
 
-Decision de cadrage :
+- le CTA principal de la landing mène vers le formulaire intégré en bas de page
+- la route `/apply` reprend le même formulaire dans une page dédiée
+- champs minimaux : prénom, email, profil, nombre de projets actifs, message libre et acceptation du cadre pilote
+- le submit passe par la route Next.js `apps/landing/app/api/pilot-applications/route.ts`, puis vers l’API Nest `POST /api/pilot-applications`
+- aucun signup public automatique n’est ajouté
+
+## 8. Paiements
+
+Le paiement n’est pas implémenté à ce stade.
+
+Décision de cadrage :
 
 - le choix cible pour les paiements sera Revolut
 
-Ce point est documente maintenant mais ne doit pas encore guider l implementation technique du MVP visible.
+Ce point est documenté maintenant mais ne doit pas encore guider l’implémentation technique du MVP visible.
