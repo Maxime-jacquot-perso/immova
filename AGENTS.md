@@ -650,17 +650,20 @@ Front :
 - Les garde-fous admin couvrent notamment : impossibilite de suspendre son propre compte, impossibilite de changer son propre role admin, blocage de la suppression/degradation du dernier `SUPER_ADMIN`, restrictions d'elevation pour `ADMIN` et limites de trial par role
 - La landing marketing Next.js adopte maintenant un positionnement plus tranché et plus sélectif : elle parle d’abord aux investisseurs immobiliers actifs et marchands de biens qui pilotent plusieurs opérations en parallèle
 - La promesse visible de la landing est désormais : piloter avec des faits plutôt qu’avec des impressions, et voir rapidement quels projets sont `OK`, `À surveiller` ou `Problématique`
-- La landing V2.1 conserve cette ossature mais avec un copy plus court, moins répétitif et plus rigoureux
-- Règle copywriting landing : une section = une information nouvelle ; phrases courtes ; pas de storytelling inutile ; pas de répétition des mêmes promesses dans plusieurs blocs
+- La landing V2.2 conserve cette ossature mais avec un copy encore plus court et plus orienté action
+- Règle copywriting landing : une section = une information utile ; phrases courtes ; pas de storytelling inutile ; pas de répétition des mêmes promesses dans plusieurs blocs
 - Règle ton landing : direct et sélectif, mais jamais condescendant ; si le produit n’est pas adapté, on le dit simplement
 - Règle crédibilité landing : aucune promesse d’intégration, d’application mobile, de sécurité, de conformité ou de délai support si elle n’est pas documentable
 - Règle rareté landing : pas de compteur public ni de chiffre de places restantes tant que la donnée n’est pas dynamique et réelle
 - Règle typographique landing : accents français, apostrophes typographiques et statuts affichés proprement (`À surveiller`, `Problématique`, `aperçu`, `accès`, etc.)
-- La structure retenue pour la landing V2.1 est stabilisée : hero cible/promesse + aperçu produit, bloc `Pour qui / Pas pour qui`, bloc `Problème`, CTA intermédiaire, bloc `Comment Axelys aide à décider`, bloc `Aperçu produit`, bloc `Offre client pilote` fusionné, bloc `Crédibilité`, FAQ resserrée, CTA final avec formulaire
+- Principe de réduction landing V2.2 : supprimer les blocs redondants avant d’ajouter du texte ; garder le minimum nécessaire pour faire agir
+- La structure retenue pour la landing V2.2 est stabilisée : hero, CTA rapide, bloc `Problème`, CTA intermédiaire, bloc `Comment ça aide`, bloc `Preuve concrète`, bloc `Offre client pilote`, FAQ courte, CTA final avec formulaire
+- La preuve concrète de la landing repose maintenant sur un exemple simplifié tiré du contexte de démo du repo, pour rendre le produit tangible sans inventer un cas marketing
 - La landing marketing embarque des metadata SEO, Open Graph, Twitter et du JSON-LD `SoftwareApplication` + `FAQPage`
 - La landing publique ne pousse plus un comparatif de plans ; elle met en avant un programme `client pilote` sélectif à `15 EUR / mois`, avec référence publique visée à `29 EUR / mois` hors programme
 - Le programme `client pilote` reste volontairement borné : pas de compteur public, sélection humaine, pas de signup automatique, et conservation du tarif pilote pour les profils retenus
 - Le CTA principal de la landing mène maintenant au formulaire intégré en bas de page ; la route `/apply` expose le même formulaire dans une page dédiée
+- Le CTA final affiche maintenant explicitement `Réponse sous 24–48 h`, `Accès progressif` et `Aucun engagement` au-dessus du formulaire
 - Le formulaire de la landing collecte `firstname`, `email`, `profileType`, `projectCount`, `problemDescription` et l’acceptation du cadre pilote, puis relaie vers `POST /api/pilot-applications` via la route Next.js `apps/landing/app/api/pilot-applications/route.ts`
 - Le choix cible pour les paiements futurs est Revolut, documente sans implementation a ce stade
 - Le dashboard global est la page d'entree post-login et synthetise le portefeuille avec agregats fiables, alertes utiles, projets a surveiller et activite recente

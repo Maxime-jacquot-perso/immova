@@ -48,25 +48,25 @@ La landing doit reprendre les codes de l’app existante tout en assumant une le
 - hiérarchie visuelle nette, peu de texte avant les CTA
 - focus sur la décision, les preuves utiles et la qualification rapide
 
-## 4. Principes de copywriting V2.1
+## 4. Principes de copywriting V2.2
 
-- réduire le volume de texte et supprimer les répétitions
-- une section = une idée nouvelle
+- réduire agressivement le volume de texte
+- une section = une information utile
+- supprimer les blocs redondants avant d’ajouter du contenu
 - phrases courtes et lisibles sur mobile
 - ton direct mais respectueux
 - aucune affirmation juridique, sécurité ou roadmap qui ne peut pas être soutenue
 - typographie française correcte sur tout le copy visible
 
-## 5. Structure retenue pour la landing V2.1
+## 5. Structure retenue pour la landing V2.2
 
-- hero cible/promesse avec CTA principal vers le formulaire et CTA secondaire vers l’aperçu produit
-- bloc `Pour qui / Pas pour qui`
+- hero cible/promesse avec aperçu produit
+- CTA rapide
 - bloc `Problème`
 - CTA intermédiaire
-- bloc `Comment Axelys aide à décider`
-- bloc `Aperçu produit` contextualisé
-- bloc `Offre client pilote` fusionné
-- bloc `Crédibilité`
+- bloc `Comment ça aide`
+- bloc `Preuve concrète`
+- bloc `Offre client pilote`
 - FAQ resserrée
 - CTA final avec vrai formulaire intégré
 
@@ -84,6 +84,8 @@ Le programme client pilote n’est pas un faux waitlist marketing.
 
 - le CTA principal de la landing mène vers le formulaire intégré en bas de page
 - la route `/apply` reprend le même formulaire dans une page dédiée
+- la landing ajoute aussi un CTA rapide après le hero et un CTA intermédiaire après le bloc problème
+- juste au-dessus du formulaire final, trois signaux fixes sont affichés : `Réponse sous 24–48 h`, `Accès progressif`, `Aucun engagement`
 - champs minimaux : prénom, email, profil, nombre de projets actifs, message libre et acceptation du cadre pilote
 - le submit passe par la route Next.js `apps/landing/app/api/pilot-applications/route.ts`, puis vers l’API Nest `POST /api/pilot-applications`
 - aucun signup public automatique n’est ajouté

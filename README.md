@@ -153,48 +153,56 @@ Choix multi-tenant :
 
 ## Landing publique et programme client pilote
 
-La landing publique ne cherche pas à ressembler à une page marketing générique.
-Le positionnement retenu reste volontairement direct :
+La landing publique ne cherche pas à “mieux expliquer”.
+Elle cherche à faire décider plus vite.
+
+Positionnement retenu :
 
 - cible explicite dès le hero : investisseurs immobiliers actifs, marchands de biens et petites structures qui pilotent plusieurs opérations en parallèle
-- promesse centrale : piloter avec des faits plutôt qu’avec des impressions
-- lecture immédiate de la valeur : voir quels projets sont `OK`, `À surveiller` ou `Problématique` à partir de données réelles
-- ton sélectif mais respectueux : pas de sur-promesse, pas d’arrogance, pas de faux signaux de rareté
+- promesse centrale : voir rapidement quels projets sont `OK`, `À surveiller` ou `Problématique`
+- ton direct, sélectif et sobre
 
-Principes de copywriting retenus pour la V2.1 :
+Principes retenus pour la V2.2 :
 
-- réduire fortement le volume de texte et éviter les redites
-- une idée utile par bloc, sans répétition de la même promesse
-- phrases courtes, ton direct, pas de storytelling décoratif
-- bloc offre fusionné en un seul ensemble clair
-- CTA intermédiaire après le problème + CTA final avec formulaire
+- réduction agressive du texte
+- une section = une information utile
+- suppression des blocs redondants ou trop explicatifs
+- lecture possible en diagonale
+- CTA plus tôt dans la page et plus près des moments de tension
 
-Décisions prises sur la crédibilité et le ton :
+Décisions copy / conversion :
+
+- suppression du bloc `Pour qui / Pas pour qui` de la lecture centrale pour gagner du scroll
+- suppression du bloc produit redondant hors hero
+- ajout d’un CTA rapide après le hero
+- ajout d’un CTA intermédiaire après le bloc problème
+- ajout d’un bloc de preuve concrète avec un exemple simplifié tiré du contexte de démo
+- FAQ réduite aux objections critiques
+
+Décisions prises sur la crédibilité :
 
 - aucune promesse d’intégration, d’application mobile ou de fonctionnalité future non disponible
 - aucune affirmation juridique ou sécurité non documentée sur la landing
-- pas de compteur public ni de chiffre de rareté tant qu’il n’est pas piloté dynamiquement
-- sélection assumée, mais sans formules condescendantes ou agressives
+- aucun compteur public tant qu’il n’est pas dynamique
+- la crédibilité repose sur une preuve simple, l’hébergement et une approche sérieuse, pas sur du jargon
 
 Règles typographiques appliquées :
 
 - accents français rétablis sur tout le copy visible
-- apostrophes typographiques `’` sur la landing et les textes associés
-- correction des statuts et formulations visibles : `À surveiller`, `Problématique`, `aperçu`, `accès`, etc.
-- ponctuation française relue sur les textes marketing et les CTA
+- apostrophes typographiques `’`
+- formulations visibles corrigées : `À surveiller`, `Problématique`, `aperçu`, `accès`, etc.
 
-Structure retenue pour la landing V2.1 :
+Flow retenu pour la landing V2.2 :
 
-- hero resserré avec cible explicite, promesse concrète, aperçu produit et CTA principal vers la demande d’accès
-- bloc `Pour qui / Pas pour qui` pour auto-qualification rapide
-- bloc `Problème` avec 4 douleurs terrain compactes
-- CTA intermédiaire après le problème
-- bloc `Comment Axelys aide à décider`
-- bloc `Aperçu produit` contextualisé
-- bloc `Offre client pilote` fusionné avec prix, cadre, attentes réciproques et raison de la limitation
-- bloc `Crédibilité` sobre avec formulation prudente
-- FAQ resserrée
-- CTA final sous forme de vrai formulaire intégré
+- hero
+- CTA rapide
+- problème
+- CTA intermédiaire
+- solution
+- preuve concrète
+- offre client pilote
+- FAQ courte
+- CTA final avec formulaire
 
 Principe du programme client pilote :
 
@@ -202,12 +210,14 @@ Principe du programme client pilote :
 - tarif pilote : `15 € / mois`
 - prix public visé hors programme : `29 € / mois`
 - si un profil entre dans le programme pilote, il conserve son tarif pilote ensuite
-- sélection humaine : le but est de trouver le bon contexte, pas d’ouvrir un signup massif
+- sélection humaine : le but est de trouver rapidement le bon contexte, pas d’ouvrir un signup massif
 
 Fonctionnement du formulaire et des CTA :
 
 - le CTA principal de la landing pointe vers le formulaire intégré en bas de page (`#access`)
 - la route `/apply` expose le même formulaire dans une page dédiée pour partage direct
+- juste au-dessus du formulaire, la landing affiche : `Réponse sous 24–48 h`, `Accès progressif`, `Aucun engagement`
+- la micro-promesse associée est : `Vous saurez rapidement si Axelys est utile pour vos projets.`
 - le formulaire demande : prénom, email, profil, nombre de projets actifs, message libre et acceptation du cadre pilote
 - le submit passe par la route Next.js `apps/landing/app/api/pilot-applications/route.ts`, qui relaie ensuite vers l’API Nest `POST /api/pilot-applications`
 - la landing peut être reliée à l’API via `API_URL` ; par défaut local, la route utilise `http://localhost:3000/api`
