@@ -17,7 +17,7 @@ import {
   ProjectStatus,
   SimulationLotType,
 } from '@prisma/client';
-import * as request from 'supertest';
+import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { buildPersonalOrganizationSlug } from '../src/invitations/personal-organization';
 import { MailService } from '../src/mail/mail.service';
