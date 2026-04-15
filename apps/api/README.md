@@ -60,6 +60,14 @@ Les fichiers d'upload et les temporaires de test sont locaux et ignores par Git.
 - avec Prisma Postgres, garder la connexion directe pour la CLI et ajouter `&pool=true` a la connexion runtime si vous restez sur le meme hostname
 - les comptes seed et donnees de demonstration du repo restent limites au local et aux tests
 
+## Deploiement Vercel
+
+- le point d'entree Vercel de l'API est `apps/api/api/[[...route]].ts`
+- `src/main.ts` reste l'entree locale / Nest classique pour le developpement
+- `vercel-build` execute uniquement `prisma generate` ; Vercel compile ensuite la Function a partir du handler `api/`
+- pour le projet Vercel de l'API, laisser l'`Output Directory` vide afin de deployer la Function, pas un dossier build statique
+- le `Root Directory` du projet Vercel doit pointer vers `apps/api`
+
 ## Reference
 
 La documentation generale du monorepo se trouve dans le [README racine](../../README.md).

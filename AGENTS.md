@@ -720,6 +720,8 @@ Front :
 - Les URLs publiques de reference sont maintenant `https://axelys.app` pour la landing, `https://app.axelys.app` pour l'application produit et `https://api.axelys.app` pour l'API.
 - Le front Vite de production doit pointer vers `https://api.axelys.app/api` via `VITE_API_URL`
 - L'API Vercel avec Prisma Postgres doit utiliser une `DATABASE_URL` poolée pour le runtime et une `DIRECT_URL` directe pour Prisma CLI, Prisma Studio et les migrations
+- Le deploiement Vercel de l'API passe desormais par la Function `apps/api/api/[[...route]].ts` ; `src/main.ts` reste reserve au run local Nest classique
+- Le projet Vercel de l'API doit utiliser `apps/api` comme `Root Directory`, laisser l'`Output Directory` vide et executer `vercel-build` pour `prisma generate`
 - Le `PrismaService` backend n'ouvre plus de connexion explicite au bootstrap afin d'eviter des connexions inutiles sur des requetes serverless qui ne touchent pas la base
 - Des fichiers helper versionnes existent maintenant dans `apps/landing/.env.example`, `apps/api/.env.example` et `apps/web/.env.prod.example` pour guider le remplissage des variables de deploiement
 - Les variables backend utiles au flow d invitation et aux liens externes sont maintenant `APP_WEB_URL`, `ALLOWED_ORIGINS`, `USER_INVITATION_TTL_HOURS`, `MAIL_FROM`, `PILOT_NOTIFICATION_EMAIL`, les variables `SMTP_*` pour un SMTP simple et, en option, `RESEND_API_KEY`
