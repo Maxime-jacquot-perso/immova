@@ -3,6 +3,12 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import styles from './pilot-application-form.module.css';
+import {
+  captureLandingEvent,
+  getPostHogDistinctId,
+  type LandingFormField,
+} from '../../lib/posthog-client';
+import { useLandingFormTracking } from './use-landing-form-tracking';
 
 type PilotApplicationFormProps = {
   submitLabel: string;
@@ -10,6 +16,7 @@ type PilotApplicationFormProps = {
   successDescription: string;
   successNote: string;
   returnHref?: string;
+  analyticsContext?: 'landing' | 'standalone';
 };
 
 const projectCountOptions = ['1', '2-5', '6-10', '10+'] as const;
@@ -43,16 +50,51 @@ export function PilotApplicationForm({
   successDescription,
   successNote,
   returnHref,
+  analyticsContext = 'standalone',
 }: PilotApplicationFormProps) {
   const [formData, setFormData] = useState<FormState>(initialState);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState('');
+  const isLandingAnalyticsEnabled = analyticsContext === 'landing';
+
+  const { registerInteraction, markSubmitted } = useLandingFormTracking({
+    enabled: isLandingAnalyticsEnabled,
+    formName: 'pilot_application',
+    getProperties: () => ({
+      profile_type: formData.profileType || undefined,
+      project_count: formData.projectCount || undefined,
+    }),
+  });
+
+  const trackableFields: Record<string, LandingFormField> = {
+    firstname: 'firstname',
+    email: 'email',
+    profileType: 'profile_type',
+    projectCount: 'project_count',
+    problemDescription: 'problem_description',
+    acknowledgement: 'acknowledgement',
+  };
+
+  const handleFormFocus = (event: React.FocusEvent<HTMLFormElement>) => {
+    const target = event.target as EventTarget & { name?: string };
+    const fieldName = typeof target.name === 'string' ? target.name : '';
+    const trackedField = trackableFields[fieldName];
+
+    if (trackedField) {
+      registerInteraction(trackedField);
+    }
+  };
 
   const handleChange = (
     event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
   ) => {
     const { name, value, type } = event.target;
+    const trackedField = trackableFields[name];
+
+    if (trackedField) {
+      registerInteraction(trackedField);
+    }
 
     setFormData((previous) => ({
       ...previous,
@@ -73,6 +115,7 @@ export function PilotApplicationForm({
       firstname: formData.firstname.trim(),
       email: formData.email.trim(),
       problemDescription: formData.problemDescription.trim(),
+      analyticsDistinctId: getPostHogDistinctId(),
     };
 
     try {
@@ -95,14 +138,15 @@ export function PilotApplicationForm({
         );
       }
 
+      markSubmitted();
       setFormData(initialState);
       setIsSuccess(true);
     } catch (submissionError) {
-      setError(
+      const errorMessage =
         submissionError instanceof Error
           ? submissionError.message
-          : 'Une erreur est survenue. Réessayez dans quelques instants.',
-      );
+          : 'Une erreur est survenue. Réessayez dans quelques instants.';
+      setError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -125,7 +169,11 @@ export function PilotApplicationForm({
   }
 
   return (
-    <form className={styles.formCard} onSubmit={handleSubmit}>
+    <form
+      className={styles.formCard}
+      onFocusCapture={handleFormFocus}
+      onSubmit={handleSubmit}
+    >
       <div className={styles.grid}>
         <div className={styles.field}>
           <label htmlFor="firstname">
@@ -236,7 +284,22 @@ export function PilotApplicationForm({
         </p>
       ) : null}
 
-      <button className={styles.submitButton} type="submit" disabled={isSubmitting}>
+      <button
+        className={styles.submitButton}
+        type="submit"
+        disabled={isSubmitting}
+        onClick={() => {
+          if (!isLandingAnalyticsEnabled) {
+            return;
+          }
+
+          captureLandingEvent('landing_cta_clicked', {
+            location: 'form',
+            label: 'submit_pilot_application',
+            target: 'submit_pilot_application',
+          });
+        }}
+      >
         {isSubmitting ? 'Envoi en cours…' : submitLabel}
       </button>
 

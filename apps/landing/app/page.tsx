@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
+import { LandingAnalytics } from './components/landing-analytics';
+import { LandingCtaLink } from './components/landing-cta-link';
 import { PilotApplicationForm } from './components/pilot-application-form';
 import styles from './page.module.css';
 import {
@@ -205,13 +207,25 @@ export default function Home() {
           <a href={appUrl}>Se connecter</a>
         </nav>
 
-        <a className={styles.buttonPrimary} href="#access">
+        <LandingCtaLink
+          className={styles.buttonPrimary}
+          href="#access"
+          location="header"
+          label="request_pilot_access"
+          target="#access"
+        >
           Demander un accès
-        </a>
+        </LandingCtaLink>
       </header>
 
       <main className={styles.main}>
-        <section className={styles.hero} id="top">
+        <LandingAnalytics />
+
+        <section
+          className={styles.hero}
+          id="top"
+          data-landing-section="hero"
+        >
           <div className={styles.heroContent}>
             <div className={styles.eyebrow}>
               Pour investisseurs immobiliers actifs et marchands de biens
@@ -233,12 +247,24 @@ export default function Home() {
             </ul>
 
             <div className={styles.heroActions}>
-              <a className={styles.buttonPrimary} href="#access">
+              <LandingCtaLink
+                className={styles.buttonPrimary}
+                href="#access"
+                location="hero"
+                label="request_pilot_access"
+                target="#access"
+              >
                 Demander un accès client pilote
-              </a>
-              <a className={styles.buttonSecondary} href="#proof">
+              </LandingCtaLink>
+              <LandingCtaLink
+                className={styles.buttonSecondary}
+                href="#proof"
+                location="hero"
+                label="view_concrete_example"
+                target="#proof"
+              >
                 Voir un exemple concret
-              </a>
+              </LandingCtaLink>
             </div>
           </div>
 
@@ -322,12 +348,22 @@ export default function Home() {
             Vous avez déjà plusieurs projets en cours ? Voyez vite si Axelys
             peut servir sur l’un d’eux.
           </p>
-          <a className={styles.buttonPrimary} href="#access">
+          <LandingCtaLink
+            className={styles.buttonPrimary}
+            href="#access"
+            location="middle"
+            label="test_on_my_project"
+            target="#access"
+          >
             Tester sur un de mes projets
-          </a>
+          </LandingCtaLink>
         </section>
 
-        <section className={styles.section} id="problem">
+        <section
+          className={styles.section}
+          id="problem"
+          data-landing-section="problem"
+        >
           <div className={styles.sectionHeading}>
             <div className={styles.eyebrow}>Problème</div>
             <h2>Le vrai coût, c’est de voir le problème trop tard.</h2>
@@ -344,13 +380,23 @@ export default function Home() {
 
           <div className={styles.inlineCta}>
             <p>Si vous pilotez déjà plusieurs opérations, le plus simple est de voir si vos projets sont sains.</p>
-            <a className={styles.buttonPrimary} href="#access">
+            <LandingCtaLink
+              className={styles.buttonPrimary}
+              href="#access"
+              location="middle"
+              label="check_project_health"
+              target="#access"
+            >
               Voir si mes projets sont sains
-            </a>
+            </LandingCtaLink>
           </div>
         </section>
 
-        <section className={styles.section} id="solution">
+        <section
+          className={styles.section}
+          id="solution"
+          data-landing-section="solution"
+        >
           <div className={styles.sectionHeading}>
             <div className={styles.eyebrow}>Comment ça aide</div>
             <h2>Trois usages. Pas plus.</h2>
@@ -366,7 +412,11 @@ export default function Home() {
           </div>
         </section>
 
-        <section className={`${styles.section} ${styles.sectionAlt}`} id="proof">
+        <section
+          className={`${styles.section} ${styles.sectionAlt}`}
+          id="proof"
+          data-landing-section="proof"
+        >
           <div className={styles.sectionHeading}>
             <div className={styles.eyebrow}>Exemple concret</div>
             <h2>En quelques secondes, vous voyez ce qui a bougé.</h2>
@@ -404,7 +454,11 @@ export default function Home() {
           </div>
         </section>
 
-        <section className={styles.section} id="pilot">
+        <section
+          className={styles.section}
+          id="pilot"
+          data-landing-section="pilot"
+        >
           <div className={styles.sectionHeading}>
             <div className={styles.eyebrow}>Offre client pilote</div>
             <h2>Un cadre simple. Pas un discours de lancement.</h2>
@@ -446,7 +500,11 @@ export default function Home() {
           </div>
         </section>
 
-        <section className={styles.section} id="faq">
+        <section
+          className={styles.section}
+          id="faq"
+          data-landing-section="faq"
+        >
           <div className={styles.sectionHeading}>
             <div className={styles.eyebrow}>FAQ</div>
             <h2>Les objections critiques avant de demander un accès.</h2>
@@ -462,7 +520,11 @@ export default function Home() {
           </div>
         </section>
 
-        <section className={`${styles.section} ${styles.sectionFinal}`} id="access">
+        <section
+          className={`${styles.section} ${styles.sectionFinal}`}
+          id="access"
+          data-landing-section="form"
+        >
           <div className={styles.accessPanel}>
             <div className={styles.accessCopy}>
               <div className={styles.eyebrow}>Demande d’accès</div>
@@ -489,6 +551,7 @@ export default function Home() {
             </div>
 
             <PilotApplicationForm
+              analyticsContext="landing"
               submitLabel="Envoyer ma demande"
               successTitle="Demande reçue"
               successDescription="Votre demande a bien été transmise. Si le profil et le contexte correspondent au programme, on revient vers vous."
@@ -500,7 +563,16 @@ export default function Home() {
         <footer className={styles.footer}>
           <p>
             {siteName} - Outil de pilotage d’opérations immobilières pour agir
-            sur des faits. <a href={appUrl}>Ouvrir l’application</a>.
+            sur des faits.{' '}
+            <LandingCtaLink
+              href={appUrl}
+              location="footer"
+              label="open_application"
+              target={appUrl}
+            >
+              Ouvrir l’application
+            </LandingCtaLink>
+            .
           </p>
         </footer>
       </main>
