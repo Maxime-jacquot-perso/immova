@@ -18,6 +18,7 @@ DIRECT_URL=postgresql://postgres:postgres@localhost:5432/immo_ops?schema=public
 JWT_SECRET=replace-with-a-long-random-secret
 APP_WEB_URL=https://app.axelys.app
 ALLOWED_ORIGINS=https://app.axelys.app,https://axelys.app
+PASSWORD_RESET_TOKEN_TTL_HOURS=2
 MAIL_FROM="Axelys <no-reply@axelys.app>"
 PILOT_NOTIFICATION_EMAIL=contact@axelys.app
 ```
@@ -46,8 +47,9 @@ pnpm test:e2e
 - copier `.env.example` vers `.env`
 - adapter `DATABASE_URL` a votre PostgreSQL local si besoin
 - `DIRECT_URL` doit pointer vers la connexion directe utilisee par Prisma CLI
-- `APP_WEB_URL` doit rester aligne sur `https://app.axelys.app` en production pour les liens d invitation
+- `APP_WEB_URL` doit rester aligne sur `https://app.axelys.app` en production pour les liens d invitation et de reinitialisation de mot de passe
 - `ALLOWED_ORIGINS` doit inclure au minimum `https://app.axelys.app` et, si la landing appelle l API depuis le navigateur, `https://axelys.app`
+- `PASSWORD_RESET_TOKEN_TTL_HOURS` permet d ajuster la duree de validite des liens de reinitialisation
 - `UPLOAD_DIR` pointe par defaut vers `./uploads`
 - `pnpm db:demo-seed` reset les donnees metier sans drop schema puis recree le seed de demonstration produit
 

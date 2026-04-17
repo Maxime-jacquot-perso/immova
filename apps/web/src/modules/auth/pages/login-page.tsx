@@ -1,15 +1,16 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { z } from 'zod';
 import { LegalLinksInline } from '../../legal/legal-links';
 import { useAuth } from '../auth-context';
+import { passwordFieldSchema } from '../password-schema';
 import { getErrorMessage } from '../../../shared/ui/error-utils';
 import { FeedbackMessage } from '../../../shared/ui/feedback-message';
 
 const schema = z.object({
   email: z.string().email('Saisissez un email valide.'),
-  password: z.string().min(6, 'Le mot de passe doit contenir au moins 6 caracteres.'),
+  password: passwordFieldSchema,
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -19,6 +20,7 @@ export function LoginPage() {
   const [searchParams] = useSearchParams();
   const { login } = useAuth();
   const invitationAccepted = searchParams.get('invitation') === 'accepted';
+  const passwordResetSucceeded = searchParams.get('passwordReset') === 'success';
   const emailPrefill = searchParams.get('email') ?? '';
   const organizationSlug = searchParams.get('organizationSlug') || undefined;
   const {
@@ -42,6 +44,14 @@ export function LoginPage() {
           <FeedbackMessage
             title="Acces active"
             message="Votre invitation est validee. Connectez-vous pour ouvrir l'application."
+            type="success"
+          />
+        ) : null}
+
+        {passwordResetSucceeded ? (
+          <FeedbackMessage
+            title="Mot de passe réinitialisé"
+            message="Votre mot de passe a été mis à jour. Vous pouvez maintenant vous connecter."
             type="success"
           />
         ) : null}
@@ -84,6 +94,8 @@ export function LoginPage() {
               <div className="field__error">{errors.password.message}</div>
             ) : null}
           </div>
+
+          <Link to="/forgot-password">Mot de passe oublié ?</Link>
 
           {errors.root ? (
             <div className="field__error">{errors.root.message}</div>

@@ -73,12 +73,12 @@ describe('API e2e', () => {
     return response.body.accessToken as string;
   }
 
-  function getTokenFromAcceptUrl(acceptUrl: string) {
-    const parsedUrl = new URL(acceptUrl);
+  function getTokenFromUrl(url: string) {
+    const parsedUrl = new URL(url);
     const token = parsedUrl.searchParams.get('token');
 
     if (!token) {
-      throw new Error('Invitation token missing from accept URL');
+      throw new Error('Token missing from URL');
     }
 
     return token;
@@ -367,9 +367,7 @@ describe('API e2e', () => {
       })
       .expect(201);
 
-    const invitationToken = getTokenFromAcceptUrl(
-      mailSpy.mock.calls[0][0].acceptUrl,
-    );
+    const invitationToken = getTokenFromUrl(mailSpy.mock.calls[0][0].acceptUrl);
 
     const verifyResponse = await request(app.getHttpServer())
       .get('/api/auth/invitations/verify')
@@ -415,9 +413,7 @@ describe('API e2e', () => {
       })
       .expect(201);
 
-    const invitationToken = getTokenFromAcceptUrl(
-      mailSpy.mock.calls[0][0].acceptUrl,
-    );
+    const invitationToken = getTokenFromUrl(mailSpy.mock.calls[0][0].acceptUrl);
     await prisma.userInvitation.updateMany({
       where: {
         email: 'expired-user@example.com',
@@ -459,15 +455,14 @@ describe('API e2e', () => {
       })
       .expect(201);
 
-    const invitationToken = getTokenFromAcceptUrl(
-      mailSpy.mock.calls[0][0].acceptUrl,
-    );
+    const invitationToken = getTokenFromUrl(mailSpy.mock.calls[0][0].acceptUrl);
 
     const acceptResponse = await request(app.getHttpServer())
       .post('/api/auth/invitations/accept')
       .send({
         token: invitationToken,
         password: 'new-password123',
+        acceptLegalDocuments: true,
       })
       .expect(201);
 
@@ -534,9 +529,7 @@ describe('API e2e', () => {
       })
       .expect(201);
 
-    const invitationToken = getTokenFromAcceptUrl(
-      mailSpy.mock.calls[0][0].acceptUrl,
-    );
+    const invitationToken = getTokenFromUrl(mailSpy.mock.calls[0][0].acceptUrl);
 
     const verifyResponse = await request(app.getHttpServer())
       .get('/api/auth/invitations/verify')
@@ -551,6 +544,7 @@ describe('API e2e', () => {
       .send({
         token: invitationToken,
         password: 'personal-password123',
+        acceptLegalDocuments: true,
       })
       .expect(201);
 
@@ -629,15 +623,14 @@ describe('API e2e', () => {
       })
       .expect(201);
 
-    const invitationToken = getTokenFromAcceptUrl(
-      mailSpy.mock.calls[0][0].acceptUrl,
-    );
+    const invitationToken = getTokenFromUrl(mailSpy.mock.calls[0][0].acceptUrl);
 
     await request(app.getHttpServer())
       .post('/api/auth/invitations/accept')
       .send({
         token: invitationToken,
         password: 'user-password123',
+        acceptLegalDocuments: true,
       })
       .expect(201);
 
@@ -646,6 +639,161 @@ describe('API e2e', () => {
       .send({
         token: invitationToken,
         password: 'user-password123',
+        acceptLegalDocuments: true,
+      })
+      .expect(410);
+  });
+
+  it('returns the same neutral response for unknown and known forgot-password requests', async () => {
+    await seedUser(prisma, {
+      organizationName: 'Org Reset',
+      organizationSlug: 'org-reset',
+      email: 'reset-user@example.com',
+      password: 'password123',
+    });
+    const mailSpy = jest
+      .spyOn(mailService, 'sendPasswordReset')
+      .mockResolvedValue({ mode: 'console' });
+
+    const unknownResponse = await request(app.getHttpServer())
+      .post('/api/auth/forgot-password')
+      .send({
+        email: 'unknown@example.com',
+      })
+      .expect(201);
+
+    const knownResponse = await request(app.getHttpServer())
+      .post('/api/auth/forgot-password')
+      .send({
+        email: 'reset-user@example.com',
+      })
+      .expect(201);
+
+    expect(unknownResponse.body).toEqual(knownResponse.body);
+    expect(knownResponse.body).toEqual({
+      success: true,
+      message:
+        'Si un compte existe pour cet email, vous allez recevoir un lien de réinitialisation.',
+    });
+    expect(mailSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('verifies and consumes a valid password reset token', async () => {
+    await seedUser(prisma, {
+      organizationName: 'Org Reset Valid',
+      organizationSlug: 'org-reset-valid',
+      email: 'reset-valid@example.com',
+      password: 'password123',
+    });
+    const mailSpy = jest
+      .spyOn(mailService, 'sendPasswordReset')
+      .mockResolvedValue({ mode: 'console' });
+
+    await request(app.getHttpServer())
+      .post('/api/auth/forgot-password')
+      .send({
+        email: 'reset-valid@example.com',
+      })
+      .expect(201);
+
+    const resetToken = getTokenFromUrl(mailSpy.mock.calls[0][0].resetUrl);
+
+    const verifyResponse = await request(app.getHttpServer())
+      .get('/api/auth/reset-password/verify')
+      .query({ token: resetToken })
+      .expect(200);
+
+    expect(verifyResponse.body.expiresAt).toBeDefined();
+
+    await request(app.getHttpServer())
+      .post('/api/auth/reset-password')
+      .send({
+        token: resetToken,
+        password: 'new-password123',
+      })
+      .expect(201);
+
+    const updatedUser = await prisma.user.findUniqueOrThrow({
+      where: { email: 'reset-valid@example.com' },
+    });
+
+    expect(compareSync('new-password123', updatedUser.passwordHash!)).toBe(
+      true,
+    );
+
+    const loginResponse = await request(app.getHttpServer())
+      .post('/api/auth/login')
+      .send({
+        email: 'reset-valid@example.com',
+        password: 'new-password123',
+      })
+      .expect(201);
+
+    expect(loginResponse.body.accessToken).toBeDefined();
+
+    await request(app.getHttpServer())
+      .post('/api/auth/reset-password')
+      .send({
+        token: resetToken,
+        password: 'another-password123',
+      })
+      .expect(410);
+  });
+
+  it('rejects invalid and expired password reset tokens', async () => {
+    await seedUser(prisma, {
+      organizationName: 'Org Reset Invalid',
+      organizationSlug: 'org-reset-invalid',
+      email: 'reset-expired@example.com',
+      password: 'password123',
+    });
+    const mailSpy = jest
+      .spyOn(mailService, 'sendPasswordReset')
+      .mockResolvedValue({ mode: 'console' });
+
+    await request(app.getHttpServer())
+      .get('/api/auth/reset-password/verify')
+      .query({ token: 'invalid-reset-token-12345' })
+      .expect(400);
+
+    await request(app.getHttpServer())
+      .post('/api/auth/reset-password')
+      .send({
+        token: 'invalid-reset-token-12345',
+        password: 'new-password123',
+      })
+      .expect(400);
+
+    await request(app.getHttpServer())
+      .post('/api/auth/forgot-password')
+      .send({
+        email: 'reset-expired@example.com',
+      })
+      .expect(201);
+
+    const resetToken = getTokenFromUrl(mailSpy.mock.calls[0][0].resetUrl);
+
+    await prisma.userActionToken.updateMany({
+      where: {
+        user: {
+          email: 'reset-expired@example.com',
+        },
+      },
+      data: {
+        expiresAt: new Date(Date.now() - 60_000),
+      },
+    });
+
+    await request(app.getHttpServer())
+      .get('/api/auth/reset-password/verify')
+      .query({ token: resetToken })
+      .expect(410);
+
+    await request(app.getHttpServer())
+      .post('/api/auth/reset-password')
+      .send({
+        token: resetToken,
+        password: 'new-password123',
       })
       .expect(410);
   });
@@ -716,9 +864,7 @@ describe('API e2e', () => {
       })
       .expect(201);
 
-    const firstToken = getTokenFromAcceptUrl(
-      mailSpy.mock.calls[0][0].acceptUrl,
-    );
+    const firstToken = getTokenFromUrl(mailSpy.mock.calls[0][0].acceptUrl);
 
     await request(app.getHttpServer())
       .post(
@@ -730,9 +876,7 @@ describe('API e2e', () => {
       })
       .expect(201);
 
-    const secondToken = getTokenFromAcceptUrl(
-      mailSpy.mock.calls[1][0].acceptUrl,
-    );
+    const secondToken = getTokenFromUrl(mailSpy.mock.calls[1][0].acceptUrl);
 
     expect(secondToken).not.toBe(firstToken);
 

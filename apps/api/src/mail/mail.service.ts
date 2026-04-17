@@ -14,6 +14,12 @@ export type SendUserInvitationMailInput = {
   variant?: InvitationEmailVariant;
 };
 
+export type SendPasswordResetMailInput = {
+  to: string;
+  resetUrl: string;
+  expiresAt: Date;
+};
+
 export type MailDeliveryResult = {
   mode: 'console' | 'smtp' | 'resend';
 };
@@ -95,6 +101,28 @@ export class MailService {
         `Expires at: ${input.expiresAt.toISOString()}`,
         `Requires password setup: ${input.requiresPasswordSetup}`,
         `Variant: ${input.variant ?? 'standard'}`,
+      ],
+    });
+  }
+
+  async sendPasswordReset(
+    input: SendPasswordResetMailInput,
+  ): Promise<MailDeliveryResult> {
+    const subject = 'Reinitialisez votre mot de passe Axelys';
+    const text = this.buildPasswordResetText(input);
+    const html = this.buildPasswordResetHtml(input);
+
+    return this.deliverMail({
+      to: input.to,
+      subject,
+      text,
+      html,
+      consoleLines: [
+        'Password reset email logged locally.',
+        `To: ${input.to}`,
+        `Subject: ${subject}`,
+        `Reset URL: ${input.resetUrl}`,
+        `Expires at: ${input.expiresAt.toISOString()}`,
       ],
     });
   }
@@ -344,6 +372,49 @@ export class MailService {
         </p>
         <p style="color: #4b5563; word-break: break-all;">
           ${this.escapeHtml(input.acceptUrl)}
+        </p>
+      </div>
+    `.trim();
+  }
+
+  private buildPasswordResetText(input: SendPasswordResetMailInput) {
+    const expirationLabel = this.formatDate(input.expiresAt);
+
+    return [
+      'Une demande de réinitialisation de mot de passe Axelys a été reçue.',
+      '',
+      'Utilisez ce lien sécurisé pour choisir un nouveau mot de passe :',
+      input.resetUrl,
+      '',
+      `Ce lien expire le ${expirationLabel}.`,
+      '',
+      "Si vous n'êtes pas à l'origine de cette demande, ignorez simplement cet email.",
+    ].join('\n');
+  }
+
+  private buildPasswordResetHtml(input: SendPasswordResetMailInput) {
+    const expirationLabel = this.formatDate(input.expiresAt);
+
+    return `
+      <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #111827;">
+        <p>Une demande de réinitialisation de mot de passe Axelys a été reçue.</p>
+        <p>Utilisez ce lien sécurisé pour choisir un nouveau mot de passe.</p>
+        <p>
+          <a
+            href="${this.escapeHtml(input.resetUrl)}"
+            style="display: inline-block; padding: 12px 18px; background: #0f766e; color: #ffffff; text-decoration: none; border-radius: 8px;"
+          >
+            Réinitialiser mon mot de passe
+          </a>
+        </p>
+        <p>
+          Ce lien expire le <strong>${this.escapeHtml(expirationLabel)}</strong>.
+        </p>
+        <p style="color: #4b5563;">
+          Si vous n'êtes pas à l'origine de cette demande, ignorez simplement cet email.
+        </p>
+        <p style="color: #4b5563; word-break: break-all;">
+          ${this.escapeHtml(input.resetUrl)}
         </p>
       </div>
     `.trim();

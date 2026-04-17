@@ -13,7 +13,9 @@ import { AdminPilotApplicationsPage } from '../modules/admin/pages/admin-pilot-a
 import { AdminShell } from '../modules/admin/pages/admin-shell';
 import { AdminUserDetailPage } from '../modules/admin/pages/admin-user-detail-page';
 import { AdminUsersListPage } from '../modules/admin/pages/admin-users-list-page';
+import { ForgotPasswordPage } from '../modules/auth/pages/forgot-password-page';
 import { LoginPage } from '../modules/auth/pages/login-page';
+import { ResetPasswordPage } from '../modules/auth/pages/reset-password-page';
 import { SetupPasswordPage } from '../modules/auth/pages/setup-password-page';
 import { DashboardPage } from '../modules/dashboard/pages/dashboard-page';
 import { ProjectDocumentsPage } from '../modules/documents/pages/project-documents-page';
@@ -40,6 +42,16 @@ export const router = createBrowserRouter([
   {
     path: '/login',
     element: <LoginPage />,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: '/forgot-password',
+    element: <ForgotPasswordPage />,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: '/reset-password',
+    element: <ResetPasswordPage />,
     errorElement: <RouteErrorBoundary />,
   },
   {

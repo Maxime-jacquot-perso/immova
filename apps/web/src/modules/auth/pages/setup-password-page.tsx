@@ -6,23 +6,12 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { z } from 'zod';
 import { LegalLinksInline } from '../../legal/legal-links';
 import { acceptInvitation, verifyInvitationToken } from '../api';
+import { passwordWithConfirmationSchema } from '../password-schema';
 import { FeedbackMessage } from '../../../shared/ui/feedback-message';
 import { formatDateTime } from '../../../shared/ui/formatters';
 import { getErrorMessage } from '../../../shared/ui/error-utils';
 
-const schema = z
-  .object({
-    password: z
-      .string()
-      .min(6, 'Le mot de passe doit contenir au moins 6 caracteres.'),
-    confirmPassword: z.string(),
-  })
-  .refine((values) => values.password === values.confirmPassword, {
-    path: ['confirmPassword'],
-    message: 'Les mots de passe doivent correspondre.',
-  });
-
-type FormValues = z.infer<typeof schema>;
+type FormValues = z.infer<typeof passwordWithConfirmationSchema>;
 
 export function SetupPasswordPage() {
   const navigate = useNavigate();
@@ -36,7 +25,7 @@ export function SetupPasswordPage() {
     formState: { errors, isSubmitting },
     setError,
   } = useForm<FormValues>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(passwordWithConfirmationSchema),
     defaultValues: {
       password: '',
       confirmPassword: '',

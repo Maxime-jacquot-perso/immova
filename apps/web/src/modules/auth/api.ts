@@ -50,6 +50,10 @@ export type InvitationVerification = {
   };
 };
 
+export type PasswordResetVerification = {
+  expiresAt: string;
+};
+
 export function login(payload: {
   email: string;
   password: string;
@@ -81,8 +85,35 @@ export function acceptInvitation(payload: {
       id: string;
       name: string;
       slug: string;
-    };
+      };
   }>('/auth/invitations/accept', {
+    method: 'POST',
+    body: payload,
+  });
+}
+
+export function requestPasswordReset(payload: { email: string }) {
+  return apiFetch<{
+    success: true;
+    message: string;
+  }>('/auth/forgot-password', {
+    method: 'POST',
+    body: payload,
+  });
+}
+
+export function verifyPasswordResetToken(token: string) {
+  const searchParams = new URLSearchParams({ token });
+
+  return apiFetch<PasswordResetVerification>(
+    `/auth/reset-password/verify?${searchParams.toString()}`,
+  );
+}
+
+export function resetPassword(payload: { token: string; password: string }) {
+  return apiFetch<{
+    success: true;
+  }>('/auth/reset-password', {
     method: 'POST',
     body: payload,
   });

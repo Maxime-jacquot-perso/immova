@@ -262,6 +262,8 @@ Entites repoussees :
 
 - `/dashboard`
 - `/login`
+- `/forgot-password`
+- `/reset-password`
 - `/setup-password`
 - `/legal/acceptance`
 - `/projects`
@@ -358,6 +360,9 @@ Structure backend :
 Back :
 
 - `POST /api/auth/login`
+- `POST /api/auth/forgot-password`
+- `GET /api/auth/reset-password/verify`
+- `POST /api/auth/reset-password`
 - `GET /api/auth/invitations/verify`
 - `POST /api/auth/invitations/accept`
 - `GET /api/legal-documents/current`
@@ -441,6 +446,8 @@ Back :
 Front :
 
 - login
+- demande de reinitialisation de mot de passe depuis `/forgot-password` avec reponse neutre quel que soit l email saisi
+- page publique `/reset-password` pour verifier un token de reinitialisation, definir un nouveau mot de passe puis rediriger proprement vers `/login`
 - dashboard global portefeuille
 - comparaison simple entre projets sur le dashboard global
 - score de completude / fiabilite partage entre dashboard global et overview projet
@@ -539,6 +546,12 @@ Front :
 - Ecrans frontend `/simulations`, `/simulations/folders/:folderId`, `/simulations/new`, `/simulations/:simulationId`, `/simulations/:simulationId/edit`
 - Dossiers d'opportunites : creation, edition, archivage, regroupement de simulations
 - Simulations : creation, edition, archivage, affichage resultats decisionnels
+
+**Auth publique - recuperation d acces :**
+- Flow `Mot de passe oublie` branche sur le module auth existant, sans bypass du login ni session automatique
+- Endpoint public neutre `POST /api/auth/forgot-password` : ne revele jamais si l email existe
+- Lien de reinitialisation securise, expire, a usage unique, avec invalidation des anciens tokens actifs
+- Page publique `/reset-password` avec verification du token, saisie du nouveau mot de passe et redirection propre vers `/login`
 
 **Saisie simulation :**
 - Formulaire creation et edition avec moins de 15 champs obligatoires

@@ -62,6 +62,7 @@ export async function cleanDatabase(prisma: PrismaClient) {
   await prisma.stripeWebhookEvent.deleteMany();
   await prisma.adminAuditLog.deleteMany();
   await prisma.userInvitation.deleteMany();
+  await prisma.userActionToken.deleteMany();
   await prisma.featureRequestVote.deleteMany();
   await prisma.featureRequest.deleteMany();
   await prisma.document.deleteMany();

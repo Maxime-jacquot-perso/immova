@@ -10,11 +10,15 @@ import {
   MembershipRole,
   Prisma,
 } from '@prisma/client';
-import { createHash, randomBytes } from 'node:crypto';
 import { hashSync } from '../common/crypto/bcrypt';
 import { LegalDocumentsService } from '../legal/legal-documents.service';
 import { MailService, type InvitationEmailVariant } from '../mail/mail.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { buildAppWebUrl } from '../common/utils/app-url.util';
+import {
+  generateSecureToken,
+  hashSecureToken,
+} from '../common/utils/secure-token.util';
 import {
   serializeInvitationOrganizationMode,
   type InvitationOrganizationModeInput,
@@ -579,18 +583,14 @@ export class InvitationsService {
   }
 
   private generateToken() {
-    return randomBytes(32).toString('base64url');
+    return generateSecureToken();
   }
 
   private hashToken(token: string) {
-    return createHash('sha256').update(token).digest('hex');
+    return hashSecureToken(token);
   }
 
   private buildAcceptUrl(token: string) {
-    const appWebUrl = (
-      process.env.APP_WEB_URL || 'http://localhost:5173'
-    ).replace(/\/$/, '');
-
-    return `${appWebUrl}/setup-password?token=${encodeURIComponent(token)}`;
+    return buildAppWebUrl('/setup-password', new URLSearchParams({ token }));
   }
 }

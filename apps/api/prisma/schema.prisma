@@ -94,6 +94,10 @@ enum InvitationOrganizationMode {
   PERSONAL
 }
 
+enum UserActionTokenType {
+  PASSWORD_RESET
+}
+
 enum SubscriptionPlan {
   FREE
   PRO
@@ -275,6 +279,7 @@ model User {
   adminAuditEntries              AdminAuditLog[]         @relation("AdminAuditActor")
   adminAuditTargets              AdminAuditLog[]         @relation("AdminAuditTarget")
   invitations                    UserInvitation[]        @relation("InvitationUser")
+  actionTokens                   UserActionToken[]
   createdInvitations             UserInvitation[]        @relation("InvitationCreator")
   featureRequests                FeatureRequest[]        @relation("FeatureRequestAuthor")
   featureRequestVotes            FeatureRequestVote[]
@@ -330,6 +335,23 @@ model UserInvitation {
   @@index([userId, organizationId])
   @@index([organizationId, expiresAt])
   @@index([createdByAdminUserId, createdAt])
+}
+
+model UserActionToken {
+  id        String              @id @default(cuid())
+  userId    String
+  type      UserActionTokenType
+  tokenHash String              @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  revokedAt DateTime?
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type, createdAt])
+  @@index([userId, type, expiresAt])
 }
 
 model LegalDocumentVersion {
