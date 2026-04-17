@@ -1,25 +1,17 @@
 import { Module } from '@nestjs/common';
 import { LegalDocumentsModule } from '../legal/legal-documents.module';
+import { PilotApplicationsModule } from '../pilot-applications/pilot-applications.module';
 import { BillingAccessService } from './billing-access.service';
-import { BillingConfigService } from './billing-config.service';
 import { BillingController } from './billing.controller';
-import { BillingPlanMapService } from './billing-plan-map.service';
+import { BillingCoreModule } from './billing-core.module';
 import { BillingService } from './billing.service';
-import { StripeClientService } from './stripe-client.service';
 import { StripeWebhookController } from './stripe-webhook.controller';
 import { StripeWebhookService } from './stripe-webhook.service';
 
 @Module({
-  imports: [LegalDocumentsModule],
+  imports: [BillingCoreModule, LegalDocumentsModule, PilotApplicationsModule],
   controllers: [BillingController, StripeWebhookController],
-  providers: [
-    BillingAccessService,
-    BillingConfigService,
-    BillingPlanMapService,
-    BillingService,
-    StripeClientService,
-    StripeWebhookService,
-  ],
+  providers: [BillingAccessService, BillingService, StripeWebhookService],
   exports: [BillingAccessService],
 })
 export class BillingModule {}

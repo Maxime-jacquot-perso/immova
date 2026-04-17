@@ -188,6 +188,11 @@ Entites additionnelles actives pour la base juridique SaaS :
 - `LegalDocumentVersion` porte le type de document (`MENTIONS_LEGALES`, `CGU`, `CGV`, `PRIVACY_POLICY`), le slug public, la version affichee, la date de mise a jour et le flag `isCurrent`
 - `UserLegalAcceptance` trace l acceptation explicite par utilisateur d une version donnee avec source (`INVITATION_SETUP`, `IN_APP`, `CHECKOUT`), date, organisation contexte si pertinente, IP et user agent quand disponibles
 
+Entites additionnelles actives pour le workflow pilote commercial :
+
+- `PilotApplication` : candidature pilote publique avec statuts explicites (`PENDING`, `APPROVED`, `REJECTED`, `PAYMENT_PENDING`, `ACTIVE`, `EXPIRED`, `CANCELLED`), traçabilité admin, liens vers `Organization`, `User` et `UserInvitation`, plus stockage des IDs Stripe utiles
+- `PilotApplicationEvent` : journal minimal des événements clés du flux pilote (soumission, approbation, lien envoyé, checkout, confirmation paiement, provisioning, expiration, annulation)
+
 **Entites prevues / prioritaires (decision avant achat) :**
 
 - `SimulationFolder` : entite dediee pour regrouper des opportunites par intention d'achat
@@ -268,6 +273,17 @@ Entites repoussees :
 - `/projects/:projectId/export`
 - `/ideas`
 - `/settings`
+- `/admin/pilot-applications`
+- `/pilot/subscribe`
+- `/pilot/subscribe/success`
+- `/pilot/subscribe/cancel`
+- `/pricing`
+- `/client-pilote`
+- `/analyse-rentabilite-immobiliere`
+- `/pilotage-operation-immobiliere`
+- `/analyse-projet-immobilier`
+- `/blog`
+- `/blog/:slug`
 
 **Ecrans prevus / prioritaires (decision avant achat) :**
 
@@ -310,6 +326,7 @@ Structure frontend :
 - `src/modules/settings` : organisation courante et membres
 - `src/modules/ideas` : boite a idees produit, votes et lecture beta pilote
 - `src/modules/admin` : back-office interne, dashboard admin, users, admins, audit
+- `src/modules/pilot` : lancement public de souscription pilote, reprise du lien securise et feedback Stripe purement UX
 - `src/modules/simulations` : dossiers d'opportunites, liste simulations, creation, edition, detail, comparaison, options actives, historique de decision et conversion vers projet
 - `src/shared` : client API, UI minimale
 
@@ -332,6 +349,7 @@ Structure backend :
 - `src/legal` : versionning des documents juridiques, exposition des versions courantes et enregistrement des acceptations
 - `src/mail`
 - `src/billing` : service Stripe centralise, mapping plans Stripe <-> plans applicatifs, Checkout Session, Billing Portal, webhook signe, politique d acces payant et idempotence
+- `src/pilot-applications` : candidature pilote publique, review admin, souscription Stripe securisee et provisioning automatique post-webhook
 - `src/simulations` : controller, service, DTO, calculs decisionnels backend (simulation-metrics.util.ts) pour opportunites avant achat, logique de conversion Simulation vers Project
 - `src/simulation-folders` : controller, service, DTO pour gestion des dossiers d'opportunites
 
@@ -350,6 +368,9 @@ Back :
 - `POST /api/billing/checkout-session`
 - `POST /api/billing/portal-session`
 - `POST /api/stripe/webhook`
+- `POST /api/pilot-applications`
+- `GET /api/pilot-applications/checkout`
+- `POST /api/pilot-applications/checkout-session`
 - `GET/POST/PATCH /api/memberships`
 - `GET/POST/PATCH /api/projects`
 - `GET /api/projects/:projectId/overview` avec bloc `forecastComparison` si un snapshot previsionnel existe
@@ -364,6 +385,11 @@ Back :
 - `POST /api/ideas/:featureRequestId/vote`
 - `DELETE /api/ideas/:featureRequestId/vote`
 - `GET /api/admin/dashboard`
+- `GET /api/admin/pilot-applications`
+- `GET /api/admin/pilot-applications/:applicationId`
+- `PATCH /api/admin/pilot-applications/:applicationId/approve`
+- `PATCH /api/admin/pilot-applications/:applicationId/reject`
+- `POST /api/admin/pilot-applications/:applicationId/send-checkout-link`
 - `GET /api/admin/users`
 - `GET /api/admin/users/organizations/options`
 - `POST /api/admin/users/invite` avec `organizationMode = existing | personal`
@@ -458,11 +484,17 @@ Front :
 - versionning juridique simple avec version et date de mise a jour visibles sur chaque document, plus preuve d acceptation cote backend
 - cookies / analytics landing controles par un bandeau minimal avec refus possible et blocage des scripts non essentiels avant consentement
 - gestion admin des essais, des suspensions/reactivations, des statuts d'abonnement et des roles admin avec motif obligatoire
+- page admin `/admin/pilot-applications` avec filtres, detail, statuts lisibles, actions `approuver / rejeter / renvoyer le lien` et feedback de delivery
+- pages publiques `/pilot/subscribe`, `/pilot/subscribe/success` et `/pilot/subscribe/cancel` pour lancer Stripe Checkout sans jamais activer l acces depuis le frontend
 - gestion admin du programme pilote avec `isPilotUser` et `betaAccessEnabled`
 - gestion admin des idees produit avec changement de statut audite
 - gestion des administrateurs avec creation de compte interne et changement de role selon le niveau autorise
 - audit log admin exploitable depuis l'UI interne
-- landing marketing Next.js refondue en V2 avec hero cible/promesse, bloc `Pour qui / Pas pour qui`, bloc `Probleme`, bloc `Comment Axelys aide a decider`, apercu produit contextualise, offre client pilote selective, FAQ resserree, CTA final avec vrai formulaire integre et SEO
+- site marketing public multi-pages avec `/`, `/pricing`, `/client-pilote`, `/analyse-rentabilite-immobiliere`, `/analyse-projet-immobilier`, `/pilotage-operation-immobiliere`, `/blog` et `/blog/:slug`
+- home centree sur l offre `Client pilote`, avec `Simple` et `Pro` visibles mais grisees / non activables
+- pricing public a 3 offres dont seule l offre `Client pilote` est actionnable aujourd hui
+- pages SEO editoriales sur rentabilite, analyse de projet et pilotage, sans simulateur public ni exposition detaillee du moteur metier
+- infrastructure blog statique avec index, template article, metadata SEO, maillage interne et premiers articles metier coherents avec le positionnement Axelys
 - module simulations decision avant achat avec `/simulations` liste dossiers, `/simulations/folders/:folderId` detail dossier et comparaison, `/simulations/new` formulaire creation, `/simulations/:simulationId` detail avec resultats decisionnels, options actives, historique d'activation, journal d'opportunite, preview de conversion et conversion projet, `/simulations/:simulationId/edit` edition simulation
 - preview de conversion cote web avec resume du futur projet, lots, hypotheses transferees, champs non repris, warnings et blocages metier
 - bloc `Previsionnel vs reel` sur l'overview projet pour les projets issus d'une conversion avec snapshot disponible
@@ -561,6 +593,16 @@ Front :
 - **source de verite d acces = Stripe via webhook verifie**, jamais la redirection frontend `success`
 - politique d acces centralisee : acces standard autorise si statut organisation `ACTIVE` ou `TRIALING` avec plan mappe ; `PAST_DUE` reste refuse par choix explicite de rigueur produit
 - `GET /api/organizations/current` expose maintenant un resume `billing` avec plan, statut, dates utiles et verdict d acces backend
+
+**Workflow candidatures pilotes :**
+- la landing publique persiste maintenant les candidatures dans `PilotApplication` avec email normalise, statut initial `PENDING` et evenement `SUBMITTED`
+- le back-office `/admin/pilot-applications` permet de filtrer, relire puis approuver ou rejeter chaque candidature avec note interne et audit log
+- l approbation prepare l `Organization`, genere un token securise de souscription, passe la candidature a `APPROVED` et peut envoyer l email de souscription ; **aucun acces n est donne a ce stade**
+- la page publique `/pilot/subscribe` relance uniquement Stripe Checkout via un token hashé ; la `success_url` reste informative et n active rien
+- `checkout.session.completed` journalise la completion du Checkout, mais l acces final n est provisionne qu apres synchronisation d un statut organisation `ACTIVE` ou `TRIALING` via webhook Stripe
+- le provisioning post-paiement cree ou reutilise le `User`, emet une invitation finale `pilotActivation`, active `isPilotUser` + `betaAccessEnabled`, rattache l utilisateur a l organisation et marque la candidature `ACTIVE`
+- les cas non finalises restent lisibles : candidature approuvee sans paiement, lien expire, webhook en double, provisioning echoue ou abonnement annule
+- un script local `apps/api/scripts/pilot/upsert-gael-pilot-application.cjs` permet d injecter le cas concret de Gaël en normalisant `gael.marchand@gmaiL.com` vers `gael.marchand@gmail.com`
 
 **Suivi previsionnel vs reel :**
 - L'overview projet expose maintenant un bloc `Previsionnel vs reel` pour les projets convertis avec snapshot disponible
@@ -698,23 +740,23 @@ Front :
 - Une invitation admin peut maintenant viser une organisation existante ou un espace personnel ; si besoin, l organisation personnelle est creee a l acceptation pour conserver un multi-tenant strict sans tenant orphelin inutile
 - Un utilisateur solo reste donc strictement multi-tenant via `1 user + 1 organization personnelle + 1 membership`
 - Les garde-fous admin couvrent notamment : impossibilite de suspendre son propre compte, impossibilite de changer son propre role admin, blocage de la suppression/degradation du dernier `SUPER_ADMIN`, restrictions d'elevation pour `ADMIN` et limites de trial par role
-- La landing marketing Next.js adopte maintenant un positionnement plus tranché et plus sélectif : elle parle d’abord aux investisseurs immobiliers actifs et marchands de biens qui pilotent plusieurs opérations en parallèle
-- La promesse visible de la landing est désormais : piloter avec des faits plutôt qu’avec des impressions, et voir rapidement quels projets sont `OK`, `À surveiller` ou `Problématique`
-- La landing V2.2 conserve cette ossature mais avec un copy encore plus court et plus orienté action
+- Le site marketing public est maintenant structure en plusieurs routes complementaires, avec une home orientee conversion `client pilote`, un pricing, des pages SEO metier et un blog
+- La promesse visible du site public reste : aider a decider avant achat puis a piloter apres acquisition, avec un ton serieux, credible et centre sur l arbitrage
+- La home met maintenant l offre `Client pilote` au centre, tout en montrant `Simple` et `Pro` comme offres a venir et non activables
 - Règle copywriting landing : une section = une information utile ; phrases courtes ; pas de storytelling inutile ; pas de répétition des mêmes promesses dans plusieurs blocs
 - Règle ton landing : direct et sélectif, mais jamais condescendant ; si le produit n’est pas adapté, on le dit simplement
 - Règle crédibilité landing : aucune promesse d’intégration, d’application mobile, de sécurité, de conformité ou de délai support si elle n’est pas documentable
 - Règle rareté landing : pas de compteur public ni de chiffre de places restantes tant que la donnée n’est pas dynamique et réelle
 - Règle typographique landing : accents français, apostrophes typographiques et statuts affichés proprement (`À surveiller`, `Problématique`, `aperçu`, `accès`, etc.)
 - Principe de réduction landing V2.2 : supprimer les blocs redondants avant d’ajouter du texte ; garder le minimum nécessaire pour faire agir
-- La structure retenue pour la landing V2.2 est stabilisée : hero, CTA rapide, bloc `Problème`, CTA intermédiaire, bloc `Comment ça aide`, bloc `Preuve concrète`, bloc `Offre client pilote`, FAQ courte, CTA final avec formulaire
-- La preuve concrète de la landing repose maintenant sur un exemple simplifié tiré du contexte de démo du repo, pour rendre le produit tangible sans inventer un cas marketing
-- La landing marketing embarque des metadata SEO, Open Graph, Twitter et du JSON-LD `SoftwareApplication` + `FAQPage`
-- La landing publique ne pousse plus un comparatif de plans ; elle met en avant un programme `client pilote` sélectif à `15 EUR / mois`, avec référence publique visée à `29 EUR / mois` hors programme
-- Le programme `client pilote` reste volontairement borné : pas de compteur public, sélection humaine, pas de signup automatique, et conservation du tarif pilote pour les profils retenus
-- Le CTA principal de la landing mène maintenant au formulaire intégré en bas de page ; la route `/apply` expose le même formulaire dans une page dédiée
-- Le CTA final affiche maintenant explicitement `Réponse sous 24–48 h`, `Accès progressif` et `Aucun engagement` au-dessus du formulaire
-- Le formulaire de la landing collecte `firstname`, `email`, `profileType`, `projectCount`, `problemDescription` et l’acceptation du cadre pilote, puis relaie vers `POST /api/pilot-applications` via la route Next.js `apps/landing/app/api/pilot-applications/route.ts`
+- La structure marketing publique stabilisee est maintenant : home orientee conversion, page pricing, page `client-pilote`, 3 pages SEO metier, index blog et articles relies entre eux
+- Les pages publiques restent editoriales : elles expliquent le probleme, les limites d Excel / des approches dispersees et la valeur d Axelys, sans simuler reellement ni exposer le moteur interne
+- Le site marketing embarque maintenant des metadata SEO page par page, Open Graph / Twitter minimaux, JSON-LD sur la home et les articles, ainsi qu un sitemap et un robots aligns avec la nouvelle architecture
+- Le pricing public expose maintenant 3 offres : `Client pilote` en avant et activable, `Simple` et `Pro` visibles mais volontairement non activables
+- Le programme `client pilote` reste volontairement borne : pas de compteur public, selection humaine, pas de signup automatique et tarif pilote a `15 EUR / mois` pour les profils retenus
+- Les CTA principaux du site public renvoient vers la demande d acces `client pilote`, soit via le formulaire integre sur la home, soit via la page `/client-pilote`, avec `/apply` conservee comme page utilitaire non indexee
+- Les CTA du site public pointent vers un parcours coherent : lecture du positionnement, consultation des offres, contenus SEO et depot d une demande pilote
+- Le formulaire pilote collecte `firstname`, `email`, `profileType`, `projectCount`, `problemDescription` et l acceptation du cadre pilote, puis relaie vers `POST /api/pilot-applications` via la route Next.js `apps/landing/app/api/pilot-applications/route.ts`
 - Le choix cible pour les paiements futurs est Revolut, documente sans implementation a ce stade
 - Le dashboard global est la page d'entree post-login et synthetise le portefeuille avec agregats fiables, alertes utiles, projets a surveiller et activite recente
 - Le dashboard global s'appuie sur un endpoint backend dedie et sur une base de calcul KPI partagee avec l'overview projet pour eviter la duplication de logique

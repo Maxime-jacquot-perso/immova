@@ -222,6 +222,37 @@ Fonctionnement du formulaire et des CTA :
 - le submit passe par la route Next.js `apps/landing/app/api/pilot-applications/route.ts`, qui relaie ensuite vers l’API Nest `POST /api/pilot-applications`
 - la landing utilise `API_URL` pour joindre l’API Nest ; en production, la valeur attendue est `https://api.axelys.app/api`
 
+## Workflow pilote admin -> Stripe -> activation
+
+Le flux pilote est maintenant explicite, admin-driven et **ne donne jamais l’accès sur une simple candidature ou sur une `success_url` Stripe**.
+
+Statuts métier utilisés :
+
+- `PENDING` : candidature reçue depuis la landing, non traitée
+- `APPROVED` : candidature validée par l’admin, parcours de souscription autorisé, accès encore fermé
+- `REJECTED` : candidature refusée
+- `PAYMENT_PENDING` : Checkout Stripe lancé ou paiement confirmé mais provisioning final encore en cours
+- `ACTIVE` : abonnement confirmé par webhook Stripe puis accès provisionné
+- `EXPIRED` : lien de souscription expiré avant finalisation
+- `CANCELLED` : abonnement pilote annulé ou devenu inéligible côté billing
+
+Flux effectif :
+
+- la landing crée une `PilotApplication` en `PENDING`
+- l’admin traite la candidature dans `/admin/pilot-applications`
+- l’approbation crée ou réutilise l’`Organization`, génère un lien sécurisé `https://app.axelys.app/pilot/subscribe?token=...` et peut envoyer l’email de souscription
+- le candidat démarre Stripe Checkout depuis `https://app.axelys.app/pilot/subscribe`
+- `checkout.session.completed` ne fait qu’enregistrer les IDs Stripe utiles
+- le webhook Stripe qui synchronise ensuite `Organization.billingStatus` reste la seule source de vérité pour l’activation
+- quand le billing passe à `ACTIVE` ou `TRIALING`, le backend crée ou réutilise le `User`, émet l’invitation finale, rattache l’utilisateur à l’organisation et passe la candidature à `ACTIVE`
+
+Garanties importantes :
+
+- aucune activation n’est basée sur le frontend Stripe
+- les doublons de webhook restent absorbés par `StripeWebhookEvent` et par le provisioning idempotent
+- une candidature approuvée mais jamais payée reste visible dans l’admin et le lien peut être renvoyé
+- le cas concret Gaël peut être injecté localement avec `pnpm --dir apps/api pilot:gael`
+
 ## Stack et architecture
 
 - `apps/landing` : Next.js + TypeScript
@@ -270,6 +301,8 @@ API (`apps/api`) :
 - `APP_WEB_URL` : URL publique de `apps/web`, utilisee dans les emails d invitation admin
 - `ALLOWED_ORIGINS` : liste CSV des origines navigateur autorisees en CORS
 - `USER_INVITATION_TTL_HOURS` : duree de validite d un lien d invitation
+- `PILOT_CHECKOUT_TOKEN_TTL_HOURS` : duree de validite d un lien securise de souscription pilote
+- `PILOT_CHECKOUT_TOKEN_TTL_HOURS` : duree de validite d un lien securise de souscription pilote
 - `MAIL_FROM` : expediteur transactionnel utilise par SMTP ou Resend
 - `PILOT_NOTIFICATION_EMAIL` : boite qui recoit les candidatures client pilote
 - `SMTP_HOST` : serveur SMTP optionnel
@@ -296,6 +329,7 @@ JWT_SECRET=replace-with-a-long-random-secret
 APP_WEB_URL=https://app.axelys.app
 ALLOWED_ORIGINS=https://app.axelys.app,https://axelys.app
 USER_INVITATION_TTL_HOURS=72
+PILOT_CHECKOUT_TOKEN_TTL_HOURS=168
 MAIL_FROM="Axelys <no-reply@axelys.app>"
 PILOT_NOTIFICATION_EMAIL=contact@axelys.app
 # SMTP_HOST="smtp.example.com"
@@ -428,6 +462,23 @@ Variables importantes :
 - le `whsec_...` local genere par Stripe CLI n est **jamais** le meme que celui du dashboard prod
 - `STRIPE_CHECKOUT_SUCCESS_URL` sert a afficher un retour UX, pas a activer l abonnement
 
+Endpoints pilotes ajoutes :
+
+- `POST /api/pilot-applications` : enregistre une candidature pilote depuis la landing
+- `GET /api/pilot-applications/checkout?token=...` : retourne le contexte du lien de souscription securise
+- `POST /api/pilot-applications/checkout-session` : cree une Checkout Session Stripe pour une candidature approuvee
+- `GET /api/admin/pilot-applications` : liste admin filtree des candidatures pilotes
+- `GET /api/admin/pilot-applications/:applicationId` : detail admin d une candidature
+- `PATCH /api/admin/pilot-applications/:applicationId/approve` : valide la candidature et prepare le flux de souscription
+- `PATCH /api/admin/pilot-applications/:applicationId/reject` : rejette la candidature
+- `POST /api/admin/pilot-applications/:applicationId/send-checkout-link` : renvoie le lien securise si necessaire
+
+Provisioning final :
+
+- l organisation pilote est preparee a l approbation, mais l acces reste ferme tant que Stripe n a pas confirme l abonnement
+- apres confirmation webhook, le backend cree ou reutilise le `User`, emet une invitation `pilotActivation`, active `isPilotUser` + `betaAccessEnabled` et rattache l utilisateur a l organisation cible
+- si un compte suspendu existe deja sur le meme email, le provisioning passe en echec explicite et reste visible cote admin
+
 ### Local Stripe CLI
 
 1. Lancer l API localement :
@@ -523,6 +574,14 @@ Notes utiles :
 - Gmail fonctionne en SMTP simple avec `smtp.gmail.com`, le port `465` et un mot de passe d application
 - le login existant reste en place ; l activation redirige ensuite vers `/login`
 
+Test manuel recommande pour le flux pilote :
+
+1. lancer `pnpm --dir apps/api pilot:gael` pour injecter ou remettre a jour la candidature de Gaël (`gael.marchand@gmail.com`) avec normalisation d email
+2. ouvrir le back-office `/admin/pilot-applications`, retrouver la candidature puis l approuver
+3. utiliser l action d envoi de lien de souscription, puis ouvrir `https://app.axelys.app/pilot/subscribe?token=...` en local ou en environnement connecté
+4. terminer Stripe Checkout et verifier que seul le webhook fait evoluer la candidature jusqu a `ACTIVE`
+5. verifier ensuite l emission de l invitation finale et la creation du rattachement organisation/utilisateur
+
 ## Scripts utiles
 
 Depuis la racine du monorepo :
@@ -537,6 +596,7 @@ pnpm lint:landing
 pnpm lint:web
 pnpm lint:api
 pnpm db:demo-seed
+pnpm --dir apps/api pilot:gael
 pnpm test:e2e:api
 pnpm test:e2e:web
 ```

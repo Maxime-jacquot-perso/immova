@@ -12,7 +12,11 @@ export type LandingCtaLocation =
   | 'hero'
   | 'middle'
   | 'footer'
-  | 'form';
+  | 'form'
+  | 'pricing'
+  | 'client_pilot'
+  | 'resource_page'
+  | 'blog';
 
 export type LandingScrollDepth = 25 | 50 | 75 | 100;
 

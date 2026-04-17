@@ -13,7 +13,7 @@ import {
 import { createHash, randomBytes } from 'node:crypto';
 import { hashSync } from '../common/crypto/bcrypt';
 import { LegalDocumentsService } from '../legal/legal-documents.service';
-import { MailService } from '../mail/mail.service';
+import { MailService, type InvitationEmailVariant } from '../mail/mail.service';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   serializeInvitationOrganizationMode,
@@ -77,6 +77,7 @@ export class InvitationsService {
     membershipRole: MembershipRole;
     createdByAdminUserId: string;
     requiresPasswordSetup: boolean;
+    emailVariant?: InvitationEmailVariant;
   }): Promise<IssuedInvitationResult> {
     const token = this.generateToken();
     const tokenHash = this.hashToken(token);
@@ -128,6 +129,7 @@ export class InvitationsService {
         acceptUrl,
         expiresAt,
         requiresPasswordSetup: input.requiresPasswordSetup,
+        variant: input.emailVariant ?? 'standard',
       });
 
       return {

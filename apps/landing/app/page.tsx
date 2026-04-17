@@ -1,167 +1,49 @@
-import type { Metadata } from 'next';
-import Image from 'next/image';
-import Link from 'next/link';
 import { LandingAnalytics } from './components/landing-analytics';
 import { LandingCtaLink } from './components/landing-cta-link';
-import { LegalFooter } from './components/legal-footer';
+import { OfferCard } from './components/offer-card';
 import { PilotApplicationForm } from './components/pilot-application-form';
-import styles from './page.module.css';
+import { SiteShell } from './components/site-shell';
+import { ArticleCard } from './components/article-card';
+import styles from './components/marketing-ui.module.css';
+import { businessPageList } from './content/business-pages';
+import { getFeaturedBlogPosts } from './content/blog-posts';
 import {
-  appUrl,
-  defaultDescription,
-  seoKeywords,
-  siteName,
-  siteUrl,
-} from './site-config';
+  homeFaqItems,
+  homeHeroHighlights,
+  homeProblemCards,
+  homePrivateCoreCards,
+  homeValueCards,
+  pricingPlans,
+} from './content/marketing-content';
+import { buildMetadata } from './seo';
+import { defaultDescription, siteName, siteUrl } from './site-config';
 
-export const metadata: Metadata = {
-  title:
-    'Pilotage d’opérations immobilières pour investisseurs actifs et marchands de biens',
+export const metadata = buildMetadata({
+  title: 'Outil de décision et de pilotage immobilier',
   description: defaultDescription,
-  keywords: seoKeywords,
-  alternates: {
-    canonical: '/',
-  },
-  openGraph: {
-    title: 'Axelys - Pilotez vos opérations immobilières avec des faits',
-    description: defaultDescription,
-    url: '/',
-  },
-  twitter: {
-    title: 'Axelys - Pilotez vos opérations immobilières avec des faits',
-    description: defaultDescription,
-  },
-};
+  path: '/',
+  keywords: [
+    'outil de décision immobilier',
+    'pilotage opération immobilière',
+    'analyse projet immobilier',
+    'analyse rentabilité immobilière',
+    'logiciel marchand de biens',
+  ],
+});
 
-const heroPoints = [
-  'Projets, lots, dépenses et documents au même endroit.',
-  'Lecture rapide des projets sains, à surveiller ou problématiques.',
-  'KPI calculés sur des données réelles.',
-];
-
-const problemItems = [
-  {
-    title: 'Vous ouvrez le mauvais projet d’abord',
-    body: 'Le vrai point chaud ressort trop tard.',
-  },
-  {
-    title: 'Le budget vit dans plusieurs versions',
-    body: 'Avant chaque arbitrage, vous reconstruisez la base.',
-  },
-  {
-    title: 'Les pièces sont à part',
-    body: 'Le justificatif n’est pas là quand il faut trancher.',
-  },
-  {
-    title: 'La dérive se voit après coup',
-    body: 'Le problème apparaît quand le budget a déjà bougé.',
-  },
-];
-
-const solutionItems = [
-  {
-    title: 'Prioriser les bons dossiers',
-    body: 'Un statut simple aide à ouvrir le bon projet en premier.',
-  },
-  {
-    title: 'Corriger plus tôt',
-    body: 'Les alertes utiles remontent avant le point de trop.',
-  },
-  {
-    title: 'Justifier vite',
-    body: 'Les chiffres et les pièces restent attachés au bon projet.',
-  },
-];
-
-const proofRows = [
-  {
-    label: 'Projet',
-    value: 'Budget en dérive',
-  },
-  {
-    label: 'Budget travaux prévu',
-    value: '10 000 €',
-  },
-  {
-    label: 'Dépenses engagées',
-    value: '30 000 €',
-  },
-  {
-    label: 'Statut',
-    value: 'Problématique',
-  },
-];
-
-const offerSections = [
-  {
-    title: 'Ce que vous obtenez',
-    items: [
-      'Un accès au produit sur vos projets réels.',
-      'Le tarif pilote à 15 € / mois.',
-      'Des échanges directs pendant le déploiement.',
-    ],
-  },
-  {
-    title: 'Ce que vous acceptez',
-    items: [
-      'Un produit encore en phase pilote.',
-      'Des ajustements de parcours et de priorités.',
-      'Un usage réel, pas une simple visite.',
-    ],
-  },
-  {
-    title: 'Pourquoi c’est limité',
-    items: [
-      'Pour garder des retours exploitables.',
-      'Pour suivre de près les premiers comptes actifs.',
-      'Pas de liste d’attente artificielle.',
-    ],
-  },
-];
-
-const faqItems = [
-  {
-    question: 'À qui s’adresse Axelys aujourd’hui ?',
-    answer:
-      'Aux investisseurs immobiliers actifs, marchands de biens et petites structures qui pilotent plusieurs opérations en parallèle.',
-  },
-  {
-    question: 'Est-ce un logiciel de gestion locative ?',
-    answer:
-      'Non. Le produit sert à suivre des opérations et à arbitrer sur des données fiables.',
-  },
-  {
-    question: 'Qu’est-ce qui est déjà disponible ?',
-    answer:
-      'Le suivi après achat : projets, lots, dépenses, documents, KPI, alertes et statuts visibles.',
-  },
-  {
-    question: 'Que comprend le programme client pilote ?',
-    answer:
-      'Un accès au produit, un tarif pilote à 15 € / mois et des échanges directs pendant la phase pilote.',
-  },
-  {
-    question: 'Comment se passe la demande d’accès ?',
-    answer:
-      'Vous remplissez le formulaire. Chaque demande reçoit une réponse humaine.',
-  },
-];
+const featuredPosts = getFeaturedBlogPosts(3);
+const publicOffers = pricingPlans;
 
 const softwareApplicationSchema = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
   name: siteName,
   applicationCategory: 'BusinessApplication',
-  applicationSubCategory: 'Logiciel de pilotage d’opérations immobilières',
+  applicationSubCategory: 'Outil de décision et de pilotage immobilier',
   operatingSystem: 'Web',
   url: siteUrl,
   inLanguage: 'fr-FR',
   description: defaultDescription,
-  audience: {
-    '@type': 'Audience',
-    audienceType:
-      'Investisseurs immobiliers actifs, marchands de biens et petites structures multi-projets',
-  },
   offers: {
     '@type': 'Offer',
     name: 'Programme client pilote',
@@ -173,7 +55,7 @@ const softwareApplicationSchema = {
 const faqPageSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
-  mainEntity: faqItems.map((item) => ({
+  mainEntity: homeFaqItems.map((item) => ({
     '@type': 'Question',
     name: item.question,
     acceptedAnswer: {
@@ -183,336 +65,203 @@ const faqPageSchema = {
   })),
 };
 
-export default function Home() {
+export default function HomePage() {
   return (
-    <div className={styles.shell}>
-      <div className={styles.glowLeft} />
-      <div className={styles.glowRight} />
+    <SiteShell
+      currentPath="/"
+      ctaHref="#home-form"
+      ctaLabel="Demander un accès"
+      ctaLocation="header"
+      ctaTrackingLabel="jump_to_home_form"
+      ctaTarget="#home-form"
+    >
+      <LandingAnalytics />
 
-      <header className={styles.header}>
-        <Link className={styles.brand} href="/">
-          <Image
-            src="/logo-text-bleu.svg"
-            alt={siteName}
-            width={250}
-            height={50}
-            priority
-          />
-        </Link>
-
-        <nav className={styles.nav} aria-label="Navigation principale">
-          <a href="#problem">Problème</a>
-          <a href="#solution">Comment ça aide</a>
-          <a href="#pilot">Offre pilote</a>
-          <a href="#faq">FAQ</a>
-          <a href={appUrl}>Se connecter</a>
-        </nav>
-
-        <LandingCtaLink
-          className={styles.buttonPrimary}
-          href="#access"
-          location="header"
-          label="request_pilot_access"
-          target="#access"
-        >
-          Demander un accès
-        </LandingCtaLink>
-      </header>
-
-      <main className={styles.main}>
-        <LandingAnalytics />
-
-        <section
-          className={styles.hero}
-          id="top"
-          data-landing-section="hero"
-        >
-          <div className={styles.heroContent}>
-            <div className={styles.eyebrow}>
-              Pour investisseurs immobiliers actifs et marchands de biens
-            </div>
-            <h1>
-              Pilotez vos opérations immobilières avec des faits, pas avec des
-              impressions.
-            </h1>
-            <p className={styles.heroLead}>
-              {siteName} vous montre rapidement quels projets sont OK, à
-              surveiller ou problématiques à partir de vos lots, dépenses,
-              documents et KPI calculés sur des données réelles.
-            </p>
-
-            <ul className={styles.heroList}>
-              {heroPoints.map((point) => (
-                <li key={point}>{point}</li>
-              ))}
-            </ul>
-
-            <div className={styles.heroActions}>
-              <LandingCtaLink
-                className={styles.buttonPrimary}
-                href="#access"
-                location="hero"
-                label="request_pilot_access"
-                target="#access"
-              >
-                Demander un accès client pilote
-              </LandingCtaLink>
-              <LandingCtaLink
-                className={styles.buttonSecondary}
-                href="#proof"
-                location="hero"
-                label="view_concrete_example"
-                target="#proof"
-              >
-                Voir un exemple concret
-              </LandingCtaLink>
-            </div>
-          </div>
-
-          <div className={styles.previewShell} aria-label="Aperçu du produit">
-            <div className={styles.previewHeader}>
-              <div>
-                <p className={styles.previewLabel}>Portefeuille</p>
-                <strong>3 projets à ouvrir en priorité</strong>
+      <div className={styles.page}>
+        <section className={styles.hero} data-landing-section="hero" id="top">
+          <div className={styles.heroGrid}>
+            <div className={styles.heroContent}>
+              <div className={styles.eyebrow}>
+                Décider avant achat. Piloter après acquisition.
               </div>
-              <span className={styles.statusBadgeWarning}>À surveiller</span>
-            </div>
-
-            <div className={styles.previewBody}>
-              <aside className={styles.previewSidebar}>
-                <div className={styles.previewSidebarTitle}>Opérations</div>
-                <div className={styles.previewProjectList}>
-                  <div className={styles.previewProjectItem}>
-                    <span>Immeuble Roubaix Centre</span>
-                    <span className={styles.statusBadgeOk}>OK</span>
-                  </div>
-                  <div className={styles.previewProjectItem}>
-                    <span>T2 Lille Fives</span>
-                    <span className={styles.statusBadgeWarning}>
-                      À surveiller
-                    </span>
-                  </div>
-                  <div className={styles.previewProjectItem}>
-                    <span>Division Tourcoing</span>
-                    <span className={styles.statusBadgeDanger}>
-                      Problématique
-                    </span>
-                  </div>
-                </div>
-              </aside>
-
-              <div className={styles.previewContent}>
-                <div className={styles.previewTopline}>
-                  <div>
-                    <p className={styles.previewLabel}>Projet ouvert</p>
-                    <strong>Division Tourcoing</strong>
-                  </div>
-                  <span className={styles.statusBadgeDanger}>Problématique</span>
-                </div>
-
-                <div className={styles.kpiGrid}>
-                  <div className={styles.kpiCard}>
-                    <span>Dépenses engagées</span>
-                    <strong>84 300 €</strong>
-                  </div>
-                  <div className={styles.kpiCard}>
-                    <span>Lots actifs</span>
-                    <strong>6</strong>
-                  </div>
-                  <div className={styles.kpiCard}>
-                    <span>Documents liés</span>
-                    <strong>19</strong>
-                  </div>
-                </div>
-
-                <div className={styles.signalGrid}>
-                  <article className={styles.signalCard}>
-                    <h2>Alertes à traiter</h2>
-                    <ul>
-                      <li>Budget travaux au-dessus de la référence projet.</li>
-                      <li>Deux justificatifs manquent sur des dépenses récentes.</li>
-                    </ul>
-                  </article>
-
-                  <article className={styles.signalCard}>
-                    <h2>Action probable</h2>
-                    <p>Revoir le poste travaux le plus exposé et rattacher les pièces manquantes.</p>
-                  </article>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className={styles.quickCta}>
-          <p>
-            Vous avez déjà plusieurs projets en cours ? Voyez vite si Axelys
-            peut servir sur l’un d’eux.
-          </p>
-          <LandingCtaLink
-            className={styles.buttonPrimary}
-            href="#access"
-            location="middle"
-            label="test_on_my_project"
-            target="#access"
-          >
-            Tester sur un de mes projets
-          </LandingCtaLink>
-        </section>
-
-        <section
-          className={styles.section}
-          id="problem"
-          data-landing-section="problem"
-        >
-          <div className={styles.sectionHeading}>
-            <div className={styles.eyebrow}>Problème</div>
-            <h2>Le vrai coût, c’est de voir le problème trop tard.</h2>
-          </div>
-
-          <div className={styles.problemGrid}>
-            {problemItems.map((item) => (
-              <article className={styles.problemCard} key={item.title}>
-                <h3>{item.title}</h3>
-                <p>{item.body}</p>
-              </article>
-            ))}
-          </div>
-
-          <div className={styles.inlineCta}>
-            <p>Si vous pilotez déjà plusieurs opérations, le plus simple est de voir si vos projets sont sains.</p>
-            <LandingCtaLink
-              className={styles.buttonPrimary}
-              href="#access"
-              location="middle"
-              label="check_project_health"
-              target="#access"
-            >
-              Voir si mes projets sont sains
-            </LandingCtaLink>
-          </div>
-        </section>
-
-        <section
-          className={styles.section}
-          id="solution"
-          data-landing-section="solution"
-        >
-          <div className={styles.sectionHeading}>
-            <div className={styles.eyebrow}>Comment ça aide</div>
-            <h2>Trois usages. Pas plus.</h2>
-          </div>
-
-          <div className={styles.decisionGrid}>
-            {solutionItems.map((item) => (
-              <article className={styles.decisionCard} key={item.title}>
-                <h3>{item.title}</h3>
-                <p>{item.body}</p>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section
-          className={`${styles.section} ${styles.sectionAlt}`}
-          id="proof"
-          data-landing-section="proof"
-        >
-          <div className={styles.sectionHeading}>
-            <div className={styles.eyebrow}>Exemple concret</div>
-            <h2>En quelques secondes, vous voyez ce qui a bougé.</h2>
-            <p>Exemple simplifié tiré du jeu de démo du repo.</p>
-          </div>
-
-          <div className={styles.proofGrid}>
-            <article className={styles.proofCard}>
-              <div className={styles.proofHeader}>
-                <div>
-                  <p className={styles.previewLabel}>Projet travaux sous tension</p>
-                  <strong>Lecture rapide dans Axelys</strong>
-                </div>
-                <span className={styles.statusBadgeDanger}>Problématique</span>
-              </div>
-
-              <div className={styles.proofRows}>
-                {proofRows.map((row) => (
-                  <div className={styles.proofRow} key={row.label}>
-                    <span>{row.label}</span>
-                    <strong>{row.value}</strong>
-                  </div>
+              <h1 className={styles.heroTitle}>
+                L’outil de décision et de pilotage immobilier pour arbitrer avec méthode.
+              </h1>
+              <p className={styles.heroLead}>
+                Axelys aide les investisseurs immobiliers actifs, marchands de
+                biens et petites structures multi-projets à décider avant achat,
+                puis à suivre un projet réel sans transformer le site public en
+                simulateur gadget.
+              </p>
+              <ul className={styles.highlightList}>
+                {homeHeroHighlights.map((item) => (
+                  <li key={item}>{item}</li>
                 ))}
+              </ul>
+              <div className={styles.actionRow}>
+                <LandingCtaLink
+                  className={styles.buttonPrimary}
+                  href="#home-form"
+                  location="hero"
+                  label="request_pilot_access"
+                  target="#home-form"
+                >
+                  Demander un accès client pilote
+                </LandingCtaLink>
+                <LandingCtaLink
+                  className={styles.buttonSecondary}
+                  href="/pricing"
+                  location="hero"
+                  label="view_pricing"
+                  target="/pricing"
+                >
+                  Voir les offres
+                </LandingCtaLink>
               </div>
-            </article>
+              <div className={styles.quickMeta}>
+                <span className={styles.quickMetaItem}>Offre ouverte: client pilote</span>
+                <span className={styles.quickMetaItem}>Simple et Pro visibles, non activables</span>
+                <span className={styles.quickMetaItem}>Simulateur réservé à l’app privée</span>
+              </div>
+            </div>
 
-            <article className={styles.proofAside}>
-              <p className={styles.previewLabel}>Cause</p>
-              <strong>Dérive travaux</strong>
-              <p className={styles.proofCause}>+20 000 € (+200 %)</p>
-              <p className={styles.proofNote}>
-                Vous savez immédiatement pourquoi le projet remonte.
+            <aside className={styles.heroPanel}>
+              <p className={styles.kicker}>Ce qu’Axelys change</p>
+              <h2 className={styles.panelTitle}>Arbitrer, suivre, corriger.</h2>
+              <p className={styles.panelBody}>
+                Le site public explique clairement le cadre. L’application privée
+                porte le moteur d’analyse détaillé, la comparaison des opportunités
+                et la conversion vers projet réel.
               </p>
-            </article>
-          </div>
-        </section>
-
-        <section
-          className={styles.section}
-          id="pilot"
-          data-landing-section="pilot"
-        >
-          <div className={styles.sectionHeading}>
-            <div className={styles.eyebrow}>Offre client pilote</div>
-            <h2>Un cadre simple. Pas un discours de lancement.</h2>
-          </div>
-
-          <div className={styles.offerPanel}>
-            <div className={styles.offerSummary}>
-              <div>
-                <p className={styles.previewLabel}>Tarif pilote</p>
-                <div className={styles.priceRow}>
-                  <strong>15 €</strong>
-                  <span>/ mois</span>
+              <div className={styles.statStrip}>
+                <div className={styles.statCard}>
+                  <span className={styles.kicker}>Avant achat</span>
+                  <strong>Comparer une opportunité</strong>
+                </div>
+                <div className={styles.statCard}>
+                  <span className={styles.kicker}>Après achat</span>
+                  <strong>Suivre les dérives utiles</strong>
+                </div>
+                <div className={styles.statCard}>
+                  <span className={styles.kicker}>Aujourd’hui</span>
+                  <strong>Programme client pilote</strong>
                 </div>
               </div>
-              <p>
-                Prix public visé hors programme : 29 € / mois. Le tarif pilote
-                reste ensuite.
-              </p>
-            </div>
-
-            <div className={styles.offerGrid}>
-              {offerSections.map((section) => (
-                <article className={styles.offerCard} key={section.title}>
-                  <h3>{section.title}</h3>
-                  <ul>
-                    {section.items.map((item) => (
-                      <li key={item}>{item}</li>
-                    ))}
-                  </ul>
-                </article>
-              ))}
-            </div>
-
-            <div className={styles.credibilityStrip}>
-              <span className={styles.credibilityPill}>Hébergé en Europe</span>
-              <span className={styles.credibilityPill}>Stack web standard</span>
-              <span className={styles.credibilityPill}>Déploiement progressif</span>
-            </div>
+            </aside>
           </div>
         </section>
 
-        <section
-          className={styles.section}
-          id="faq"
-          data-landing-section="faq"
-        >
+        <section className={styles.section} data-landing-section="problem" id="problem">
+          <div className={styles.sectionHeading}>
+            <div className={styles.eyebrow}>Le problème</div>
+            <h2 className={styles.sectionTitle}>Décider et piloter deviennent fragiles quand tout est dispersé.</h2>
+            <p className={styles.sectionLead}>
+              Axelys n’essaie pas de tout faire. Le produit s’attaque à ce qui
+              abîme le plus vite la qualité d’un arbitrage et d’un suivi de projet.
+            </p>
+          </div>
+          <div className={styles.cardGrid}>
+            {homeProblemCards.map((item, index) => (
+              <article
+                className={`${styles.card} ${index === 0 ? styles.cardEmphasis : ''}`.trim()}
+                key={item.title}
+              >
+                <h3 className={styles.cardTitle}>{item.title}</h3>
+                <p className={styles.cardText}>{item.body}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className={styles.section} data-landing-section="solution" id="solution">
+          <div className={styles.sectionHeading}>
+            <div className={styles.eyebrow}>Comment Axelys aide</div>
+            <h2 className={styles.sectionTitle}>Axelys aide à arbitrer, pas seulement à calculer.</h2>
+          </div>
+          <div className={styles.cardGrid}>
+            {homeValueCards.map((item) => (
+              <article className={styles.card} key={item.title}>
+                <h3 className={styles.cardTitle}>{item.title}</h3>
+                <p className={styles.cardText}>{item.body}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className={styles.section} data-landing-section="proof" id="proof">
+          <div className={styles.sectionHeading}>
+            <div className={styles.eyebrow}>Sécurité produit</div>
+            <h2 className={styles.sectionTitle}>Le site public reste utile sans exposer le cœur du produit.</h2>
+            <p className={styles.sectionLead}>
+              Le contenu public prépare la compréhension et la conversion. Le vrai
+              simulateur, la logique métier détaillée et la conversion vers projet
+              restent dans l’application privée.
+            </p>
+          </div>
+          <div className={styles.cardGrid}>
+            {homePrivateCoreCards.map((item) => (
+              <article className={styles.card} key={item.title}>
+                <h3 className={styles.cardTitle}>{item.title}</h3>
+                <p className={styles.cardText}>{item.body}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className={styles.section} data-landing-section="pilot" id="offers">
+          <div className={styles.sectionHeading}>
+            <div className={styles.eyebrow}>Offres</div>
+            <h2 className={styles.sectionTitle}>Le client pilote au centre. Simple et Pro visibles, mais pas activables.</h2>
+          </div>
+          <div className={styles.pricingGrid}>
+            {publicOffers.map((plan) => (
+              <OfferCard key={plan.slug} plan={plan} />
+            ))}
+          </div>
+        </section>
+
+        <section className={styles.sectionMuted}>
+          <div className={styles.sectionHeading}>
+            <div className={styles.eyebrow}>Pages métier</div>
+            <h2 className={styles.sectionTitle}>Des pages publiques utiles pour l’indexation, sans simulateur réel.</h2>
+          </div>
+          <div className={styles.resourceGrid}>
+            {businessPageList.map((page) => (
+              <LandingCtaLink
+                className={styles.resourceCard}
+                href={page.href}
+                key={page.href}
+                location="middle"
+                label="open_business_page"
+                target={page.href}
+              >
+                <p className={styles.resourceMeta}>Page métier</p>
+                <h3 className={styles.resourceTitle}>{page.title}</h3>
+                <p className={styles.resourceDescription}>{page.description}</p>
+              </LandingCtaLink>
+            ))}
+          </div>
+        </section>
+
+        <section className={styles.section}>
+          <div className={styles.sectionHeading}>
+            <div className={styles.eyebrow}>Blog</div>
+            <h2 className={styles.sectionTitle}>Des articles utiles pour préparer une décision sérieuse.</h2>
+          </div>
+          <div className={styles.articleGrid}>
+            {featuredPosts.map((post, index) => (
+              <ArticleCard key={post.slug} post={post} featured={index === 0} />
+            ))}
+          </div>
+        </section>
+
+        <section className={styles.section} data-landing-section="faq" id="faq">
           <div className={styles.sectionHeading}>
             <div className={styles.eyebrow}>FAQ</div>
-            <h2>Les objections critiques avant de demander un accès.</h2>
+            <h2 className={styles.sectionTitle}>Les points à clarifier avant de candidater.</h2>
           </div>
-
-          <div className={styles.faqList}>
-            {faqItems.map((item) => (
+          <div className={styles.faqGrid}>
+            {homeFaqItems.map((item) => (
               <details className={styles.faqItem} key={item.question}>
                 <summary>{item.question}</summary>
                 <p>{item.answer}</p>
@@ -521,34 +270,32 @@ export default function Home() {
           </div>
         </section>
 
-        <section
-          className={`${styles.section} ${styles.sectionFinal}`}
-          id="access"
-          data-landing-section="form"
-        >
-          <div className={styles.accessPanel}>
-            <div className={styles.accessCopy}>
+        <section className={styles.section} data-landing-section="form" id="home-form">
+          <div className={styles.formGrid}>
+            <div className={styles.heroContent}>
               <div className={styles.eyebrow}>Demande d’accès</div>
-              <h2>Demandez un accès si vous pilotez déjà plusieurs opérations.</h2>
-              <p className={styles.accessPromise}>
-                Vous saurez rapidement si Axelys est utile pour vos projets.
+              <h2 className={styles.sectionTitle}>Candidater au programme client pilote</h2>
+              <p className={styles.sectionLead}>
+                Le bon point d’entrée aujourd’hui est le programme client pilote.
+                Pas d’ouverture automatique, pas de promesse floue, juste un tri
+                sérieux des contextes où Axelys peut déjà être utile.
               </p>
-
-              <div className={styles.accessSignals}>
-                <span className={styles.accessSignal}>Réponse sous 24–48 h</span>
-                <span className={styles.accessSignal}>Accès progressif</span>
-                <span className={styles.accessSignal}>Aucun engagement</span>
+              <ul className={styles.signalList}>
+                <li>Réponse humaine sur la pertinence du contexte</li>
+                <li>Offre pilote à 15 € / mois pour les profils retenus</li>
+                <li>Simple et Pro restent volontairement non activables</li>
+              </ul>
+              <div className={styles.actionRow}>
+                <LandingCtaLink
+                  className={styles.buttonGhost}
+                  href="/client-pilote"
+                  location="form"
+                  label="open_client_pilot_page"
+                  target="/client-pilote"
+                >
+                  Voir la page client pilote
+                </LandingCtaLink>
               </div>
-
-              <p>
-                Le formulaire sert à vérifier si le produit correspond à votre
-                contexte. Pas d’accès automatique.
-              </p>
-
-              <p className={styles.accessNote}>
-                Vous préférez une page dédiée ? Le même formulaire reste
-                accessible sur <Link href="/apply">/apply</Link>.
-              </p>
             </div>
 
             <PilotApplicationForm
@@ -560,24 +307,16 @@ export default function Home() {
             />
           </div>
         </section>
-
-        <footer className={styles.footer}>
-          <LegalFooter ctaLocation="footer" />
-        </footer>
-      </main>
+      </div>
 
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(softwareApplicationSchema),
-        }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareApplicationSchema) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(faqPageSchema),
-        }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqPageSchema) }}
       />
-    </div>
+    </SiteShell>
   );
 }

@@ -309,3 +309,81 @@ export function getInvitationStatusTone(value: string | null | undefined) {
 export function getFeatureRequestStatusTone(value: string | null | undefined) {
   return featureRequestStatusTones[value ?? ''] ?? 'neutral';
 }
+
+const pilotApplicationStatusLabels: Record<string, string> = {
+  PENDING: 'Pending',
+  APPROVED: 'Approved',
+  REJECTED: 'Rejected',
+  PAYMENT_PENDING: 'Payment pending',
+  ACTIVE: 'Active',
+  EXPIRED: 'Expired',
+  CANCELLED: 'Cancelled',
+};
+
+const pilotProvisioningStatusLabels: Record<string, string> = {
+  PENDING: 'En attente',
+  IN_PROGRESS: 'En cours',
+  COMPLETED: 'Provisionne',
+  FAILED: 'En erreur',
+};
+
+const pilotApplicationEventLabels: Record<string, string> = {
+  SUBMITTED: 'Candidature recue',
+  APPROVED: 'Approuvee',
+  REJECTED: 'Rejetee',
+  CHECKOUT_LINK_SENT: 'Lien envoye',
+  CHECKOUT_STARTED: 'Checkout demarre',
+  CHECKOUT_COMPLETED: 'Checkout complete',
+  PAYMENT_CONFIRMED: 'Paiement confirme',
+  PROVISIONING_COMPLETED: 'Provisioning termine',
+  PROVISIONING_FAILED: 'Provisioning echoue',
+  CANCELLED: 'Abonnement annule',
+  EXPIRED: 'Lien expire',
+};
+
+const pilotApplicationStatusTones: Record<string, string> = {
+  PENDING: 'neutral',
+  APPROVED: 'info',
+  REJECTED: 'danger',
+  PAYMENT_PENDING: 'warning',
+  ACTIVE: 'good',
+  EXPIRED: 'warning',
+  CANCELLED: 'danger',
+};
+
+const pilotProvisioningStatusTones: Record<string, string> = {
+  PENDING: 'neutral',
+  IN_PROGRESS: 'info',
+  COMPLETED: 'good',
+  FAILED: 'danger',
+};
+
+export function getPilotApplicationStatusLabel(
+  value: string | null | undefined,
+) {
+  return getLabel(pilotApplicationStatusLabels, value);
+}
+
+export function getPilotProvisioningStatusLabel(
+  value: string | null | undefined,
+) {
+  return getLabel(pilotProvisioningStatusLabels, value);
+}
+
+export function getPilotApplicationEventLabel(
+  value: string | null | undefined,
+) {
+  return getLabel(pilotApplicationEventLabels, value);
+}
+
+export function getPilotApplicationStatusTone(
+  value: string | null | undefined,
+) {
+  return pilotApplicationStatusTones[value ?? ''] ?? 'neutral';
+}
+
+export function getPilotProvisioningStatusTone(
+  value: string | null | undefined,
+) {
+  return pilotProvisioningStatusTones[value ?? ''] ?? 'neutral';
+}

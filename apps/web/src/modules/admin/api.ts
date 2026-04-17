@@ -530,3 +530,244 @@ export function updateAdminIdeaStatus(
     body: payload,
   });
 }
+
+export type AdminPilotApplicationStatus =
+  | 'PENDING'
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'PAYMENT_PENDING'
+  | 'ACTIVE'
+  | 'EXPIRED'
+  | 'CANCELLED';
+
+export type AdminPilotProvisioningStatus =
+  | 'PENDING'
+  | 'IN_PROGRESS'
+  | 'COMPLETED'
+  | 'FAILED';
+
+export type AdminPilotApplicationEvent = {
+  id: string;
+  type: string;
+  message?: string | null;
+  metadata?: unknown;
+  createdAt: string;
+  actor: {
+    id: string;
+    email: string;
+    firstName?: string | null;
+    lastName?: string | null;
+  } | null;
+};
+
+export type AdminPilotApplicationSummary = {
+  id: string;
+  firstName: string;
+  lastName?: string | null;
+  fullName: string;
+  email: string;
+  profileType: string;
+  projectCount: string;
+  problemDescription: string;
+  status: AdminPilotApplicationStatus;
+  provisioningStatus: AdminPilotProvisioningStatus;
+  createdAt: string;
+  approvedAt?: string | null;
+  paymentStartedAt?: string | null;
+  paymentConfirmedAt?: string | null;
+  activatedAt?: string | null;
+  reviewedAt?: string | null;
+  checkoutLinkSentAt?: string | null;
+  provisioningErrorMessage?: string | null;
+  organization: {
+    id: string;
+    name: string;
+    slug: string;
+    billingPlan: string;
+    billingStatus: string;
+    projectsCount: number;
+  } | null;
+  invitation: {
+    id: string;
+    status: AdminInvitationStatus;
+    createdAt: string;
+    acceptedAt?: string | null;
+    expiresAt: string;
+  } | null;
+  user: {
+    id: string;
+    email: string;
+    firstName?: string | null;
+    lastName?: string | null;
+    isPilotUser: boolean;
+    betaAccessEnabled: boolean;
+  } | null;
+  reviewedBy: {
+    id: string;
+    email: string;
+    firstName?: string | null;
+    lastName?: string | null;
+  } | null;
+};
+
+export type AdminPilotApplicationDetail = AdminPilotApplicationSummary & {
+  acknowledgementAcceptedAt: string;
+  organizationName?: string | null;
+  internalNote?: string | null;
+  stripe: {
+    customerId?: string | null;
+    checkoutSessionId?: string | null;
+    subscriptionId?: string | null;
+    priceId?: string | null;
+  };
+  organization: {
+    id: string;
+    name: string;
+    slug: string;
+    billingPlan: string;
+    billingStatus: string;
+    billingCurrentPeriodEnd?: string | null;
+    billingCancelAtPeriodEnd: boolean;
+    billingLastEventAt?: string | null;
+    projectsCount: number;
+    membersCount: number;
+    stripeCustomerId?: string | null;
+    stripeSubscriptionId?: string | null;
+  } | null;
+  invitation: {
+    id: string;
+    status: AdminInvitationStatus;
+    createdAt: string;
+    acceptedAt?: string | null;
+    revokedAt?: string | null;
+    expiresAt: string;
+    membershipRole: string;
+    organizationMode: string;
+  } | null;
+  user: {
+    id: string;
+    email: string;
+    firstName?: string | null;
+    lastName?: string | null;
+    hasPassword: boolean;
+    isPilotUser: boolean;
+    betaAccessEnabled: boolean;
+    memberships: Array<{
+      id: string;
+      role: string;
+      organizationId: string;
+    }>;
+  } | null;
+  events: AdminPilotApplicationEvent[];
+};
+
+export type AdminPilotApplicationsResponse = {
+  items: AdminPilotApplicationSummary[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+};
+
+export type AdminPilotDelivery = {
+  mode: 'console' | 'smtp' | 'resend' | 'failed' | 'skipped';
+  error?: string;
+};
+
+export type ListAdminPilotApplicationsParams = Partial<{
+  page: number;
+  pageSize: number;
+  search: string;
+  status: AdminPilotApplicationStatus;
+}>;
+
+export function listAdminPilotApplications(
+  session: Session | null,
+  params: ListAdminPilotApplicationsParams,
+) {
+  const currentSession = requireSession(session);
+
+  return apiFetch<AdminPilotApplicationsResponse>(
+    `/admin/pilot-applications${buildQuery(params as Record<string, string | number | undefined>)}`,
+    {
+      token: currentSession.accessToken,
+    },
+  );
+}
+
+export function getAdminPilotApplication(
+  session: Session | null,
+  applicationId: string,
+) {
+  const currentSession = requireSession(session);
+
+  return apiFetch<AdminPilotApplicationDetail>(
+    `/admin/pilot-applications/${applicationId}`,
+    {
+      token: currentSession.accessToken,
+    },
+  );
+}
+
+export function approvePilotApplication(
+  session: Session | null,
+  applicationId: string,
+  payload: {
+    reason: string;
+    note?: string;
+    organizationName?: string;
+    sendCheckoutLink?: boolean;
+  },
+) {
+  const currentSession = requireSession(session);
+
+  return apiFetch<{
+    application: AdminPilotApplicationDetail;
+    delivery: AdminPilotDelivery;
+  }>(`/admin/pilot-applications/${applicationId}/approve`, {
+    method: 'PATCH',
+    token: currentSession.accessToken,
+    body: payload,
+  });
+}
+
+export function rejectPilotApplication(
+  session: Session | null,
+  applicationId: string,
+  payload: {
+    reason: string;
+    note?: string;
+    sendRejectionEmail?: boolean;
+  },
+) {
+  const currentSession = requireSession(session);
+
+  return apiFetch<{
+    application: AdminPilotApplicationDetail;
+    delivery: AdminPilotDelivery;
+  }>(`/admin/pilot-applications/${applicationId}/reject`, {
+    method: 'PATCH',
+    token: currentSession.accessToken,
+    body: payload,
+  });
+}
+
+export function resendPilotCheckoutLink(
+  session: Session | null,
+  applicationId: string,
+  payload: {
+    reason: string;
+    note?: string;
+  },
+) {
+  const currentSession = requireSession(session);
+
+  return apiFetch<{
+    application: AdminPilotApplicationDetail;
+    delivery: AdminPilotDelivery;
+  }>(`/admin/pilot-applications/${applicationId}/send-checkout-link`, {
+    method: 'POST',
+    token: currentSession.accessToken,
+    body: payload,
+  });
+}

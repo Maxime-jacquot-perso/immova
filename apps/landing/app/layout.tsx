@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   applicationName: siteName,
   title: {
-    default: `Pilotage d’opérations immobilières pour décider sur des faits | ${siteName}`,
+    default: `Décider avant achat et piloter après acquisition | ${siteName}`,
     template: `%s | ${siteName}`,
   },
   description: defaultDescription,
@@ -26,9 +26,12 @@ export const metadata: Metadata = {
     siteName,
     locale: 'fr_FR',
     type: 'website',
+    description: defaultDescription,
+    url: '/',
   },
   twitter: {
     card: 'summary_large_image',
+    description: defaultDescription,
   },
 };
 

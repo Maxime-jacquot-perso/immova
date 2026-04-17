@@ -11,6 +11,8 @@ export const ADMIN_PERMISSIONS = {
   subscriptionOverride: 'subscription.override',
   ideasRead: 'ideas.read',
   ideasUpdate: 'ideas.update',
+  pilotApplicationsRead: 'pilot-applications.read',
+  pilotApplicationsUpdate: 'pilot-applications.update',
   adminsRead: 'admins.read',
   adminsCreate: 'admins.create',
   adminsUpdate: 'admins.update',
@@ -22,10 +24,7 @@ export function canAccessAdmin(session: Session | null) {
   return Boolean(session?.admin);
 }
 
-export function hasAdminPermission(
-  session: Session | null,
-  permission: string,
-) {
+export function hasAdminPermission(session: Session | null, permission: string) {
   return session?.admin?.permissions.includes(permission) ?? false;
 }
 

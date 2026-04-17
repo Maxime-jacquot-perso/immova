@@ -155,6 +155,37 @@ enum FeatureRequestStatus {
   REJECTED
 }
 
+enum PilotApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PAYMENT_PENDING
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+enum PilotApplicationProvisioningStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
+
+enum PilotApplicationEventType {
+  SUBMITTED
+  APPROVED
+  REJECTED
+  CHECKOUT_LINK_SENT
+  CHECKOUT_STARTED
+  CHECKOUT_COMPLETED
+  PAYMENT_CONFIRMED
+  PROVISIONING_COMPLETED
+  PROVISIONING_FAILED
+  CANCELLED
+  EXPIRED
+}
+
 enum AdminAuditAction {
   TRIAL_GRANTED
   TRIAL_EXTENDED
@@ -167,6 +198,9 @@ enum AdminAuditAction {
   USER_INVITE_RESENT
   USER_PILOT_ACCESS_UPDATED
   FEATURE_REQUEST_STATUS_UPDATED
+  PILOT_APPLICATION_APPROVED
+  PILOT_APPLICATION_REJECTED
+  PILOT_APPLICATION_CHECKOUT_LINK_SENT
 }
 
 enum AdminAuditTargetType {
@@ -174,6 +208,7 @@ enum AdminAuditTargetType {
   ADMIN
   SUBSCRIPTION
   FEATURE_REQUEST
+  PILOT_APPLICATION
 }
 
 model Organization {
@@ -212,6 +247,7 @@ model Organization {
   projectForecastSnapshots       ProjectForecastSnapshot[]
   stripeWebhookEvents            StripeWebhookEvent[]
   legalAcceptances               UserLegalAcceptance[]
+  pilotApplication               PilotApplication?
 
   @@index([billingPlan])
   @@index([billingStatus])
@@ -236,14 +272,17 @@ model User {
   updatedAt            DateTime           @updatedAt
 
   memberships                    Membership[]
-  adminAuditEntries              AdminAuditLog[]        @relation("AdminAuditActor")
-  adminAuditTargets              AdminAuditLog[]        @relation("AdminAuditTarget")
-  invitations                    UserInvitation[]       @relation("InvitationUser")
-  createdInvitations             UserInvitation[]       @relation("InvitationCreator")
-  featureRequests                FeatureRequest[]       @relation("FeatureRequestAuthor")
+  adminAuditEntries              AdminAuditLog[]         @relation("AdminAuditActor")
+  adminAuditTargets              AdminAuditLog[]         @relation("AdminAuditTarget")
+  invitations                    UserInvitation[]        @relation("InvitationUser")
+  createdInvitations             UserInvitation[]        @relation("InvitationCreator")
+  featureRequests                FeatureRequest[]        @relation("FeatureRequestAuthor")
   featureRequestVotes            FeatureRequestVote[]
-  simulationConversionsTriggered SimulationConversion[] @relation("SimulationConversionActor")
+  simulationConversionsTriggered SimulationConversion[]  @relation("SimulationConversionActor")
   legalAcceptances               UserLegalAcceptance[]
+  pilotApplications              PilotApplication[]      @relation("PilotApplicationUser")
+  reviewedPilotApplications      PilotApplication[]      @relation("PilotApplicationReviewer")
+  pilotApplicationEvents         PilotApplicationEvent[] @relation("PilotApplicationEventActor")
 
   @@index([adminRole])
   @@index([isSuspended, subscriptionStatus])
@@ -282,9 +321,10 @@ model UserInvitation {
   createdAt            DateTime                   @default(now())
   updatedAt            DateTime                   @updatedAt
 
-  user               User?         @relation("InvitationUser", fields: [userId], references: [id], onDelete: SetNull)
-  organization       Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdByAdminUser User          @relation("InvitationCreator", fields: [createdByAdminUserId], references: [id], onDelete: Restrict)
+  user               User?             @relation("InvitationUser", fields: [userId], references: [id], onDelete: SetNull)
+  organization       Organization?     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdByAdminUser User              @relation("InvitationCreator", fields: [createdByAdminUserId], references: [id], onDelete: Restrict)
+  pilotApplication   PilotApplication?
 
   @@index([email])
   @@index([userId, organizationId])
@@ -483,6 +523,72 @@ model FeatureRequestVote {
   @@unique([featureRequestId, userId])
   @@index([organizationId, featureRequestId])
   @@index([organizationId, userId])
+}
+
+model PilotApplication {
+  id                        String                             @id @default(cuid())
+  firstName                 String
+  lastName                  String?
+  email                     String
+  normalizedEmail           String
+  profileType               String
+  projectCount              String
+  problemDescription        String
+  acknowledgementAcceptedAt DateTime
+  status                    PilotApplicationStatus             @default(PENDING)
+  provisioningStatus        PilotApplicationProvisioningStatus @default(PENDING)
+  organizationName          String?
+  internalNote              String?
+  reviewedAt                DateTime?
+  reviewedByUserId          String?
+  approvedAt                DateTime?
+  rejectedAt                DateTime?
+  paymentStartedAt          DateTime?
+  paymentConfirmedAt        DateTime?
+  activatedAt               DateTime?
+  checkoutLinkSentAt        DateTime?
+  checkoutTokenHash         String?                            @unique
+  checkoutTokenExpiresAt    DateTime?
+  stripeCustomerId          String?
+  stripeCheckoutSessionId   String?                            @unique
+  stripeSubscriptionId      String?                            @unique
+  stripePriceId             String?
+  organizationId            String?                            @unique
+  userId                    String?
+  invitationId              String?                            @unique
+  provisioningErrorMessage  String?
+  createdAt                 DateTime                           @default(now())
+  updatedAt                 DateTime                           @updatedAt
+
+  organization Organization?           @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  user         User?                   @relation("PilotApplicationUser", fields: [userId], references: [id], onDelete: SetNull)
+  reviewedBy   User?                   @relation("PilotApplicationReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  invitation   UserInvitation?         @relation(fields: [invitationId], references: [id], onDelete: SetNull)
+  events       PilotApplicationEvent[]
+
+  @@index([normalizedEmail, createdAt])
+  @@index([status, createdAt])
+  @@index([provisioningStatus, createdAt])
+  @@index([reviewedByUserId, reviewedAt])
+  @@index([organizationId])
+  @@index([userId])
+}
+
+model PilotApplicationEvent {
+  id                 String                    @id @default(cuid())
+  pilotApplicationId String
+  actorUserId        String?
+  type               PilotApplicationEventType
+  message            String?
+  metadata           Json?
+  createdAt          DateTime                  @default(now())
+
+  pilotApplication PilotApplication @relation(fields: [pilotApplicationId], references: [id], onDelete: Cascade)
+  actorUser        User?            @relation("PilotApplicationEventActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([pilotApplicationId, createdAt])
+  @@index([type, createdAt])
+  @@index([actorUserId, createdAt])
 }
 
 enum SimulationStrategy {

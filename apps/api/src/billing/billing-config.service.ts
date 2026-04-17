@@ -34,6 +34,25 @@ export class BillingConfigService {
     return this.requireEnv('STRIPE_PORTAL_RETURN_URL');
   }
 
+  getAppWebUrl() {
+    return (process.env.APP_WEB_URL?.trim() || 'http://localhost:5173').replace(
+      /\/$/,
+      '',
+    );
+  }
+
+  getPilotCheckoutStartUrl(token: string) {
+    return `${this.getAppWebUrl()}/pilot/subscribe?token=${encodeURIComponent(token)}`;
+  }
+
+  getPilotCheckoutSuccessUrl(applicationId: string) {
+    return `${this.getAppWebUrl()}/pilot/subscribe/success?applicationId=${encodeURIComponent(applicationId)}`;
+  }
+
+  getPilotCheckoutCancelUrl(applicationId: string) {
+    return `${this.getAppWebUrl()}/pilot/subscribe/cancel?applicationId=${encodeURIComponent(applicationId)}`;
+  }
+
   getPriceId(plan: PurchasableBillingPlan) {
     return this.requireEnv(BILLING_PLAN_ENV_BY_PLAN[plan]);
   }

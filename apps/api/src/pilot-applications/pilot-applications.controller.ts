@@ -1,13 +1,10 @@
-import {
-  Body,
-  Controller,
-  Post,
-  Logger,
-  HttpException,
-  HttpStatus,
-} from '@nestjs/common';
-import { PilotApplicationsService } from './pilot-applications.service';
+import { Body, Controller, Get, Logger, Post, Query } from '@nestjs/common';
 import { CreatePilotApplicationDto } from './dto/create-pilot-application.dto';
+import {
+  CreatePilotCheckoutSessionDto,
+  PilotCheckoutTokenQueryDto,
+} from './dto/pilot-checkout-token.dto';
+import { PilotApplicationsService } from './pilot-applications.service';
 
 @Controller('pilot-applications')
 export class PilotApplicationsController {
@@ -19,21 +16,20 @@ export class PilotApplicationsController {
 
   @Post()
   async create(@Body() createDto: CreatePilotApplicationDto) {
-    try {
-      this.logger.log(`Received pilot application from ${createDto.email}`);
-      this.logger.debug(`Full payload: ${JSON.stringify(createDto)}`);
+    this.logger.log(
+      `Received pilot application from ${createDto.email.trim().toLowerCase()}`,
+    );
 
-      await this.pilotApplicationsService.create(createDto);
-      return { success: true };
-    } catch (error) {
-      this.logger.error(
-        `Failed to process pilot application: ${error.message}`,
-        error.stack,
-      );
-      throw new HttpException(
-        `Failed to process application: ${error.message}`,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
+    return this.pilotApplicationsService.create(createDto);
+  }
+
+  @Get('checkout')
+  getCheckoutContext(@Query() query: PilotCheckoutTokenQueryDto) {
+    return this.pilotApplicationsService.getCheckoutContext(query.token);
+  }
+
+  @Post('checkout-session')
+  createCheckoutSession(@Body() body: CreatePilotCheckoutSessionDto) {
+    return this.pilotApplicationsService.createCheckoutSession(body);
   }
 }

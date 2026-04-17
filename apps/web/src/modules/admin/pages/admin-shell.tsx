@@ -25,6 +25,16 @@ export function AdminShell() {
           >
             Dashboard admin
           </NavLink>
+          {hasAdminPermission(session, ADMIN_PERMISSIONS.pilotApplicationsRead) ? (
+            <NavLink
+              to="/admin/pilot-applications"
+              className={({ isActive }) =>
+                `sidebar__link ${isActive ? 'sidebar__link--active' : ''}`
+              }
+            >
+              Candidatures pilotes
+            </NavLink>
+          ) : null}
           {hasAdminPermission(session, ADMIN_PERMISSIONS.usersRead) ? (
             <NavLink
               to="/admin/users"

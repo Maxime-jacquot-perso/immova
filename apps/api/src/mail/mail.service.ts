@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 
+export type InvitationEmailVariant = 'standard' | 'pilotActivation';
+
 export type SendUserInvitationMailInput = {
   to: string;
   organizationName: string;
@@ -9,6 +11,7 @@ export type SendUserInvitationMailInput = {
   acceptUrl: string;
   expiresAt: Date;
   requiresPasswordSetup: boolean;
+  variant?: InvitationEmailVariant;
 };
 
 export type MailDeliveryResult = {
@@ -18,13 +21,30 @@ export type MailDeliveryResult = {
 export type SendPilotApplicationNotificationInput = {
   to: string;
   application: {
+    id?: string;
     firstname: string;
+    lastname?: string | null;
     email: string;
     projectCount: string;
     profileType: string;
     problemDescription: string;
     acknowledgement: boolean;
   };
+};
+
+export type SendPilotApplicationApprovedInput = {
+  to: string;
+  firstName: string;
+  organizationName: string;
+  checkoutUrl: string;
+  expiresAt: Date;
+  planLabel: string;
+  priceLabel: string;
+};
+
+export type SendPilotApplicationRejectedInput = {
+  to: string;
+  firstName: string;
 };
 
 @Injectable()
@@ -53,62 +73,19 @@ export class MailService {
   async sendUserInvitation(
     input: SendUserInvitationMailInput,
   ): Promise<MailDeliveryResult> {
-    const subject = 'Votre acces Axelys';
+    const subject =
+      input.variant === 'pilotActivation'
+        ? 'Votre acces pilote Axelys est pret'
+        : 'Votre acces Axelys';
     const text = this.buildInvitationText(input);
     const html = this.buildInvitationHtml(input);
-    const smtpConfig = this.getSmtpConfig();
 
-    if (smtpConfig) {
-      const transport = nodemailer.createTransport({
-        host: smtpConfig.host,
-        port: smtpConfig.port,
-        secure: smtpConfig.secure,
-        auth: {
-          user: smtpConfig.user,
-          pass: smtpConfig.pass,
-        },
-      });
-
-      await transport.sendMail({
-        from: this.mailFrom,
-        to: input.to,
-        subject,
-        text,
-        html,
-      });
-
-      return { mode: 'smtp' };
-    }
-
-    if (this.resendApiKey && this.mailFrom) {
-      const response = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${this.resendApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          from: this.mailFrom,
-          to: [input.to],
-          subject,
-          text,
-          html,
-        }),
-      });
-
-      if (!response.ok) {
-        const payload = await response.text();
-
-        throw new Error(
-          `Resend invitation delivery failed with status ${response.status}: ${payload}`,
-        );
-      }
-
-      return { mode: 'resend' };
-    }
-
-    this.logger.log(
-      [
+    return this.deliverMail({
+      to: input.to,
+      subject,
+      text,
+      html,
+      consoleLines: [
         'Invitation email logged locally.',
         `To: ${input.to}`,
         `Subject: ${subject}`,
@@ -117,10 +94,9 @@ export class MailService {
         `Accept URL: ${input.acceptUrl}`,
         `Expires at: ${input.expiresAt.toISOString()}`,
         `Requires password setup: ${input.requiresPasswordSetup}`,
-      ].join('\n'),
-    );
-
-    return { mode: 'console' };
+        `Variant: ${input.variant ?? 'standard'}`,
+      ],
+    });
   }
 
   async sendPilotApplicationNotification(
@@ -129,6 +105,73 @@ export class MailService {
     const subject = 'Nouvelle candidature client pilote';
     const text = this.buildPilotApplicationText(input);
     const html = this.buildPilotApplicationHtml(input);
+
+    return this.deliverMail({
+      to: input.to,
+      subject,
+      text,
+      html,
+      replyTo: input.application.email,
+      consoleLines: [
+        'Pilot application notification logged locally.',
+        `Application ID: ${input.application.id ?? 'n/a'}`,
+        `From: ${input.application.firstname} ${input.application.lastname ?? ''} <${input.application.email}>`.trim(),
+        `Project count: ${input.application.projectCount}`,
+        `Profile: ${input.application.profileType}`,
+        `Problem: ${input.application.problemDescription}`,
+        `Acknowledgement: ${input.application.acknowledgement}`,
+      ],
+    });
+  }
+
+  async sendPilotApplicationApproved(
+    input: SendPilotApplicationApprovedInput,
+  ): Promise<MailDeliveryResult> {
+    const subject = 'Votre candidature Axelys est approuvee';
+    const text = this.buildPilotApplicationApprovedText(input);
+    const html = this.buildPilotApplicationApprovedHtml(input);
+
+    return this.deliverMail({
+      to: input.to,
+      subject,
+      text,
+      html,
+      consoleLines: [
+        'Pilot approval email logged locally.',
+        `To: ${input.to}`,
+        `Checkout URL: ${input.checkoutUrl}`,
+        `Expires at: ${input.expiresAt.toISOString()}`,
+      ],
+    });
+  }
+
+  async sendPilotApplicationRejected(
+    input: SendPilotApplicationRejectedInput,
+  ): Promise<MailDeliveryResult> {
+    const subject = 'Retour sur votre candidature Axelys';
+    const text = this.buildPilotApplicationRejectedText(input);
+    const html = this.buildPilotApplicationRejectedHtml(input);
+
+    return this.deliverMail({
+      to: input.to,
+      subject,
+      text,
+      html,
+      consoleLines: [
+        'Pilot rejection email logged locally.',
+        `To: ${input.to}`,
+      ],
+    });
+  }
+
+  private async deliverMail(input: {
+    to: string;
+    subject: string;
+    text: string;
+    html: string;
+    replyTo?: string;
+    consoleLines: string[];
+  }): Promise<MailDeliveryResult> {
     const smtpConfig = this.getSmtpConfig();
 
     if (smtpConfig) {
@@ -145,55 +188,48 @@ export class MailService {
       await transport.sendMail({
         from: this.mailFrom,
         to: input.to,
-        subject,
-        text,
-        html,
-        replyTo: input.application.email,
+        subject: input.subject,
+        text: input.text,
+        html: input.html,
+        replyTo: input.replyTo,
       });
 
       return { mode: 'smtp' };
     }
 
     if (this.resendApiKey && this.mailFrom) {
+      const payload: Record<string, unknown> = {
+        from: this.mailFrom,
+        to: [input.to],
+        subject: input.subject,
+        text: input.text,
+        html: input.html,
+      };
+
+      if (input.replyTo) {
+        payload.reply_to = input.replyTo;
+      }
+
       const response = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${this.resendApiKey}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          from: this.mailFrom,
-          to: [input.to],
-          subject,
-          text,
-          html,
-          reply_to: input.application.email,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
-        const payload = await response.text();
-
+        const body = await response.text();
         throw new Error(
-          `Resend pilot notification delivery failed with status ${response.status}: ${payload}`,
+          `Mail delivery failed with status ${response.status}: ${body}`,
         );
       }
 
       return { mode: 'resend' };
     }
 
-    this.logger.log(
-      [
-        'Pilot application notification logged locally.',
-        `From: ${input.application.firstname} <${input.application.email}>`,
-        `Subject: ${subject}`,
-        `Project count: ${input.application.projectCount}`,
-        `Profile: ${input.application.profileType}`,
-        `Problem: ${input.application.problemDescription}`,
-        `Acknowledgement: ${input.application.acknowledgement}`,
-      ].join('\n'),
-    );
-
+    this.logger.log(input.consoleLines.join('\n'));
     return { mode: 'console' };
   }
 
@@ -240,12 +276,16 @@ export class MailService {
   private buildInvitationText(input: SendUserInvitationMailInput) {
     const expirationLabel = this.formatDate(input.expiresAt);
     const legalLinks = this.getLegalLinks();
+    const isPilotActivation = input.variant === 'pilotActivation';
+    const intro = isPilotActivation
+      ? 'Votre abonnement pilote Axelys est confirme. Votre acces peut maintenant etre finalise.'
+      : 'Un administrateur a cree votre acces Axelys.';
     const nextStep = input.requiresPasswordSetup
       ? 'Utilisez ce lien pour definir votre mot de passe et finaliser votre acces.'
       : 'Utilisez ce lien pour confirmer votre acces, puis connectez-vous avec votre mot de passe habituel.';
 
     return [
-      'Un administrateur a cree votre acces Axelys.',
+      intro,
       '',
       `Organisation : ${input.organizationName}`,
       `Role : ${input.membershipRole}`,
@@ -266,13 +306,17 @@ export class MailService {
   private buildInvitationHtml(input: SendUserInvitationMailInput) {
     const expirationLabel = this.formatDate(input.expiresAt);
     const legalLinks = this.getLegalLinks();
+    const isPilotActivation = input.variant === 'pilotActivation';
+    const intro = isPilotActivation
+      ? 'Votre abonnement pilote Axelys est confirme. Votre acces peut maintenant etre finalise.'
+      : 'Un administrateur a cree votre acces Axelys.';
     const nextStep = input.requiresPasswordSetup
       ? 'Utilisez ce lien securise pour definir votre mot de passe et finaliser votre acces.'
       : 'Utilisez ce lien securise pour confirmer votre acces, puis connectez-vous avec votre mot de passe habituel.';
 
     return `
       <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #111827;">
-        <p>Un administrateur a cree votre acces Axelys.</p>
+        <p>${this.escapeHtml(intro)}</p>
         <p>
           <strong>Organisation :</strong> ${this.escapeHtml(input.organizationName)}<br />
           <strong>Role :</strong> ${this.escapeHtml(input.membershipRole)}
@@ -308,10 +352,18 @@ export class MailService {
   private buildPilotApplicationText(
     input: SendPilotApplicationNotificationInput,
   ) {
+    const fullName = [input.application.firstname, input.application.lastname]
+      .filter((value): value is string => Boolean(value && value.trim()))
+      .join(' ')
+      .trim();
+
     return [
       'Nouvelle candidature client pilote',
       '',
+      `ID : ${input.application.id ?? 'n/a'}`,
       `Prenom : ${input.application.firstname}`,
+      `Nom : ${input.application.lastname ?? '-'}`,
+      `Nom complet : ${fullName || '-'}`,
       `Email : ${input.application.email}`,
       `Projets en cours : ${input.application.projectCount}`,
       `Profil : ${input.application.profileType}`,
@@ -332,7 +384,9 @@ export class MailService {
       <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #111827;">
         <h2 style="color: #1f6feb;">Nouvelle candidature client pilote</h2>
         <p>
+          <strong>ID :</strong> ${this.escapeHtml(input.application.id ?? 'n/a')}<br />
           <strong>Prenom :</strong> ${this.escapeHtml(input.application.firstname)}<br />
+          <strong>Nom :</strong> ${this.escapeHtml(input.application.lastname ?? '-')}<br />
           <strong>Email :</strong> <a href="mailto:${this.escapeHtml(input.application.email)}">${this.escapeHtml(input.application.email)}</a><br />
           <strong>Projets en cours :</strong> ${this.escapeHtml(input.application.projectCount)}<br />
           <strong>Profil :</strong> ${this.escapeHtml(input.application.profileType)}
@@ -353,6 +407,88 @@ export class MailService {
           >
             Repondre au candidat
           </a>
+        </p>
+      </div>
+    `.trim();
+  }
+
+  private buildPilotApplicationApprovedText(
+    input: SendPilotApplicationApprovedInput,
+  ) {
+    const expirationLabel = this.formatDate(input.expiresAt);
+
+    return [
+      `Bonjour ${input.firstName},`,
+      '',
+      'Votre candidature Axelys a ete approuvee.',
+      `Vous pouvez maintenant lancer votre abonnement ${input.planLabel} (${input.priceLabel}) via Stripe Checkout.`,
+      '',
+      `Organisation preparee : ${input.organizationName}`,
+      `Lien de souscription : ${input.checkoutUrl}`,
+      '',
+      `Ce lien expire le ${expirationLabel}.`,
+      'Votre acces a la plateforme sera active uniquement apres confirmation Stripe du paiement.',
+    ].join('\n');
+  }
+
+  private buildPilotApplicationApprovedHtml(
+    input: SendPilotApplicationApprovedInput,
+  ) {
+    const expirationLabel = this.formatDate(input.expiresAt);
+
+    return `
+      <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #111827;">
+        <p>Bonjour ${this.escapeHtml(input.firstName)},</p>
+        <p>Votre candidature Axelys a ete approuvee.</p>
+        <p>
+          Vous pouvez maintenant lancer votre abonnement <strong>${this.escapeHtml(input.planLabel)}</strong>
+          (${this.escapeHtml(input.priceLabel)}) via Stripe Checkout.
+        </p>
+        <p>
+          <strong>Organisation preparee :</strong> ${this.escapeHtml(input.organizationName)}
+        </p>
+        <p>
+          <a
+            href="${this.escapeHtml(input.checkoutUrl)}"
+            style="display: inline-block; padding: 12px 18px; background: #0f766e; color: #ffffff; text-decoration: none; border-radius: 8px;"
+          >
+            Demarrer mon abonnement
+          </a>
+        </p>
+        <p>Ce lien expire le <strong>${this.escapeHtml(expirationLabel)}</strong>.</p>
+        <p style="color: #4b5563;">
+          Votre acces a la plateforme sera active uniquement apres confirmation Stripe du paiement.
+        </p>
+        <p style="color: #4b5563; word-break: break-all;">
+          ${this.escapeHtml(input.checkoutUrl)}
+        </p>
+      </div>
+    `.trim();
+  }
+
+  private buildPilotApplicationRejectedText(
+    input: SendPilotApplicationRejectedInput,
+  ) {
+    return [
+      `Bonjour ${input.firstName},`,
+      '',
+      'Merci pour votre candidature au programme pilote Axelys.',
+      'Nous ne pouvons pas donner suite favorable a votre demande a ce stade.',
+      '',
+      'Nous vous recontacterons si le programme evolue ou si une nouvelle place se libere.',
+    ].join('\n');
+  }
+
+  private buildPilotApplicationRejectedHtml(
+    input: SendPilotApplicationRejectedInput,
+  ) {
+    return `
+      <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #111827;">
+        <p>Bonjour ${this.escapeHtml(input.firstName)},</p>
+        <p>Merci pour votre candidature au programme pilote Axelys.</p>
+        <p>Nous ne pouvons pas donner suite favorable a votre demande a ce stade.</p>
+        <p style="color: #4b5563;">
+          Nous vous recontacterons si le programme evolue ou si une nouvelle place se libere.
         </p>
       </div>
     `.trim();

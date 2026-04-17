@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { BillingPlan, Prisma, StripeWebhookEventStatus } from '@prisma/client';
 import Stripe from 'stripe';
+import { PilotApplicationsService } from '../pilot-applications/pilot-applications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { BillingPlanMapService } from './billing-plan-map.service';
 import { mapStripeSubscriptionStatusToBillingStatus } from './billing-status.util';
@@ -57,6 +58,7 @@ export class StripeWebhookService {
     private readonly prisma: PrismaService,
     private readonly stripeClient: StripeClientService,
     private readonly billingPlanMap: BillingPlanMapService,
+    private readonly pilotApplicationsService: PilotApplicationsService,
   ) {}
 
   async handleWebhook(rawPayload: Buffer, signature?: string) {
@@ -149,10 +151,21 @@ export class StripeWebhookService {
 
     const stripeCustomerId = this.extractStripeId(session.customer);
     const stripeSubscriptionId = this.extractStripeId(session.subscription);
+    const pilotApplicationId = this.getMetadataValue(
+      session.metadata,
+      'pilotApplicationId',
+    );
     const organization = await this.findOrganizationForEvent({
       organizationId:
         this.getMetadataValue(session.metadata, 'organizationId') ??
         session.client_reference_id,
+      stripeCustomerId,
+      stripeSubscriptionId,
+    });
+
+    await this.pilotApplicationsService.markCheckoutCompleted({
+      pilotApplicationId,
+      stripeCheckoutSessionId: session.id,
       stripeCustomerId,
       stripeSubscriptionId,
     });
@@ -286,20 +299,30 @@ export class StripeWebhookService {
       );
     }
 
+    const billingStatus = mapStripeSubscriptionStatusToBillingStatus(
+      subscription.status,
+    );
+
     await this.applyOrganizationStripeState({
       organizationId: organization.id,
       stripeCustomerId,
       stripeSubscriptionId: subscription.id,
       stripePriceId,
       billingPlan,
-      billingStatus: mapStripeSubscriptionStatusToBillingStatus(
-        subscription.status,
-      ),
+      billingStatus,
       billingCurrentPeriodEnd: subscription.current_period_end
         ? new Date(subscription.current_period_end * 1000)
         : null,
       billingCancelAtPeriodEnd: subscription.cancel_at_period_end,
       eventCreatedAt,
+    });
+
+    await this.pilotApplicationsService.syncFromOrganizationBilling({
+      organizationId: organization.id,
+      billingStatus,
+      stripeCustomerId,
+      stripeSubscriptionId: subscription.id,
+      stripePriceId,
     });
 
     return {

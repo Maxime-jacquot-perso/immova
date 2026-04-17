@@ -2,19 +2,21 @@
   color-scheme: light;
   font-family:
     var(--font-body),
-    "IBM Plex Sans",
-    "Avenir Next",
-    "Segoe UI",
+    'IBM Plex Sans',
+    'Avenir Next',
+    'Segoe UI',
     sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  --bg: #f3f5f9;
+  --bg: #edf1f5;
   --text: #0f172a;
-  --muted: #526072;
+  --muted: #5b6678;
   --muted-strong: #334155;
   --border: rgba(207, 217, 230, 0.9);
+  --accent: #2563eb;
+  --accent-dark: #1d4ed8;
   --shadow-soft: 0 20px 40px rgba(15, 23, 42, 0.08);
   --shadow-strong: 0 28px 56px rgba(15, 23, 42, 0.12);
 }
@@ -34,10 +36,11 @@ body {
   min-width: 320px;
   min-height: 100vh;
   background:
-    radial-gradient(circle at top left, rgba(113, 164, 255, 0.18), transparent 24%),
-    radial-gradient(circle at 85% 10%, rgba(14, 165, 233, 0.12), transparent 18%),
-    linear-gradient(180deg, #f8fafd 0%, var(--bg) 100%);
+    radial-gradient(circle at top left, rgba(37, 99, 235, 0.18), transparent 24%),
+    radial-gradient(circle at 85% 10%, rgba(15, 118, 110, 0.12), transparent 18%),
+    linear-gradient(180deg, #f8fafc 0%, var(--bg) 100%);
   color: var(--text);
+  line-height: 1.5;
 }
 
 a {

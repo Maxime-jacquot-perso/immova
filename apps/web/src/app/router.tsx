@@ -1,37 +1,40 @@
 import { createBrowserRouter } from 'react-router-dom';
 import { AppShell } from './layout/app-shell';
-import { LoginPage } from '../modules/auth/pages/login-page';
-import { SetupPasswordPage } from '../modules/auth/pages/setup-password-page';
-import { DashboardPage } from '../modules/dashboard/pages/dashboard-page';
-import { IdeasPage } from '../modules/ideas/pages/ideas-page';
-import { LegalAcceptancePage } from '../modules/legal/pages/legal-acceptance-page';
-import { ProjectsListPage } from '../modules/projects/pages/projects-list-page';
-import { ProjectCreatePage } from '../modules/projects/pages/project-create-page';
-import { ProjectEditPage } from '../modules/projects/pages/project-edit-page';
-import { ProjectLayout } from '../modules/projects/pages/project-layout';
-import { ProjectOverviewPage } from '../modules/projects/pages/project-overview-page';
-import { ProjectLotsPage } from '../modules/lots/pages/project-lots-page';
-import { ProjectExpensesPage } from '../modules/expenses/pages/project-expenses-page';
-import { ProjectDocumentsPage } from '../modules/documents/pages/project-documents-page';
-import { ProjectExportPage } from '../modules/projects/pages/project-export-page';
-import { SimulationsFoldersPage } from '../modules/simulations/pages/simulations-folders-page';
-import { FolderDetailPage } from '../modules/simulations/pages/folder-detail-page';
-import { SimulationFormPage } from '../modules/simulations/pages/simulation-form-page';
-import { SimulationDetailPage } from '../modules/simulations/pages/simulation-detail-page';
-import { SimulationEditPage } from '../modules/simulations/pages/simulation-edit-page';
-import { SettingsPage } from '../modules/settings/pages/settings-page';
+import { RequireAdminAccess } from './require-admin-access';
+import { RequireAuth } from './require-auth';
+import { RequireProductAccess } from './require-product-access';
+import { RouteErrorBoundary } from './route-error-boundary';
+import { SessionHomeRedirect } from './session-home-redirect';
 import { AdminAdminsPage } from '../modules/admin/pages/admin-admins-page';
 import { AdminAuditLogsPage } from '../modules/admin/pages/admin-audit-logs-page';
 import { AdminDashboardPage } from '../modules/admin/pages/admin-dashboard-page';
 import { AdminIdeasPage } from '../modules/admin/pages/admin-ideas-page';
+import { AdminPilotApplicationsPage } from '../modules/admin/pages/admin-pilot-applications-page';
 import { AdminShell } from '../modules/admin/pages/admin-shell';
 import { AdminUserDetailPage } from '../modules/admin/pages/admin-user-detail-page';
 import { AdminUsersListPage } from '../modules/admin/pages/admin-users-list-page';
-import { RouteErrorBoundary } from './route-error-boundary';
-import { RequireAdminAccess } from './require-admin-access';
-import { RequireAuth } from './require-auth';
-import { RequireProductAccess } from './require-product-access';
-import { SessionHomeRedirect } from './session-home-redirect';
+import { LoginPage } from '../modules/auth/pages/login-page';
+import { SetupPasswordPage } from '../modules/auth/pages/setup-password-page';
+import { DashboardPage } from '../modules/dashboard/pages/dashboard-page';
+import { ProjectDocumentsPage } from '../modules/documents/pages/project-documents-page';
+import { ProjectExpensesPage } from '../modules/expenses/pages/project-expenses-page';
+import { IdeasPage } from '../modules/ideas/pages/ideas-page';
+import { LegalAcceptancePage } from '../modules/legal/pages/legal-acceptance-page';
+import { ProjectLotsPage } from '../modules/lots/pages/project-lots-page';
+import { PilotSubscribePage } from '../modules/pilot/pages/pilot-subscribe-page';
+import { PilotSubscribeStatusPage } from '../modules/pilot/pages/pilot-subscribe-status-page';
+import { ProjectCreatePage } from '../modules/projects/pages/project-create-page';
+import { ProjectEditPage } from '../modules/projects/pages/project-edit-page';
+import { ProjectExportPage } from '../modules/projects/pages/project-export-page';
+import { ProjectLayout } from '../modules/projects/pages/project-layout';
+import { ProjectOverviewPage } from '../modules/projects/pages/project-overview-page';
+import { ProjectsListPage } from '../modules/projects/pages/projects-list-page';
+import { SettingsPage } from '../modules/settings/pages/settings-page';
+import { FolderDetailPage } from '../modules/simulations/pages/folder-detail-page';
+import { SimulationDetailPage } from '../modules/simulations/pages/simulation-detail-page';
+import { SimulationEditPage } from '../modules/simulations/pages/simulation-edit-page';
+import { SimulationFormPage } from '../modules/simulations/pages/simulation-form-page';
+import { SimulationsFoldersPage } from '../modules/simulations/pages/simulations-folders-page';
 
 export const router = createBrowserRouter([
   {
@@ -42,6 +45,21 @@ export const router = createBrowserRouter([
   {
     path: '/setup-password',
     element: <SetupPasswordPage />,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: '/pilot/subscribe',
+    element: <PilotSubscribePage />,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: '/pilot/subscribe/success',
+    element: <PilotSubscribeStatusPage mode="success" />,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: '/pilot/subscribe/cancel',
+    element: <PilotSubscribeStatusPage mode="cancel" />,
     errorElement: <RouteErrorBoundary />,
   },
   {
@@ -147,6 +165,10 @@ export const router = createBrowserRouter([
               {
                 index: true,
                 element: <AdminDashboardPage />,
+              },
+              {
+                path: 'pilot-applications',
+                element: <AdminPilotApplicationsPage />,
               },
               {
                 path: 'users',

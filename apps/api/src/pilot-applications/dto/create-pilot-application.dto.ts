@@ -1,32 +1,49 @@
 import {
+  IsBoolean,
   IsEmail,
   IsIn,
   IsNotEmpty,
+  IsOptional,
   IsString,
-  IsBoolean,
+  MaxLength,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class CreatePilotApplicationDto {
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsString()
   @IsNotEmpty()
-  firstname: string;
+  @MaxLength(80)
+  firstname!: string;
 
+  @Transform(({ value }) =>
+    typeof value === 'string' && value.trim() ? value.trim() : undefined,
+  )
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  lastname?: string;
+
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim().toLowerCase() : value,
+  )
   @IsEmail()
   @IsNotEmpty()
-  email: string;
+  email!: string;
 
   @IsString()
   @IsIn(['1', '2-5', '6-10', '10+'])
-  projectCount: string;
+  projectCount!: string;
 
   @IsString()
   @IsIn(['Investisseur immobilier', 'Marchand de biens', 'Autre'])
-  profileType: string;
+  profileType!: string;
 
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsString()
   @IsNotEmpty()
-  problemDescription: string;
+  @MaxLength(4000)
+  problemDescription!: string;
 
   @Transform(({ value }) => {
     if (value === 'true' || value === true) return true;
@@ -34,5 +51,5 @@ export class CreatePilotApplicationDto {
     return value;
   })
   @IsBoolean()
-  acknowledgement: boolean;
+  acknowledgement!: boolean;
 }

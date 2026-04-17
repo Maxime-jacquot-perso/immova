@@ -24,15 +24,14 @@ export const apiUrl = stripTrailingSlash(
 );
 
 export const defaultDescription =
-  "Axelys aide les investisseurs immobiliers actifs et les marchands de biens à voir quels projets sont OK, à surveiller ou problématiques, avec des KPI calculés sur des données réelles.";
+  'Axelys est un outil de décision et de pilotage immobilier qui aide à arbitrer avant achat puis à suivre les écarts entre hypothèse et réalité après acquisition.';
 
 export const seoKeywords = [
+  'outil de décision immobilier',
   'pilotage opération immobilière',
-  'outil investisseur immobilier actif',
+  'analyse rentabilité immobilière',
+  'analyse projet immobilier',
   'logiciel marchand de biens',
-  'KPI projet immobilier',
-  'alertes projet immobilier',
-  'statut décisionnel projet immobilier',
-  'suivi dépenses documents lots immobilier',
-  'outil pilotage multi-projets immobiliers',
+  'suivi projet immobilier',
+  'programme client pilote Axelys',
 ];
