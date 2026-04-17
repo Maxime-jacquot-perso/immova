@@ -7,7 +7,9 @@ let appPromise: Promise<INestApplication> | null = null;
 
 async function getApp() {
   if (!appPromise) {
-    appPromise = NestFactory.create(AppModule).then(async (app) => {
+    appPromise = NestFactory.create(AppModule, {
+      rawBody: true,
+    }).then(async (app) => {
       configureApp(app);
       await app.init();
       return app;

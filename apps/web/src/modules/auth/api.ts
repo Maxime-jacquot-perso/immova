@@ -31,6 +31,10 @@ export type Session = {
   } | null;
   role: string | null;
   admin: AdminContext | null;
+  legal?: {
+    accountAcceptanceRequired: boolean;
+    missingDocumentTypes: string[];
+  };
 };
 
 export type InvitationVerification = {
@@ -68,6 +72,7 @@ export function verifyInvitationToken(token: string) {
 export function acceptInvitation(payload: {
   token: string;
   password?: string;
+  acceptLegalDocuments: true;
 }) {
   return apiFetch<{
     email: string;

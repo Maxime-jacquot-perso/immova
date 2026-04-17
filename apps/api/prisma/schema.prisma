@@ -108,6 +108,45 @@ enum SubscriptionStatus {
   CANCELED
 }
 
+enum BillingPlan {
+  NONE
+  PILOT
+  STANDARD
+  PRO
+}
+
+enum BillingStatus {
+  NONE
+  INCOMPLETE
+  INCOMPLETE_EXPIRED
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  UNPAID
+  PAUSED
+}
+
+enum StripeWebhookEventStatus {
+  PROCESSING
+  PROCESSED
+  IGNORED
+  FAILED
+}
+
+enum LegalDocumentType {
+  MENTIONS_LEGALES
+  CGU
+  CGV
+  PRIVACY_POLICY
+}
+
+enum LegalAcceptanceSource {
+  INVITATION_SETUP
+  IN_APP
+  CHECKOUT
+}
+
 enum FeatureRequestStatus {
   OPEN
   PLANNED
@@ -138,11 +177,19 @@ enum AdminAuditTargetType {
 }
 
 model Organization {
-  id        String   @id @default(cuid())
-  name      String
-  slug      String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                       String        @id @default(cuid())
+  name                     String
+  slug                     String        @unique
+  stripeCustomerId         String?       @unique
+  stripeSubscriptionId     String?       @unique
+  stripePriceId            String?
+  billingPlan              BillingPlan   @default(NONE)
+  billingStatus            BillingStatus @default(NONE)
+  billingCurrentPeriodEnd  DateTime?
+  billingCancelAtPeriodEnd Boolean       @default(false)
+  billingLastEventAt       DateTime?
+  createdAt                DateTime      @default(now())
+  updatedAt                DateTime      @updatedAt
 
   memberships                    Membership[]
   projects                       Project[]
@@ -163,6 +210,11 @@ model Organization {
   simulationOptionActivationLogs SimulationOptionActivationLog[]
   simulationConversions          SimulationConversion[]
   projectForecastSnapshots       ProjectForecastSnapshot[]
+  stripeWebhookEvents            StripeWebhookEvent[]
+  legalAcceptances               UserLegalAcceptance[]
+
+  @@index([billingPlan])
+  @@index([billingStatus])
 }
 
 model User {
@@ -183,14 +235,15 @@ model User {
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt
 
-  memberships         Membership[]
-  adminAuditEntries   AdminAuditLog[]      @relation("AdminAuditActor")
-  adminAuditTargets   AdminAuditLog[]      @relation("AdminAuditTarget")
-  invitations         UserInvitation[]     @relation("InvitationUser")
-  createdInvitations  UserInvitation[]     @relation("InvitationCreator")
-  featureRequests     FeatureRequest[]     @relation("FeatureRequestAuthor")
-  featureRequestVotes FeatureRequestVote[]
+  memberships                    Membership[]
+  adminAuditEntries              AdminAuditLog[]        @relation("AdminAuditActor")
+  adminAuditTargets              AdminAuditLog[]        @relation("AdminAuditTarget")
+  invitations                    UserInvitation[]       @relation("InvitationUser")
+  createdInvitations             UserInvitation[]       @relation("InvitationCreator")
+  featureRequests                FeatureRequest[]       @relation("FeatureRequestAuthor")
+  featureRequestVotes            FeatureRequestVote[]
   simulationConversionsTriggered SimulationConversion[] @relation("SimulationConversionActor")
+  legalAcceptances               UserLegalAcceptance[]
 
   @@index([adminRole])
   @@index([isSuspended, subscriptionStatus])
@@ -239,31 +292,68 @@ model UserInvitation {
   @@index([createdByAdminUserId, createdAt])
 }
 
+model LegalDocumentVersion {
+  id                String            @id @default(cuid())
+  documentType      LegalDocumentType
+  title             String
+  slug              String
+  version           String
+  language          String            @default("fr")
+  documentUpdatedAt DateTime
+  isCurrent         Boolean           @default(false)
+  createdAt         DateTime          @default(now())
+
+  acceptances UserLegalAcceptance[]
+
+  @@unique([documentType, version])
+  @@index([documentType, isCurrent])
+}
+
+model UserLegalAcceptance {
+  id                     String                @id @default(cuid())
+  userId                 String
+  organizationId         String?
+  legalDocumentVersionId String
+  source                 LegalAcceptanceSource
+  acceptedAt             DateTime              @default(now())
+  ipAddress              String?
+  userAgent              String?
+
+  user                 User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization         Organization?        @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  legalDocumentVersion LegalDocumentVersion @relation(fields: [legalDocumentVersionId], references: [id], onDelete: Restrict)
+
+  @@index([userId, acceptedAt])
+  @@index([organizationId, acceptedAt])
+  @@index([legalDocumentVersionId, acceptedAt])
+  @@index([userId, legalDocumentVersionId])
+}
+
 model Project {
-  id              String        @id @default(cuid())
+  id              String              @id @default(cuid())
   organizationId  String
   name            String
   reference       String?
   addressLine1    String?
   postalCode      String?
   city            String?
-  country         String        @default("FR")
-  type            ProjectType   @default(OTHER)
+  country         String              @default("FR")
+  type            ProjectType         @default(OTHER)
   strategy        SimulationStrategy?
-  status          ProjectStatus @default(DRAFT)
-  purchasePrice   Decimal?      @db.Decimal(12, 2)
-  notaryFees      Decimal?      @db.Decimal(12, 2)
-  acquisitionFees Decimal?      @db.Decimal(12, 2)
-  worksBudget     Decimal?      @db.Decimal(12, 2)
+  status          ProjectStatus       @default(DRAFT)
+  purchasePrice   Decimal?            @db.Decimal(12, 2)
+  notaryFees      Decimal?            @db.Decimal(12, 2)
+  acquisitionFees Decimal?            @db.Decimal(12, 2)
+  worksBudget     Decimal?            @db.Decimal(12, 2)
   notes           String?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
 
-  organization            Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization            Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   lots                    Lot[]
   expenses                Expense[]
   documents               Document[]
-  convertedFromSimulation Simulation[] @relation("SimulationConvertedProject")
+  convertedFromSimulation Simulation[]             @relation("SimulationConvertedProject")
   conversionRecord        SimulationConversion?
   forecastSnapshot        ProjectForecastSnapshot?
 
@@ -464,41 +554,41 @@ model SimulationFolder {
 }
 
 model Simulation {
-  id                             String             @id @default(cuid())
+  id                             String                  @id @default(cuid())
   organizationId                 String
   folderId                       String
   name                           String
   address                        String?
   strategy                       SimulationStrategy
   propertyType                   SimulationPropertyType?
-  departmentCode                 String?            @db.VarChar(3)
-  isFirstTimeBuyer               Boolean            @default(false)
-  purchasePrice                  Decimal            @db.Decimal(12, 2)
-  furnitureValue                 Decimal?           @db.Decimal(12, 2)
-  estimatedDisbursements         Decimal?           @db.Decimal(12, 2)
-  notaryFees                     Decimal?           @db.Decimal(12, 2)
+  departmentCode                 String?                 @db.VarChar(3)
+  isFirstTimeBuyer               Boolean                 @default(false)
+  purchasePrice                  Decimal                 @db.Decimal(12, 2)
+  furnitureValue                 Decimal?                @db.Decimal(12, 2)
+  estimatedDisbursements         Decimal?                @db.Decimal(12, 2)
+  notaryFees                     Decimal?                @db.Decimal(12, 2)
   notaryFeesBreakdown            Json?
-  acquisitionFees                Decimal            @db.Decimal(12, 2)
-  worksBudget                    Decimal            @db.Decimal(12, 2)
+  acquisitionFees                Decimal                 @db.Decimal(12, 2)
+  worksBudget                    Decimal                 @db.Decimal(12, 2)
   worksBreakdownJson             Json?
   financingMode                  FinancingMode
-  downPayment                    Decimal?           @db.Decimal(12, 2)
-  loanAmount                     Decimal?           @db.Decimal(12, 2)
-  interestRate                   Decimal?           @db.Decimal(5, 2)
+  downPayment                    Decimal?                @db.Decimal(12, 2)
+  loanAmount                     Decimal?                @db.Decimal(12, 2)
+  interestRate                   Decimal?                @db.Decimal(5, 2)
   loanDurationMonths             Int?
-  estimatedMonthlyPayment        Decimal?           @db.Decimal(10, 2)
+  estimatedMonthlyPayment        Decimal?                @db.Decimal(10, 2)
   estimatedProjectDurationMonths Int?
-  targetResalePrice              Decimal?           @db.Decimal(12, 2)
-  targetMonthlyRent              Decimal?           @db.Decimal(10, 2)
-  bufferAmount                   Decimal?           @db.Decimal(12, 2)
+  targetResalePrice              Decimal?                @db.Decimal(12, 2)
+  targetMonthlyRent              Decimal?                @db.Decimal(10, 2)
+  bufferAmount                   Decimal?                @db.Decimal(12, 2)
   notes                          String?
   decisionScore                  Int?
   decisionStatus                 DecisionStatus?
   resultSummaryJson              Json?
   convertedProjectId             String?
   archivedAt                     DateTime?
-  createdAt                      DateTime           @default(now())
-  updatedAt                      DateTime           @updatedAt
+  createdAt                      DateTime                @default(now())
+  updatedAt                      DateTime                @updatedAt
 
   organization         Organization                    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   folder               SimulationFolder                @relation(fields: [folderId], references: [id], onDelete: Cascade)
@@ -529,55 +619,75 @@ model SimulationConversion {
   status          SimulationConversionStatus @default(COMPLETED)
   createdAt       DateTime                   @default(now())
 
-  organization Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  simulation   Simulation            @relation(fields: [simulationId], references: [id], onDelete: Cascade)
-  project      Project               @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  createdByUser User                 @relation("SimulationConversionActor", fields: [createdByUserId], references: [id], onDelete: Restrict)
-  snapshot     ProjectForecastSnapshot?
+  organization  Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  simulation    Simulation               @relation(fields: [simulationId], references: [id], onDelete: Cascade)
+  project       Project                  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdByUser User                     @relation("SimulationConversionActor", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  snapshot      ProjectForecastSnapshot?
 
   @@index([organizationId, createdAt])
   @@index([createdByUserId, createdAt])
 }
 
 model ProjectForecastSnapshot {
-  id                             String          @id @default(cuid())
+  id                             String             @id @default(cuid())
   organizationId                 String
-  projectId                      String          @unique
-  simulationId                   String          @unique
-  conversionId                   String          @unique
+  projectId                      String             @unique
+  simulationId                   String             @unique
+  conversionId                   String             @unique
   referenceDate                  DateTime
   strategy                       SimulationStrategy
-  purchasePrice                  Decimal?        @db.Decimal(12, 2)
-  acquisitionCost                Decimal?        @db.Decimal(12, 2)
-  notaryFees                     Decimal?        @db.Decimal(12, 2)
-  worksBudget                    Decimal?        @db.Decimal(12, 2)
-  bufferAmount                   Decimal?        @db.Decimal(12, 2)
-  downPayment                    Decimal?        @db.Decimal(12, 2)
-  loanAmount                     Decimal?        @db.Decimal(12, 2)
-  interestRate                   Decimal?        @db.Decimal(5, 2)
+  purchasePrice                  Decimal?           @db.Decimal(12, 2)
+  acquisitionCost                Decimal?           @db.Decimal(12, 2)
+  notaryFees                     Decimal?           @db.Decimal(12, 2)
+  worksBudget                    Decimal?           @db.Decimal(12, 2)
+  bufferAmount                   Decimal?           @db.Decimal(12, 2)
+  downPayment                    Decimal?           @db.Decimal(12, 2)
+  loanAmount                     Decimal?           @db.Decimal(12, 2)
+  interestRate                   Decimal?           @db.Decimal(5, 2)
   loanDurationMonths             Int?
-  estimatedMonthlyPayment        Decimal?        @db.Decimal(10, 2)
+  estimatedMonthlyPayment        Decimal?           @db.Decimal(10, 2)
   estimatedProjectDurationMonths Int?
-  targetMonthlyRent              Decimal?        @db.Decimal(10, 2)
-  targetResalePrice              Decimal?        @db.Decimal(12, 2)
-  totalProjectCost               Decimal?        @db.Decimal(12, 2)
-  equityRequired                 Decimal?        @db.Decimal(12, 2)
-  grossMargin                    Decimal?        @db.Decimal(12, 2)
-  grossYield                     Decimal?        @db.Decimal(8, 2)
-  monthlyCashDelta               Decimal?        @db.Decimal(12, 2)
+  targetMonthlyRent              Decimal?           @db.Decimal(10, 2)
+  targetResalePrice              Decimal?           @db.Decimal(12, 2)
+  totalProjectCost               Decimal?           @db.Decimal(12, 2)
+  equityRequired                 Decimal?           @db.Decimal(12, 2)
+  grossMargin                    Decimal?           @db.Decimal(12, 2)
+  grossYield                     Decimal?           @db.Decimal(8, 2)
+  monthlyCashDelta               Decimal?           @db.Decimal(12, 2)
   decisionScore                  Int?
   decisionStatus                 DecisionStatus?
   recommendation                 String?
-  lotsCount                      Int             @default(0)
+  lotsCount                      Int                @default(0)
   lotsJson                       Json?
-  createdAt                      DateTime        @default(now())
+  createdAt                      DateTime           @default(now())
 
-  organization Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  project      Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  simulation   Simulation         @relation(fields: [simulationId], references: [id], onDelete: Cascade)
+  organization Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project      Project              @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  simulation   Simulation           @relation(fields: [simulationId], references: [id], onDelete: Cascade)
   conversion   SimulationConversion @relation(fields: [conversionId], references: [id], onDelete: Cascade)
 
   @@index([organizationId, referenceDate])
+}
+
+model StripeWebhookEvent {
+  id             String                   @id @default(cuid())
+  organizationId String?
+  stripeEventId  String                   @unique
+  type           String
+  livemode       Boolean
+  status         StripeWebhookEventStatus @default(PROCESSING)
+  eventCreatedAt DateTime
+  receivedAt     DateTime                 @default(now())
+  processedAt    DateTime?
+  payload        Json?
+  errorMessage   String?
+
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, receivedAt])
+  @@index([status, receivedAt])
+  @@index([type, receivedAt])
 }
 
 model SimulationLot {

@@ -1,6 +1,11 @@
 import posthog from 'posthog-js';
 
 type PostHogPropertyValue = string | number | boolean;
+export type AnalyticsConsentStatus = 'pending' | 'accepted' | 'rejected';
+
+const ANALYTICS_CONSENT_STORAGE_KEY = 'axelys:analytics-consent';
+const ANALYTICS_CONSENT_COOKIE_NAME = 'axelys_analytics_consent';
+let analyticsInitialized = false;
 
 export type LandingCtaLocation =
   | 'header'
@@ -66,10 +71,90 @@ function compactProperties(
   ) as Record<string, PostHogPropertyValue>;
 }
 
+function canUseBrowserStorage() {
+  return typeof window !== 'undefined' && typeof localStorage !== 'undefined';
+}
+
+function resolveConsentValue(value: string | null | undefined): AnalyticsConsentStatus {
+  if (value === 'accepted' || value === 'rejected') {
+    return value;
+  }
+
+  return 'pending';
+}
+
+function initializeAnalytics() {
+  if (analyticsInitialized) {
+    if (posthog.has_opted_out_capturing()) {
+      posthog.opt_in_capturing();
+    }
+    return;
+  }
+
+  const projectToken = process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN;
+
+  if (!projectToken) {
+    return;
+  }
+
+  posthog.init(projectToken, {
+    api_host: '/ingest',
+    ui_host: 'https://eu.posthog.com',
+    defaults: '2026-01-30',
+    capture_exceptions: true,
+    debug: process.env.NODE_ENV === 'development',
+  });
+  analyticsInitialized = true;
+}
+
+export function getAnalyticsConsentStatus(): AnalyticsConsentStatus {
+  if (!canUseBrowserStorage()) {
+    return 'pending';
+  }
+
+  return resolveConsentValue(
+    window.localStorage.getItem(ANALYTICS_CONSENT_STORAGE_KEY),
+  );
+}
+
+export function setAnalyticsConsentStatus(
+  status: Exclude<AnalyticsConsentStatus, 'pending'>,
+) {
+  if (!canUseBrowserStorage()) {
+    return;
+  }
+
+  window.localStorage.setItem(ANALYTICS_CONSENT_STORAGE_KEY, status);
+  document.cookie = `${ANALYTICS_CONSENT_COOKIE_NAME}=${status}; path=/; max-age=15552000; samesite=lax`;
+
+  if (status === 'accepted') {
+    initializeAnalytics();
+    return;
+  }
+
+  if (analyticsInitialized) {
+    posthog.opt_out_capturing();
+  }
+}
+
+export function initializeAnalyticsIfConsented() {
+  if (getAnalyticsConsentStatus() === 'accepted') {
+    initializeAnalytics();
+  }
+}
+
+export function isAnalyticsEnabled() {
+  return analyticsInitialized && getAnalyticsConsentStatus() === 'accepted';
+}
+
 export function captureLandingEvent<EventName extends keyof LandingEventMap>(
   eventName: EventName,
   properties?: LandingEventMap[EventName],
 ) {
+  if (!isAnalyticsEnabled()) {
+    return;
+  }
+
   if (properties) {
     posthog.capture(
       eventName,
@@ -84,5 +169,9 @@ export function captureLandingEvent<EventName extends keyof LandingEventMap>(
 }
 
 export function getPostHogDistinctId() {
+  if (!isAnalyticsEnabled()) {
+    return '';
+  }
+
   return posthog.get_distinct_id();
 }

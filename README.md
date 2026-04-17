@@ -278,6 +278,14 @@ API (`apps/api`) :
 - `SMTP_PASS` : secret SMTP optionnel
 - `SMTP_SECURE` : force le mode secure SMTP si besoin
 - `RESEND_API_KEY` : cle API Resend optionnelle si SMTP n est pas configure
+- `STRIPE_SECRET_KEY` : cle secrete Stripe serveur uniquement, jamais exposee au frontend
+- `STRIPE_WEBHOOK_SECRET` : secret de signature du webhook Stripe
+- `STRIPE_PRICE_PILOT_MONTHLY` : price id Stripe du plan `PILOT`
+- `STRIPE_PRICE_STANDARD_MONTHLY` : price id Stripe du plan `STANDARD`
+- `STRIPE_PRICE_PRO_MONTHLY` : price id Stripe du plan `PRO`
+- `STRIPE_CHECKOUT_SUCCESS_URL` : URL de retour Stripe Checkout en cas de succes, purement UX
+- `STRIPE_CHECKOUT_CANCEL_URL` : URL de retour Stripe Checkout en cas d annulation
+- `STRIPE_PORTAL_RETURN_URL` : URL de retour du Billing Portal
 
 Valeurs de reference :
 
@@ -296,6 +304,14 @@ PILOT_NOTIFICATION_EMAIL=contact@axelys.app
 # SMTP_PASS="smtp-password"
 # SMTP_SECURE=true
 # RESEND_API_KEY=re_xxx
+STRIPE_SECRET_KEY=sk_live_replace_me
+STRIPE_WEBHOOK_SECRET=whsec_replace_me
+STRIPE_PRICE_PILOT_MONTHLY=price_replace_pilot
+STRIPE_PRICE_STANDARD_MONTHLY=price_replace_standard
+STRIPE_PRICE_PRO_MONTHLY=price_replace_pro
+STRIPE_CHECKOUT_SUCCESS_URL=https://app.axelys.app/settings/billing/success?session_id={CHECKOUT_SESSION_ID}
+STRIPE_CHECKOUT_CANCEL_URL=https://app.axelys.app/settings/billing/cancel
+STRIPE_PORTAL_RETURN_URL=https://app.axelys.app/settings/billing
 ```
 
 App web (`apps/web`) :
@@ -370,6 +386,71 @@ pnpm db:demo-seed
 pnpm dev:landing
 pnpm dev:web
 pnpm dev:api
+```
+
+## Billing Stripe cote API
+
+L abonnement SaaS est maintenant **porte par `Organization`**, pas par le frontend et pas par la simple URL de succes Checkout.
+
+Principes retenus :
+
+- **source de verite = Stripe via webhook verifie**
+- aucun acces payant n est accorde sur la seule redirection `success_url`
+- le webhook `/api/stripe/webhook` verifie la signature Stripe avec le **raw body exact**
+- les traitements webhook sont **idempotents** via la table `StripeWebhookEvent`
+- les IDs Stripe et l etat courant sont synchronises sur `Organization`
+- la politique d acces payant reste centralisee cote backend
+
+Endpoints backend ajoutes :
+
+- `POST /api/billing/checkout-session` : cree une Checkout Session Stripe pour un plan mensuel (`PILOT`, `STANDARD`, `PRO`)
+- `POST /api/billing/portal-session` : cree une session Billing Portal pour l organisation courante
+- `POST /api/stripe/webhook` : recoit et verifie les evenements Stripe publics
+
+Evenements Stripe geres :
+
+- `checkout.session.completed`
+- `customer.subscription.created`
+- `customer.subscription.updated`
+- `customer.subscription.deleted`
+- `invoice.paid`
+- `invoice.payment_failed`
+
+Regle d acces retenue :
+
+- acces organisation autorise si `billingStatus` vaut `ACTIVE` ou `TRIALING` **et** qu un plan Axelys connu est mappe
+- acces refuse si `PAST_DUE`, `UNPAID`, `CANCELED`, `INCOMPLETE_EXPIRED` ou si le price id Stripe n est pas mappe a un plan applicatif
+- les anciens overrides internes utilisateur (`subscriptionStatus`, `trialEndsAt`) restent compatibles comme mecanisme legacy, mais la voie standard SaaS est desormais le billing Stripe de l organisation
+
+Variables importantes :
+
+- `STRIPE_SECRET_KEY` et `STRIPE_WEBHOOK_SECRET` sont **deux secrets differents**
+- le `whsec_...` local genere par Stripe CLI n est **jamais** le meme que celui du dashboard prod
+- `STRIPE_CHECKOUT_SUCCESS_URL` sert a afficher un retour UX, pas a activer l abonnement
+
+### Local Stripe CLI
+
+1. Lancer l API localement :
+
+```bash
+pnpm dev:api
+```
+
+2. Ecouter les webhooks Stripe vers l API locale :
+
+```bash
+stripe listen --forward-to localhost:3000/api/stripe/webhook
+```
+
+3. Recuperer le `whsec_...` affiche par Stripe CLI et le mettre dans `apps/api/.env` sous `STRIPE_WEBHOOK_SECRET`
+
+4. Garder un autre `STRIPE_WEBHOOK_SECRET` en production, configure depuis le dashboard Stripe / Workbench
+
+5. Tester ensuite Checkout ou des evenements :
+
+```bash
+stripe trigger invoice.payment_failed
+stripe trigger invoice.paid
 ```
 
 ## Seed de demo produit
@@ -497,6 +578,7 @@ Verification locale recommandee avant push :
 ```bash
 pnpm lint
 pnpm build
+cd apps/api && pnpm test -- --runInBand
 pnpm test:e2e:api
 ```
 

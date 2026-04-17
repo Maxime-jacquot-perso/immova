@@ -5,12 +5,14 @@ import {
   Injectable,
 } from '@nestjs/common';
 import {
+  LegalAcceptanceSource,
   InvitationOrganizationMode,
   MembershipRole,
   Prisma,
 } from '@prisma/client';
 import { createHash, randomBytes } from 'node:crypto';
 import { hashSync } from '../common/crypto/bcrypt';
+import { LegalDocumentsService } from '../legal/legal-documents.service';
 import { MailService } from '../mail/mail.service';
 import { PrismaService } from '../prisma/prisma.service';
 import {
@@ -60,6 +62,7 @@ export class InvitationsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly mailService: MailService,
+    private readonly legalDocumentsService: LegalDocumentsService,
   ) {}
 
   async issueInvitation(input: {
@@ -242,7 +245,13 @@ export class InvitationsService {
     };
   }
 
-  async acceptInvitation(input: { token: string; password?: string }) {
+  async acceptInvitation(input: {
+    token: string;
+    password?: string;
+    acceptLegalDocuments: true;
+    ipAddress?: string | null;
+    userAgent?: string | null;
+  }) {
     const invitation = await this.getInvitationByTokenOrThrow(input.token);
     this.assertInvitationUsable(invitation);
 
@@ -325,6 +334,18 @@ export class InvitationsService {
           revokedAt: acceptedAt,
         },
       });
+
+      await this.legalDocumentsService.acceptCurrentDocuments(
+        {
+          userId: invitation.user.id,
+          organizationId: organization.id,
+          scope: 'ACCOUNT',
+          source: LegalAcceptanceSource.INVITATION_SETUP,
+          ipAddress: input.ipAddress,
+          userAgent: input.userAgent,
+        },
+        tx,
+      );
     });
 
     return {

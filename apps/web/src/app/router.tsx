@@ -4,6 +4,7 @@ import { LoginPage } from '../modules/auth/pages/login-page';
 import { SetupPasswordPage } from '../modules/auth/pages/setup-password-page';
 import { DashboardPage } from '../modules/dashboard/pages/dashboard-page';
 import { IdeasPage } from '../modules/ideas/pages/ideas-page';
+import { LegalAcceptancePage } from '../modules/legal/pages/legal-acceptance-page';
 import { ProjectsListPage } from '../modules/projects/pages/projects-list-page';
 import { ProjectCreatePage } from '../modules/projects/pages/project-create-page';
 import { ProjectEditPage } from '../modules/projects/pages/project-edit-page';
@@ -51,6 +52,10 @@ export const router = createBrowserRouter([
       {
         index: true,
         element: <SessionHomeRedirect />,
+      },
+      {
+        path: 'legal/acceptance',
+        element: <LegalAcceptancePage />,
       },
       {
         element: <RequireProductAccess />,

@@ -3,6 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { LandingAnalytics } from './components/landing-analytics';
 import { LandingCtaLink } from './components/landing-cta-link';
+import { LegalFooter } from './components/legal-footer';
 import { PilotApplicationForm } from './components/pilot-application-form';
 import styles from './page.module.css';
 import {
@@ -561,19 +562,7 @@ export default function Home() {
         </section>
 
         <footer className={styles.footer}>
-          <p>
-            {siteName} - Outil de pilotage d’opérations immobilières pour agir
-            sur des faits.{' '}
-            <LandingCtaLink
-              href={appUrl}
-              location="footer"
-              label="open_application"
-              target={appUrl}
-            >
-              Ouvrir l’application
-            </LandingCtaLink>
-            .
-          </p>
+          <LegalFooter ctaLocation="footer" />
         </footer>
       </main>
 

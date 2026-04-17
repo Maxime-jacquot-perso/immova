@@ -2,6 +2,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { canAccessBetaFeatures } from '../../modules/auth/beta-access';
 import { useAuth } from '../../modules/auth/auth-context';
 import { canAccessAdmin } from '../../modules/admin/permissions';
+import { LegalLinksInline } from '../../modules/legal/legal-links';
 
 export function AppShell() {
   const navigate = useNavigate();
@@ -87,6 +88,13 @@ export function AppShell() {
           >
             Se deconnecter
           </button>
+          <div className="sidebar__footer">
+            <LegalLinksInline
+              className="legal-links"
+              documents={['CGU', 'CGV', 'PRIVACY_POLICY', 'MENTIONS_LEGALES']}
+              linkClassName="legal-links__anchor"
+            />
+          </div>
         </div>
       </aside>
 

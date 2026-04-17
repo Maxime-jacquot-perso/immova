@@ -9,6 +9,7 @@ export async function POST(request: NextRequest) {
       typeof body.analyticsDistinctId === 'string'
         ? body.analyticsDistinctId.trim()
         : '';
+    const analyticsConsentGranted = body.analyticsConsentGranted === true;
     const payload = {
       ...body,
       firstname: body.firstname?.trim(),
@@ -16,6 +17,7 @@ export async function POST(request: NextRequest) {
       problemDescription: body.problemDescription?.trim(),
     };
     delete payload.analyticsDistinctId;
+    delete payload.analyticsConsentGranted;
 
     if (
       !payload.firstname ||
@@ -32,7 +34,10 @@ export async function POST(request: NextRequest) {
 
     if (!payload.acknowledgement) {
       return NextResponse.json(
-        { error: 'Vous devez accepter les conditions de la phase pilote' },
+        {
+          error:
+            'Vous devez accepter la politique de confidentialité et le traitement de votre demande.',
+        },
         { status: 400 }
       );
     }
@@ -48,16 +53,18 @@ export async function POST(request: NextRequest) {
     if (!response.ok) {
       const error = await response.text();
       console.error('API error:', error);
-      const posthog = getPostHogClient();
-      posthog.capture({
-        distinctId: analyticsDistinctId || crypto.randomUUID(),
-        event: 'pilot_application_api_error',
-        properties: {
-          profile_type: payload.profileType,
-          project_count: payload.projectCount,
-          error_source: 'backend_api',
-        },
-      });
+      if (analyticsConsentGranted && analyticsDistinctId) {
+        const posthog = getPostHogClient();
+        posthog.capture({
+          distinctId: analyticsDistinctId,
+          event: 'pilot_application_api_error',
+          properties: {
+            profile_type: payload.profileType,
+            project_count: payload.projectCount,
+            error_source: 'backend_api',
+          },
+        });
+      }
       return NextResponse.json(
         {
           error:
@@ -67,15 +74,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const posthog = getPostHogClient();
-    posthog.capture({
-      distinctId: analyticsDistinctId || crypto.randomUUID(),
-      event: 'pilot_application_received',
-      properties: {
-        profile_type: payload.profileType,
-        project_count: payload.projectCount,
-      },
-    });
+    if (analyticsConsentGranted && analyticsDistinctId) {
+      const posthog = getPostHogClient();
+      posthog.capture({
+        distinctId: analyticsDistinctId,
+        event: 'pilot_application_received',
+        properties: {
+          profile_type: payload.profileType,
+          project_count: payload.projectCount,
+        },
+      });
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

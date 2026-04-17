@@ -44,7 +44,9 @@ describe('API e2e', () => {
       imports: [AppModule],
     }).compile();
 
-    app = moduleRef.createNestApplication();
+    app = moduleRef.createNestApplication({
+      rawBody: true,
+    });
     configureApp(app);
     await app.init();
 

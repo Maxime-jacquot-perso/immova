@@ -5,6 +5,10 @@ import { canAccessAdmin } from '../modules/admin/permissions';
 export function RequireProductAccess() {
   const { session } = useAuth();
 
+  if (session?.legal?.accountAcceptanceRequired) {
+    return <Navigate replace to="/legal/acceptance" />;
+  }
+
   if (!session?.organization) {
     if (canAccessAdmin(session)) {
       return <Navigate replace to="/admin" />;

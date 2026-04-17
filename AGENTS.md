@@ -113,6 +113,11 @@ Ne pas remettre dans le scope sans validation explicite :
 - Back-office admin interne dans `apps/web` sous `/admin` avec layout separe de l'application utilisateur
 - API admin dediee sous `/api/admin/*` avec guards, permissions et audit log distincts des routes produit
 - RBAC admin global porte par `User.adminRole` avec mapping `role -> permissions` centralise cote backend pour rester simple sur le MVP
+- Billing SaaS Stripe centralise cote backend sur `Organization`, avec Checkout Session pour souscription, Billing Portal pour self-service et webhook signe comme source de verite
+- Aucun acces payant ne doit etre accorde sur une simple redirection frontend `success` ; la synchronisation se fait uniquement depuis Stripe via webhook verifie sur raw body
+- Les documents juridiques publics (`mentions legales`, `CGU`, `CGV`, `politique de confidentialite`) vivent cote landing pour rester accessibles sans session, avec version visible et date de mise a jour
+- La preuve minimale d acceptation juridique est centralisee cote backend via version de document + utilisateur + horodatage, avec capture IP / user-agent quand disponible
+- Les traceurs non essentiels de la landing (analytics / mesure d audience) ne doivent jamais partir avant consentement explicite utilisateur
 
 **Domaines publics et liens externes de reference :**
 
@@ -172,6 +177,16 @@ Entites additionnelles actives pour la conversion robuste et le suivi previsionn
 
 - `SimulationConversion` : trace la conversion effective d'une simulation vers un projet, avec acteur, date et statut ; constitue la source de verite metier de la conversion
 - `ProjectForecastSnapshot` : fige les hypotheses previsionnelles au moment de la conversion pour servir de reference immutable
+
+Entites additionnelles actives pour le billing SaaS :
+
+- `Organization` porte desormais la verite de facturation SaaS Stripe : `stripeCustomerId`, `stripeSubscriptionId`, `stripePriceId`, `billingPlan`, `billingStatus`, `billingCurrentPeriodEnd`, `billingCancelAtPeriodEnd`, `billingLastEventAt`
+- `StripeWebhookEvent` journalise les evenements Stripe recus pour garantir l idempotence du webhook et tracer traitement, statut, date et payload utile
+
+Entites additionnelles actives pour la base juridique SaaS :
+
+- `LegalDocumentVersion` porte le type de document (`MENTIONS_LEGALES`, `CGU`, `CGV`, `PRIVACY_POLICY`), le slug public, la version affichee, la date de mise a jour et le flag `isCurrent`
+- `UserLegalAcceptance` trace l acceptation explicite par utilisateur d une version donnee avec source (`INVITATION_SETUP`, `IN_APP`, `CHECKOUT`), date, organisation contexte si pertinente, IP et user agent quand disponibles
 
 **Entites prevues / prioritaires (decision avant achat) :**
 
@@ -243,6 +258,7 @@ Entites repoussees :
 - `/dashboard`
 - `/login`
 - `/setup-password`
+- `/legal/acceptance`
 - `/projects`
 - `/projects/new`
 - `/projects/:projectId`
@@ -286,6 +302,7 @@ Structure frontend :
 
 - `src/app` : routing, providers, layout
 - `src/modules/auth` : login, session et activation invitation
+- `src/modules/legal` : liens juridiques, acceptation explicite en session et API d acceptation
 - `src/modules/projects` : liste projets, detail projet, overview, export, API projet
 - `src/modules/lots` : gestion lots dans un projet
 - `src/modules/expenses` : gestion depenses dans un projet
@@ -312,7 +329,9 @@ Structure backend :
 - `src/ideas`
 - `src/admin`
 - `src/invitations`
+- `src/legal` : versionning des documents juridiques, exposition des versions courantes et enregistrement des acceptations
 - `src/mail`
+- `src/billing` : service Stripe centralise, mapping plans Stripe <-> plans applicatifs, Checkout Session, Billing Portal, webhook signe, politique d acces payant et idempotence
 - `src/simulations` : controller, service, DTO, calculs decisionnels backend (simulation-metrics.util.ts) pour opportunites avant achat, logique de conversion Simulation vers Project
 - `src/simulation-folders` : controller, service, DTO pour gestion des dossiers d'opportunites
 
@@ -323,9 +342,14 @@ Back :
 - `POST /api/auth/login`
 - `GET /api/auth/invitations/verify`
 - `POST /api/auth/invitations/accept`
+- `GET /api/legal-documents/current`
+- `POST /api/legal-documents/accept/current`
 - `GET /api/dashboard`
 - `GET /api/dashboard/drifts`
 - `GET /api/organizations/current`
+- `POST /api/billing/checkout-session`
+- `POST /api/billing/portal-session`
+- `POST /api/stripe/webhook`
 - `GET/POST/PATCH /api/memberships`
 - `GET/POST/PATCH /api/projects`
 - `GET /api/projects/:projectId/overview` avec bloc `forecastComparison` si un snapshot previsionnel existe
@@ -428,6 +452,11 @@ Front :
 - detail utilisateur admin avec organisations rattachees, invitations, historique admin recent et actions sensibles auditees
 - invitation admin d un utilisateur avec email, role membership, choix entre organisation existante et espace personnel, email transactionnel et lien unique vers l app web
 - page publique `/setup-password` pour verifier un token d invitation, definir le mot de passe si necessaire puis rediriger vers `/login`
+- page publique landing des documents juridiques : `/mentions-legales`, `/cgu`, `/cgv`, `/politique-de-confidentialite`
+- page applicative `/legal/acceptance` pour forcer l acceptation explicite des documents en vigueur avant l acces complet
+- liens juridiques visibles dans le footer landing, la page `/apply`, les ecrans d authentification et les sidebars de l app
+- versionning juridique simple avec version et date de mise a jour visibles sur chaque document, plus preuve d acceptation cote backend
+- cookies / analytics landing controles par un bandeau minimal avec refus possible et blocage des scripts non essentiels avant consentement
 - gestion admin des essais, des suspensions/reactivations, des statuts d'abonnement et des roles admin avec motif obligatoire
 - gestion admin du programme pilote avec `isPilotUser` et `betaAccessEnabled`
 - gestion admin des idees produit avec changement de statut audite
@@ -521,6 +550,17 @@ Front :
 - Creation systematique d'une trace `SimulationConversion` avec simulation source, projet cree, acteur, date et statut
 - Creation systematique d'un snapshot `ProjectForecastSnapshot` immutable au moment de la conversion
 - `SimulationConversion` sert de trace metier principale ; `Simulation.convertedProjectId` reste un raccourci maintenu pour les lectures rapides de l'UI et la compatibilite
+
+**Billing SaaS Stripe - backend :**
+- abonnement SaaS rattache a `Organization` pour rester coherent avec le multi-tenant B2B
+- module `src/billing` implemente avec client Stripe serveur unique, version API fixee cote backend, mapping centralise `priceId -> billingPlan`
+- endpoints authentifies `POST /api/billing/checkout-session` et `POST /api/billing/portal-session`
+- endpoint public `POST /api/stripe/webhook` avec verification de signature via `Stripe-Signature` et **raw body exact**
+- webhook idempotent via table `StripeWebhookEvent` et statut de traitement persisted
+- evenements geres : `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.paid`, `invoice.payment_failed`
+- **source de verite d acces = Stripe via webhook verifie**, jamais la redirection frontend `success`
+- politique d acces centralisee : acces standard autorise si statut organisation `ACTIVE` ou `TRIALING` avec plan mappe ; `PAST_DUE` reste refuse par choix explicite de rigueur produit
+- `GET /api/organizations/current` expose maintenant un resume `billing` avec plan, statut, dates utiles et verdict d acces backend
 
 **Suivi previsionnel vs reel :**
 - L'overview projet expose maintenant un bloc `Previsionnel vs reel` pour les projets convertis avec snapshot disponible

@@ -1,4 +1,6 @@
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, Req } from '@nestjs/common';
+import type { Request } from 'express';
+import { extractRequestMetadata } from '../common/utils/request-metadata.util';
 import { AuthService } from './auth.service';
 import { AcceptInvitationDto } from './dto/accept-invitation.dto';
 import { LoginDto } from './dto/login.dto';
@@ -19,7 +21,13 @@ export class AuthController {
   }
 
   @Post('invitations/accept')
-  acceptInvitation(@Body() body: AcceptInvitationDto) {
-    return this.authService.acceptInvitation(body);
+  acceptInvitation(@Body() body: AcceptInvitationDto, @Req() request: Request) {
+    const metadata = extractRequestMetadata(request);
+
+    return this.authService.acceptInvitation({
+      ...body,
+      ipAddress: metadata.ipAddress,
+      userAgent: metadata.userAgent,
+    });
   }
 }

@@ -1,5 +1,6 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/auth-context';
+import { LegalLinksInline } from '../../legal/legal-links';
 import { ADMIN_PERMISSIONS, hasAdminPermission } from '../permissions';
 
 export function AdminShell() {
@@ -92,6 +93,13 @@ export function AdminShell() {
           >
             Se deconnecter
           </button>
+          <div className="sidebar__footer">
+            <LegalLinksInline
+              className="legal-links"
+              documents={['CGU', 'CGV', 'PRIVACY_POLICY', 'MENTIONS_LEGALES']}
+              linkClassName="legal-links__anchor"
+            />
+          </div>
         </div>
       </aside>
 

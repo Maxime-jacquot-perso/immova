@@ -2,11 +2,13 @@ import { Module } from '@nestjs/common';
 import { AdminModule } from './admin/admin.module';
 import { AppController } from './app.controller';
 import { AuthModule } from './auth/auth.module';
+import { BillingModule } from './billing/billing.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { DocumentsModule } from './documents/documents.module';
 import { ExportsModule } from './exports/exports.module';
 import { ExpensesModule } from './expenses/expenses.module';
 import { IdeasModule } from './ideas/ideas.module';
+import { LegalDocumentsModule } from './legal/legal-documents.module';
 import { LotsModule } from './lots/lots.module';
 import { MembershipsModule } from './memberships/memberships.module';
 import { OrganizationsModule } from './organizations/organizations.module';
@@ -23,6 +25,8 @@ import { StorageModule } from './storage/storage.module';
     StorageModule,
     AdminModule,
     AuthModule,
+    BillingModule,
+    LegalDocumentsModule,
     OrganizationsModule,
     MembershipsModule,
     DashboardModule,

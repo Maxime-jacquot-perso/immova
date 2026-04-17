@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { LegalFooter } from '../components/legal-footer';
 import { PilotApplicationForm } from '../components/pilot-application-form';
 import styles from './page.module.css';
 import { siteName } from '../site-config';
@@ -46,6 +47,10 @@ export default function ApplyPage() {
             returnHref="/"
           />
         </section>
+
+        <footer className={styles.footer}>
+          <LegalFooter ctaLocation="footer" />
+        </footer>
       </main>
     </div>
   );

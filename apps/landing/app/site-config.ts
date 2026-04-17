@@ -7,6 +7,9 @@ function stripTrailingSlash(value: string) {
 }
 
 export const siteName = 'Axelys';
+export const publisherName = 'REGERA';
+export const legalContactEmail =
+  process.env.NEXT_PUBLIC_LEGAL_CONTACT_EMAIL ?? 'contact@axelys.app';
 export const siteUrl = stripTrailingSlash(
   process.env.NEXT_PUBLIC_SITE_URL ?? defaultSiteUrl,
 );

@@ -2,6 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { z } from 'zod';
+import { LegalLinksInline } from '../../legal/legal-links';
 import { useAuth } from '../auth-context';
 import { getErrorMessage } from '../../../shared/ui/error-utils';
 import { FeedbackMessage } from '../../../shared/ui/feedback-message';
@@ -92,6 +93,16 @@ export function LoginPage() {
             {isSubmitting ? 'Connexion...' : 'Se connecter'}
           </button>
         </form>
+
+        <p className="auth-legal-note">
+          Documents juridiques disponibles :{' '}
+          <LegalLinksInline
+            className="legal-links"
+            documents={['CGU', 'CGV', 'PRIVACY_POLICY', 'MENTIONS_LEGALES']}
+            linkClassName="legal-links__anchor"
+          />
+          .
+        </p>
       </div>
     </div>
   );

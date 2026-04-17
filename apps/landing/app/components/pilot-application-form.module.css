@@ -67,10 +67,17 @@
   align-items: flex-start;
   gap: 12px;
   font-size: 0.96rem;
+  line-height: 1.55;
 }
 
 .checkbox input {
   margin-top: 4px;
+}
+
+.checkbox a {
+  color: #1d4ed8;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .error {

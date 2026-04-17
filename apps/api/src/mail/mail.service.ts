@@ -44,6 +44,12 @@ export class MailService {
     Boolean(this.smtpPass) ||
     Boolean(this.smtpSecure);
 
+  private getPublicSiteUrl() {
+    return (
+      process.env.NEXT_PUBLIC_SITE_URL?.trim() || 'https://axelys.app'
+    ).replace(/\/$/, '');
+  }
+
   async sendUserInvitation(
     input: SendUserInvitationMailInput,
   ): Promise<MailDeliveryResult> {
@@ -233,6 +239,7 @@ export class MailService {
 
   private buildInvitationText(input: SendUserInvitationMailInput) {
     const expirationLabel = this.formatDate(input.expiresAt);
+    const legalLinks = this.getLegalLinks();
     const nextStep = input.requiresPasswordSetup
       ? 'Utilisez ce lien pour definir votre mot de passe et finaliser votre acces.'
       : 'Utilisez ce lien pour confirmer votre acces, puis connectez-vous avec votre mot de passe habituel.';
@@ -246,6 +253,11 @@ export class MailService {
       nextStep,
       input.acceptUrl,
       '',
+      'Documents juridiques applicables :',
+      `CGU : ${legalLinks.cgu}`,
+      `CGV : ${legalLinks.cgv}`,
+      `Politique de confidentialite : ${legalLinks.privacyPolicy}`,
+      '',
       `Ce lien expire le ${expirationLabel}.`,
       "Si vous n'etes pas concerne, ignorez simplement cet email.",
     ].join('\n');
@@ -253,6 +265,7 @@ export class MailService {
 
   private buildInvitationHtml(input: SendUserInvitationMailInput) {
     const expirationLabel = this.formatDate(input.expiresAt);
+    const legalLinks = this.getLegalLinks();
     const nextStep = input.requiresPasswordSetup
       ? 'Utilisez ce lien securise pour definir votre mot de passe et finaliser votre acces.'
       : 'Utilisez ce lien securise pour confirmer votre acces, puis connectez-vous avec votre mot de passe habituel.';
@@ -275,6 +288,12 @@ export class MailService {
         </p>
         <p>
           Ce lien expire le <strong>${this.escapeHtml(expirationLabel)}</strong>.
+        </p>
+        <p style="color: #4b5563;">
+          Documents juridiques :
+          <a href="${this.escapeHtml(legalLinks.cgu)}">CGU</a>,
+          <a href="${this.escapeHtml(legalLinks.cgv)}">CGV</a>,
+          <a href="${this.escapeHtml(legalLinks.privacyPolicy)}">Politique de confidentialite</a>.
         </p>
         <p style="color: #4b5563;">
           Si vous n'etes pas concerne, ignorez simplement cet email.
@@ -300,7 +319,7 @@ export class MailService {
       'Probleme rencontre :',
       input.application.problemDescription,
       '',
-      `Accepte la phase pilote : ${input.application.acknowledgement ? 'Oui' : 'Non'}`,
+      `Accepte le traitement de la demande : ${input.application.acknowledgement ? 'Oui' : 'Non'}`,
       '',
       `Repondre directement a : ${input.application.email}`,
     ].join('\n');
@@ -325,7 +344,7 @@ export class MailService {
           </p>
         </div>
         <p>
-          <strong>Accepte la phase pilote :</strong> ${input.application.acknowledgement ? 'Oui' : 'Non'}
+          <strong>Accepte le traitement de la demande :</strong> ${input.application.acknowledgement ? 'Oui' : 'Non'}
         </p>
         <p style="margin-top: 24px;">
           <a
@@ -344,6 +363,16 @@ export class MailService {
       dateStyle: 'medium',
       timeStyle: 'short',
     }).format(value);
+  }
+
+  private getLegalLinks() {
+    const siteUrl = this.getPublicSiteUrl();
+
+    return {
+      cgu: `${siteUrl}/cgu`,
+      cgv: `${siteUrl}/cgv`,
+      privacyPolicy: `${siteUrl}/politique-de-confidentialite`,
+    };
   }
 
   private escapeHtml(value: string) {

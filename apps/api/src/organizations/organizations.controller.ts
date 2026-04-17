@@ -12,6 +12,9 @@ export class OrganizationsController {
 
   @Get('current')
   getCurrent(@CurrentUser() user: AuthenticatedUser) {
-    return this.organizationsService.getCurrent(user.organizationId!);
+    return this.organizationsService.getCurrent({
+      organizationId: user.organizationId!,
+      userId: user.userId,
+    });
   }
 }

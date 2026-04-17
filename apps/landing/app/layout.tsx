@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { IBM_Plex_Sans } from 'next/font/google';
-import { SpeedInsights } from '@vercel/speed-insights/next';
+import { CookieConsentManager } from './components/cookie-consent-manager';
 import { defaultDescription, siteName, siteUrl } from './site-config';
 import './globals.css';
 
@@ -41,7 +41,7 @@ export default function RootLayout({
     <html className={ibmPlexSans.variable} lang="fr">
       <body>
         {children}
-        <SpeedInsights />
+        <CookieConsentManager />
       </body>
     </html>
   );

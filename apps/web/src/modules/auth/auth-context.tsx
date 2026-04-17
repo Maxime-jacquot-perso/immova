@@ -10,6 +10,7 @@ type AuthContextValue = {
     password: string;
     organizationSlug?: string;
   }) => Promise<void>;
+  markAccountLegalAcceptanceCompleted: () => void;
   logout: () => void;
 };
 
@@ -26,18 +27,39 @@ export function AuthProvider({ children }: PropsWithChildren) {
     return stored ? (JSON.parse(stored) as Session) : null;
   });
 
+  function persistSession(nextSession: Session | null) {
+    if (nextSession) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(nextSession));
+    } else {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+
+    setSession(nextSession);
+  }
+
   const value = useMemo<AuthContextValue>(
     () => ({
       session,
       isReady: true,
       async login(payload) {
         const nextSession = await loginRequest(payload);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(nextSession));
-        setSession(nextSession);
+        persistSession(nextSession);
+      },
+      markAccountLegalAcceptanceCompleted() {
+        if (!session) {
+          return;
+        }
+
+        persistSession({
+          ...session,
+          legal: {
+            accountAcceptanceRequired: false,
+            missingDocumentTypes: [],
+          },
+        });
       },
       logout() {
-        localStorage.removeItem(STORAGE_KEY);
-        setSession(null);
+        persistSession(null);
       },
     }),
     [session],

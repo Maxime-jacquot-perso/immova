@@ -438,6 +438,12 @@ th {
   padding: 32px;
 }
 
+.auth-legal-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
 .meta {
   color: var(--muted);
   font-size: 0.92rem;
@@ -494,6 +500,43 @@ th {
   align-self: end;
   min-height: 46px;
   color: var(--muted);
+}
+
+.checkbox-field input {
+  margin: 0;
+}
+
+.sidebar__footer {
+  padding-top: 6px;
+}
+
+.legal-links {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.legal-links__anchor {
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.legal-acceptance__documents {
+  display: grid;
+  gap: 12px;
+}
+
+.legal-acceptance__document {
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: white;
+}
+
+.legal-acceptance__checkbox {
+  align-items: flex-start;
+  align-self: stretch;
+  min-height: 0;
 }
 
 .simulation-form {

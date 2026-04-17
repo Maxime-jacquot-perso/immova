@@ -12,6 +12,7 @@ import {
   isAdminRole,
 } from '../admin/admin-authorization';
 import { InvitationsService } from '../invitations/invitations.service';
+import { LegalDocumentsService } from '../legal/legal-documents.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AcceptInvitationDto } from './dto/accept-invitation.dto';
 import { LoginDto } from './dto/login.dto';
@@ -23,6 +24,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly invitationsService: InvitationsService,
+    private readonly legalDocumentsService: LegalDocumentsService,
   ) {}
 
   async login(input: LoginDto) {
@@ -66,6 +68,12 @@ export class AuthService {
       data: { lastLoginAt },
     });
 
+    const legalStatus = await this.legalDocumentsService.getAcceptanceStatus({
+      userId: user.id,
+      organizationId: membership?.organizationId ?? null,
+      scope: 'ACCOUNT',
+    });
+
     const accessToken = await this.jwtService.signAsync({
       sub: user.id,
       email: user.email,
@@ -103,6 +111,10 @@ export class AuthService {
             trialPolicy: getTrialPolicy(user.adminRole),
           }
         : null,
+      legal: {
+        accountAcceptanceRequired: !legalStatus.isSatisfied,
+        missingDocumentTypes: legalStatus.missingDocumentTypes,
+      },
     };
   }
 
@@ -110,7 +122,12 @@ export class AuthService {
     return this.invitationsService.verifyToken(input.token);
   }
 
-  acceptInvitation(input: AcceptInvitationDto) {
+  acceptInvitation(
+    input: AcceptInvitationDto & {
+      ipAddress?: string | null;
+      userAgent?: string | null;
+    },
+  ) {
     return this.invitationsService.acceptInvitation(input);
   }
 }

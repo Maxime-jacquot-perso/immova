@@ -5,6 +5,7 @@ import { useState } from 'react';
 import styles from './pilot-application-form.module.css';
 import {
   captureLandingEvent,
+  isAnalyticsEnabled,
   getPostHogDistinctId,
   type LandingFormField,
 } from '../../lib/posthog-client';
@@ -116,6 +117,7 @@ export function PilotApplicationForm({
       email: formData.email.trim(),
       problemDescription: formData.problemDescription.trim(),
       analyticsDistinctId: getPostHogDistinctId(),
+      analyticsConsentGranted: isAnalyticsEnabled(),
     };
 
     try {
@@ -273,8 +275,12 @@ export function PilotApplicationForm({
           required
         />
         <span>
-          Je comprends que le produit est en phase pilote et qu’il peut encore
-          évoluer rapidement.
+          J’ai lu la{' '}
+          <Link href="/politique-de-confidentialite">Politique de confidentialité</Link>{' '}
+          et j’accepte que REGERA traite les informations transmises pour
+          étudier ma demande d’accès, me recontacter à ce sujet et gérer une
+          éventuelle relation commerciale. Je comprends aussi que le produit
+          est en phase pilote et qu’il peut encore évoluer rapidement.
         </span>
       </label>
 
