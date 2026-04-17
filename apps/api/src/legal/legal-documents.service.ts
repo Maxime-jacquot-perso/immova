@@ -9,7 +9,7 @@ import {
   listLegalDocumentDefinitions,
   type LegalAcceptanceScope as SharedLegalAcceptanceScope,
   type LegalDocumentType as SharedLegalDocumentType,
-} from '../../../../packages/legal/src';
+} from '@axelys/legal';
 import { PrismaService } from '../prisma/prisma.service';
 
 type PrismaExecutor = PrismaService | Prisma.TransactionClient;

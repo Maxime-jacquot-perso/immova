@@ -300,6 +300,7 @@ Entites repoussees :
 - Code sobre, lisible, sans sur-abstraction
 - Dossiers structures par domaine
 - Validation DTO / schemas des deux cotes
+- Tout package interne partage consomme au runtime cote Node/NestJS doit exposer un build compile (`dist/`) compatible avec le format du consumer, avec `main` / `types` / `exports` coherents ; ne jamais importer un package workspace via son `src` depuis `apps/api`
 - Calculs KPI cote backend
 - Score de completude, alertes metier, suggestions d'action et statut decisionnel centralises cote backend
 - Pas de logique produit dupliquee entre front et back

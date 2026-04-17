@@ -66,7 +66,7 @@ Les fichiers d'upload et les temporaires de test sont locaux et ignores par Git.
 
 - le point d'entree Vercel de l'API est `apps/api/api/[[...route]].ts`
 - `src/main.ts` reste l'entree locale / Nest classique pour le developpement
-- `vercel-build` execute uniquement `prisma generate` ; Vercel compile ensuite la Function a partir du handler `api/`
+- `vercel-build` construit d abord les packages workspace runtime requis (ex: `@axelys/legal`), puis execute `prisma generate` ; Vercel compile ensuite la Function a partir du handler `api/`
 - pour le projet Vercel de l'API, laisser l'`Output Directory` vide afin de deployer la Function, pas un dossier build statique
 - le `Root Directory` du projet Vercel doit pointer vers `apps/api`
 
