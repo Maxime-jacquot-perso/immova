@@ -14,25 +14,25 @@ export default function ApplyPage() {
         <section className={styles.hero}>
           <div className={styles.heroGrid}>
             <div className={styles.heroContent}>
-              <div className={styles.eyebrow}>Page utilitaire</div>
-              <h1 className={styles.heroTitle}>Formulaire de demande d’accès client pilote</h1>
+              <div className={styles.eyebrow}>Demande directe</div>
+              <h1 className={styles.heroTitle}>Déposer une demande d’accès au programme client pilote</h1>
               <p className={styles.heroLead}>
-                Cette page reprend le formulaire du programme client pilote en
-                version directe. Elle reste volontairement non indexée pour
-                éviter les doublons avec la page publique principale.
+                Cette page vous permet d’aller directement au formulaire si vous avez déjà
+                le bon contexte en tête et souhaitez tester Axelys sur des opérations
+                réelles.
               </p>
               <ul className={styles.highlightList}>
-                <li>Le programme reste sélectif</li>
-                <li>Le tarif pilote est de 15 € / mois pour les profils retenus</li>
-                <li>Aucune inscription automatique n’est déclenchée ici</li>
+                <li>Accès sur sélection</li>
+                <li>Tarif pilote à 15 € / mois</li>
+                <li>Réponse humaine après étude du contexte</li>
               </ul>
             </div>
             <aside className={styles.heroPanel}>
-              <p className={styles.kicker}>Conseil</p>
-              <h2 className={styles.panelTitle}>La page de référence reste /client-pilote.</h2>
+              <p className={styles.kicker}>Accès pilote</p>
+              <h2 className={styles.panelTitle}>Axelys s’ouvre d’abord sur des cas réels.</h2>
               <p className={styles.panelBody}>
-                Utilisez cette page comme accès direct au formulaire si besoin,
-                mais gardez /client-pilote comme page publique principale.
+                Si vous voulez décider avant achat et piloter après acquisition dans le
+                même cadre, vous pouvez déposer votre demande ici.
               </p>
             </aside>
           </div>
@@ -44,8 +44,8 @@ export default function ApplyPage() {
               <div className={styles.eyebrow}>Demande d’accès</div>
               <h2 className={styles.sectionTitle}>Présentez votre contexte</h2>
               <p className={styles.sectionLead}>
-                On cherche surtout à comprendre si Axelys peut vous aider dès
-                maintenant sur des opérations réelles.
+                On cherche surtout à comprendre si Axelys peut vous aider dès maintenant
+                sur des opérations concrètes.
               </p>
             </div>
             <PilotApplicationForm

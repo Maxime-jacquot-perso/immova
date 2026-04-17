@@ -86,12 +86,11 @@ export function ArticlePageTemplate({ post }: ArticlePageTemplateProps) {
           </article>
 
           <aside className={styles.sidebarCard}>
-            <div className={styles.eyebrow}>Dans le bon cadre</div>
-            <h2 className={styles.sidebarTitle}>Le contenu public reste éditorial.</h2>
+            <div className={styles.eyebrow}>Pour aller plus loin</div>
+            <h2 className={styles.sidebarTitle}>Relier la lecture à l’usage réel</h2>
             <p className={styles.sidebarText}>
-              Les pages et articles Axelys expliquent les cas d’usage et la
-              méthode. Le simulateur détaillé, les comparaisons privées et la
-              logique métier sensible restent dans l’application privée.
+              Ces sujets prennent vraiment de la valeur quand ils servent à comparer,
+              décider et suivre un projet concret.
             </p>
             <ul className={styles.sidebarList}>
               {relatedPages.map((page) => (
@@ -129,12 +128,10 @@ export function ArticlePageTemplate({ post }: ArticlePageTemplateProps) {
         <section className={styles.ctaBand}>
           <div className={styles.ctaText}>
             <div className={styles.eyebrow}>Axelys</div>
-            <h2 className={styles.sectionTitle}>
-              Passer du contenu éditorial à un usage réel, sans gadget public
-            </h2>
+            <h2 className={styles.sectionTitle}>Voir si Axelys convient à vos opérations</h2>
             <p className={styles.sectionLead}>
-              Si votre sujet est concret, le programme client pilote est la
-              bonne porte d’entrée aujourd’hui.
+              Si vous avez des dossiers concrets à arbitrer ou à suivre, le programme
+              client pilote est le bon point d’entrée aujourd’hui.
             </p>
           </div>
           <div className={styles.actionRow}>

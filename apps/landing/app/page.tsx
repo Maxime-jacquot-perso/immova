@@ -88,10 +88,9 @@ export default function HomePage() {
                 L’outil de décision et de pilotage immobilier pour arbitrer avec méthode.
               </h1>
               <p className={styles.heroLead}>
-                Axelys aide les investisseurs immobiliers actifs, marchands de
-                biens et petites structures multi-projets à décider avant achat,
-                puis à suivre un projet réel sans transformer le site public en
-                simulateur gadget.
+                Axelys aide les investisseurs immobiliers actifs, marchands de biens et
+                petites structures multi-projets à décider avant achat, puis à suivre les
+                projets réels avec la même exigence de lecture.
               </p>
               <ul className={styles.highlightList}>
                 {homeHeroHighlights.map((item) => (
@@ -119,9 +118,9 @@ export default function HomePage() {
                 </LandingCtaLink>
               </div>
               <div className={styles.quickMeta}>
-                <span className={styles.quickMetaItem}>Offre ouverte: client pilote</span>
+                <span className={styles.quickMetaItem}>Offre ouverte : client pilote</span>
                 <span className={styles.quickMetaItem}>Simple et Pro visibles, non activables</span>
-                <span className={styles.quickMetaItem}>Simulateur réservé à l’app privée</span>
+                <span className={styles.quickMetaItem}>Accès détaillé réservé aux comptes autorisés</span>
               </div>
             </div>
 
@@ -129,9 +128,8 @@ export default function HomePage() {
               <p className={styles.kicker}>Ce qu’Axelys change</p>
               <h2 className={styles.panelTitle}>Arbitrer, suivre, corriger.</h2>
               <p className={styles.panelBody}>
-                Le site public explique clairement le cadre. L’application privée
-                porte le moteur d’analyse détaillé, la comparaison des opportunités
-                et la conversion vers projet réel.
+                Vous comparez une opportunité, vous suivez un projet, vous voyez plus tôt
+                ce qui dérive et ce qui demande un arbitrage.
               </p>
               <div className={styles.statStrip}>
                 <div className={styles.statCard}>
@@ -154,10 +152,12 @@ export default function HomePage() {
         <section className={styles.section} data-landing-section="problem" id="problem">
           <div className={styles.sectionHeading}>
             <div className={styles.eyebrow}>Le problème</div>
-            <h2 className={styles.sectionTitle}>Décider et piloter deviennent fragiles quand tout est dispersé.</h2>
+            <h2 className={styles.sectionTitle}>
+              Décider et piloter deviennent fragiles quand tout est dispersé.
+            </h2>
             <p className={styles.sectionLead}>
-              Axelys n’essaie pas de tout faire. Le produit s’attaque à ce qui
-              abîme le plus vite la qualité d’un arbitrage et d’un suivi de projet.
+              Quand les hypothèses, les pièces et les chiffres sont éparpillés, la décision
+              devient plus lente, moins fiable et plus coûteuse à corriger.
             </p>
           </div>
           <div className={styles.cardGrid}>
@@ -176,7 +176,9 @@ export default function HomePage() {
         <section className={styles.section} data-landing-section="solution" id="solution">
           <div className={styles.sectionHeading}>
             <div className={styles.eyebrow}>Comment Axelys aide</div>
-            <h2 className={styles.sectionTitle}>Axelys aide à arbitrer, pas seulement à calculer.</h2>
+            <h2 className={styles.sectionTitle}>
+              Axelys aide à arbitrer, pas seulement à calculer.
+            </h2>
           </div>
           <div className={styles.cardGrid}>
             {homeValueCards.map((item) => (
@@ -190,12 +192,11 @@ export default function HomePage() {
 
         <section className={styles.section} data-landing-section="proof" id="proof">
           <div className={styles.sectionHeading}>
-            <div className={styles.eyebrow}>Sécurité produit</div>
-            <h2 className={styles.sectionTitle}>Le site public reste utile sans exposer le cœur du produit.</h2>
+            <div className={styles.eyebrow}>Le bon cadre</div>
+            <h2 className={styles.sectionTitle}>Un cadre sérieux, pas un gadget.</h2>
             <p className={styles.sectionLead}>
-              Le contenu public prépare la compréhension et la conversion. Le vrai
-              simulateur, la logique métier détaillée et la conversion vers projet
-              restent dans l’application privée.
+              Axelys montre comment mieux décider et mieux piloter. L’usage détaillé
+              s’ouvre ensuite dans un environnement réservé.
             </p>
           </div>
           <div className={styles.cardGrid}>
@@ -211,7 +212,9 @@ export default function HomePage() {
         <section className={styles.section} data-landing-section="pilot" id="offers">
           <div className={styles.sectionHeading}>
             <div className={styles.eyebrow}>Offres</div>
-            <h2 className={styles.sectionTitle}>Le client pilote au centre. Simple et Pro visibles, mais pas activables.</h2>
+            <h2 className={styles.sectionTitle}>
+              Le client pilote est ouvert. Simple et Pro restent à venir.
+            </h2>
           </div>
           <div className={styles.pricingGrid}>
             {publicOffers.map((plan) => (
@@ -222,8 +225,10 @@ export default function HomePage() {
 
         <section className={styles.sectionMuted}>
           <div className={styles.sectionHeading}>
-            <div className={styles.eyebrow}>Pages métier</div>
-            <h2 className={styles.sectionTitle}>Des pages publiques utiles pour l’indexation, sans simulateur réel.</h2>
+            <div className={styles.eyebrow}>Approfondir</div>
+            <h2 className={styles.sectionTitle}>
+              Trois angles pour mieux lire une opération immobilière.
+            </h2>
           </div>
           <div className={styles.resourceGrid}>
             {businessPageList.map((page) => (
@@ -235,7 +240,7 @@ export default function HomePage() {
                 label="open_business_page"
                 target={page.href}
               >
-                <p className={styles.resourceMeta}>Page métier</p>
+                <p className={styles.resourceMeta}>Guide métier</p>
                 <h3 className={styles.resourceTitle}>{page.title}</h3>
                 <p className={styles.resourceDescription}>{page.description}</p>
               </LandingCtaLink>
@@ -246,7 +251,9 @@ export default function HomePage() {
         <section className={styles.section}>
           <div className={styles.sectionHeading}>
             <div className={styles.eyebrow}>Blog</div>
-            <h2 className={styles.sectionTitle}>Des articles utiles pour préparer une décision sérieuse.</h2>
+            <h2 className={styles.sectionTitle}>
+              Des articles utiles pour préparer une décision sérieuse.
+            </h2>
           </div>
           <div className={styles.articleGrid}>
             {featuredPosts.map((post, index) => (
@@ -258,7 +265,9 @@ export default function HomePage() {
         <section className={styles.section} data-landing-section="faq" id="faq">
           <div className={styles.sectionHeading}>
             <div className={styles.eyebrow}>FAQ</div>
-            <h2 className={styles.sectionTitle}>Les points à clarifier avant de candidater.</h2>
+            <h2 className={styles.sectionTitle}>
+              Ce qu’il faut savoir avant d’envoyer une demande.
+            </h2>
           </div>
           <div className={styles.faqGrid}>
             {homeFaqItems.map((item) => (
@@ -276,9 +285,8 @@ export default function HomePage() {
               <div className={styles.eyebrow}>Demande d’accès</div>
               <h2 className={styles.sectionTitle}>Candidater au programme client pilote</h2>
               <p className={styles.sectionLead}>
-                Le bon point d’entrée aujourd’hui est le programme client pilote.
-                Pas d’ouverture automatique, pas de promesse floue, juste un tri
-                sérieux des contextes où Axelys peut déjà être utile.
+                Le programme client pilote est la seule porte d’entrée ouverte aujourd’hui.
+                On retient les contextes où Axelys peut déjà apporter une vraie valeur.
               </p>
               <ul className={styles.signalList}>
                 <li>Réponse humaine sur la pertinence du contexte</li>

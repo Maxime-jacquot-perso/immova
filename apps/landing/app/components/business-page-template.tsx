@@ -65,8 +65,8 @@ export function BusinessPageTemplate({
             <div className={styles.eyebrow}>Problème métier</div>
             <h2 className={styles.sectionTitle}>Pourquoi ce sujet mérite une vraie méthode</h2>
             <p className={styles.sectionLead}>
-              Ces points reviennent souvent chez les investisseurs immobiliers,
-              marchands de biens et petites structures multi-projets.
+              Ces difficultés reviennent dès que la décision se prend sur des hypothèses
+              dispersées ou un suivi trop fragmenté.
             </p>
           </div>
           <div className={styles.cardGrid}>
@@ -84,8 +84,8 @@ export function BusinessPageTemplate({
 
         <section className={styles.section}>
           <div className={styles.sectionHeading}>
-            <div className={styles.eyebrow}>Lecture Axelys</div>
-            <h2 className={styles.sectionTitle}>Une page publique utile, sans exposer le moteur privé</h2>
+            <div className={styles.eyebrow}>Méthode</div>
+            <h2 className={styles.sectionTitle}>Comment reprendre une lecture fiable</h2>
           </div>
           <div className={styles.editorialGrid}>
             <div className={styles.editorialMain}>
@@ -110,16 +110,15 @@ export function BusinessPageTemplate({
 
             <aside className={styles.sidebarCard}>
               <div className={styles.eyebrow}>À retenir</div>
-              <h3 className={styles.sidebarTitle}>Le site public prépare la décision.</h3>
+              <h3 className={styles.sidebarTitle}>Le bon cadre aide à trancher.</h3>
               <p className={styles.sidebarText}>
-                Le calcul détaillé, la comparaison privée et la conversion vers
-                projet restent dans l’application. Cette séparation protège le
-                cœur produit et garde le contenu public vraiment utile.
+                Un bon outil n’essaie pas d’impressionner. Il aide à comparer, à décider,
+                puis à garder une base claire pour la suite du projet.
               </p>
               <ul className={styles.sidebarList}>
-                <li>Pas de simulateur réel accessible sans compte</li>
-                <li>Pas d’exposition détaillée des formules métier</li>
-                <li>Oui à des pages SEO qui répondent aux vraies questions</li>
+                <li>Comparer plusieurs dossiers avec la même grille</li>
+                <li>Éviter les angles morts avant de s’engager</li>
+                <li>Garder une base exploitable pour le suivi réel</li>
               </ul>
             </aside>
           </div>
@@ -133,7 +132,7 @@ export function BusinessPageTemplate({
           <div className={styles.resourceGrid}>
             {relatedPages.map((item) => (
               <Link className={styles.resourceCard} href={item.href} key={item.href}>
-                <p className={styles.resourceMeta}>Page métier</p>
+                <p className={styles.resourceMeta}>Guide métier</p>
                 <h3 className={styles.resourceTitle}>{item.title}</h3>
                 <p className={styles.resourceDescription}>{item.description}</p>
               </Link>
@@ -151,8 +150,8 @@ export function BusinessPageTemplate({
             <div className={styles.eyebrow}>Programme client pilote</div>
             <h2 className={styles.sectionTitle}>Voir si Axelys est pertinent sur vos opérations réelles</h2>
             <p className={styles.sectionLead}>
-              L’offre ouverte aujourd’hui reste le programme client pilote. Les
-              offres Simple et Pro sont visibles, mais pas encore activables.
+              Le programme client pilote est la seule offre ouverte aujourd’hui. Simple
+              et Pro restent visibles, mais à venir.
             </p>
           </div>
           <div className={styles.actionRow}>
@@ -166,7 +165,7 @@ export function BusinessPageTemplate({
               Demander un accès
             </LandingCtaLink>
             <Link className={styles.buttonGhost} href="/pricing">
-              Consulter le pricing
+              Consulter les offres
             </Link>
           </div>
         </section>

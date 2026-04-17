@@ -38,7 +38,7 @@ export type PricingPlan = {
 export const marketingNavigation: NavigationItem[] = [
   {
     href: '/pricing',
-    label: 'Pricing',
+    label: 'Offres',
   },
   {
     href: '/client-pilote',
@@ -65,12 +65,12 @@ export const footerLinkGroups: FooterLinkGroup[] = [
     title: 'Axelys',
     links: [
       { href: '/', label: 'Accueil' },
-      { href: '/pricing', label: 'Pricing' },
+      { href: '/pricing', label: 'Offres' },
       { href: '/client-pilote', label: 'Programme client pilote' },
     ],
   },
   {
-    title: 'Pages métier',
+    title: 'Sujets clés',
     links: [
       {
         href: '/analyse-rentabilite-immobiliere',
@@ -87,7 +87,7 @@ export const footerLinkGroups: FooterLinkGroup[] = [
     ],
   },
   {
-    title: 'Contenu',
+    title: 'Articles',
     links: [
       { href: '/blog', label: 'Blog' },
       {
@@ -109,17 +109,17 @@ export const pricingPlans: PricingPlan[] = [
     status: 'Ouvert sur sélection',
     statusTone: 'available',
     priceLabel: '15 € / mois',
-    priceDetail: 'Tarif pilote conservé pour les comptes retenus à ce stade.',
+    priceDetail: 'Tarif pilote conservé pour les comptes retenus.',
     description:
-      'Le programme actif aujourd’hui pour tester Axelys sur des projets réels, avec un cadre simple et un retour produit direct.',
+      'Le cadre ouvert aujourd’hui pour utiliser Axelys sur des opérations réelles, avec un retour direct à l’équipe.',
     highlights: [
-      'Accès à l’application privée actuelle',
-      'Pilotage des projets, lots, dépenses, documents et indicateurs utiles',
-      'Parcours d’accès humain et progressif, sans inscription automatique',
-      'Échanges directs avec l’équipe pendant la phase pilote',
+      'Accès à Axelys sur vos dossiers réels',
+      'Suivi des projets, lots, dépenses, documents et indicateurs utiles',
+      'Accès progressif après échange, sans inscription automatique',
+      'Retour direct à l’équipe pendant la phase pilote',
     ],
     footnote:
-      'La souscription n’est proposée qu’après validation de la demande. Le simulateur et la conversion restent dans l’application privée.',
+      'L’accès s’ouvre après validation de la demande. L’analyse détaillée et le suivi restent réservés aux comptes autorisés.',
     featured: true,
     cta: {
       href: '/client-pilote',
@@ -135,17 +135,16 @@ export const pricingPlans: PricingPlan[] = [
     status: 'Bientôt disponible',
     statusTone: 'pending',
     priceLabel: 'À venir',
-    priceDetail:
-      'Positionnement provisoire pour un usage individuel plus cadré.',
+    priceDetail: 'Offre en préparation pour un usage individuel plus cadré.',
     description:
-      'Une future offre destinée aux profils qui veulent un cadre plus resserré, sans ouvrir tout le périmètre organisationnel.',
+      'Une future offre pour les profils qui veulent un cadre simple et resserré, sans couche de complexité inutile.',
     highlights: [
-      'Orientation prévue pour un usage individuel',
-      'Périmètre plus limité que l’offre Pro',
-      'Non activable publiquement pour le moment',
+      'Pensée pour un usage individuel',
+      'Périmètre plus resserré que l’offre Pro',
+      'Visible aujourd’hui, non activable pour le moment',
     ],
     footnote:
-      'Le contour exact reste volontairement prudent tant que le pilote n’a pas consolidé les priorités produit.',
+      'Le périmètre reste volontairement prudent tant que le programme pilote n’a pas stabilisé les priorités.',
     disabled: true,
   },
   {
@@ -154,17 +153,16 @@ export const pricingPlans: PricingPlan[] = [
     status: 'Bientôt disponible',
     statusTone: 'pending',
     priceLabel: 'À venir',
-    priceDetail:
-      'Positionnement provisoire pour les structures multi-projets.',
+    priceDetail: 'Offre en préparation pour les structures multi-projets.',
     description:
-      'Une future offre pensée pour les équipes ou organisations qui veulent piloter plusieurs opérations avec une lecture portefeuille plus large.',
+      'Une future offre pour les équipes qui veulent suivre plusieurs opérations avec une lecture portefeuille plus large.',
     highlights: [
-      'Orientation prévue pour du multi-projets',
-      'Lecture portefeuille et coordination plus avancées',
-      'Non activable publiquement pour le moment',
+      'Pensée pour un usage multi-projets',
+      'Lecture portefeuille plus large',
+      'Visible aujourd’hui, non activable pour le moment',
     ],
     footnote:
-      'Rien n’est ouvert à la vente tant que le périmètre réel n’est pas suffisamment stabilisé.',
+      'Rien n’est ouvert à la vente tant que le périmètre réel n’est pas assez stabilisé.',
     disabled: true,
   },
 ];
@@ -179,75 +177,75 @@ export const pricingMatrix = [
     values: ['Demande puis validation humaine', 'Fermé', 'Fermé'],
   },
   {
-    label: 'Cible prioritaire',
+    label: 'Pour qui',
     values: [
-      'Investisseurs actifs et marchands de biens qui veulent tester Axelys sur des cas réels',
-      'Usage individuel au périmètre plus resserré',
-      'Structures multi-projets et vision portefeuille',
+      'Investisseurs actifs, marchands de biens et petites structures qui veulent tester Axelys sur des cas réels',
+      'Usage individuel au cadre plus resserré',
+      'Structures multi-projets avec besoin de vision portefeuille',
     ],
   },
   {
-    label: 'Niveau de maturité',
+    label: 'Statut',
     values: [
-      'Produit actuel',
-      'Positionnement en préparation',
-      'Positionnement en préparation',
+      'Ouvert aujourd’hui',
+      'En préparation',
+      'En préparation',
     ],
   },
 ];
 
 export const homeHeroHighlights = [
-  'Décider avant achat sans transformer le site public en simulateur gadget.',
-  'Piloter ensuite les projets réels avec dépenses, lots, documents et indicateurs utiles.',
-  'Relier hypothèses et réalité sans double saisie complète quand l’opportunité devient un projet.',
+  'Comparer une opportunité avec une vraie lecture de décision.',
+  'Suivre ensuite les projets réels avec dépenses, lots, documents et indicateurs utiles.',
+  'Garder un lien clair entre hypothèse initiale et réalité du projet.',
 ];
 
 export const homeProblemCards = [
   {
-    title: 'Vous calculez, mais vous arbitrez mal',
-    body: 'Une opportunité “rentable” sur le papier peut rester faible si la durée, les frais et le cash mobilisé sont mal cadrés.',
+    title: 'Vous avez des chiffres, pas une vraie lecture',
+    body: 'Une opportunité peut sembler rentable et rester pourtant fragile si les frais, la durée ou le cash mobilisé sont mal relus.',
   },
   {
-    title: 'Le tableur ne survit pas au passage à l’action',
-    body: 'L’hypothèse avant achat se perd, puis il faut reconstituer le projet réel à la main.',
+    title: 'Le tableur ne tient pas jusqu’au projet réel',
+    body: 'L’hypothèse avant achat se perd vite, puis le suivi repart de zéro quand l’opération avance.',
   },
   {
     title: 'Les dérives remontent trop tard',
-    body: 'Quand dépenses, pièces et statuts sont dispersés, la mauvaise surprise apparaît après le point de bascule.',
+    body: 'Quand les dépenses, les pièces et les statuts sont dispersés, l’alerte arrive souvent après le vrai point de bascule.',
   },
   {
-    title: 'Les bons indicateurs ne sont jamais au même endroit',
-    body: 'Il faut rouvrir plusieurs fichiers et plusieurs outils avant de pouvoir décider correctement.',
+    title: 'Les bons repères ne sont jamais au même endroit',
+    body: 'Il faut rouvrir plusieurs fichiers et plusieurs outils avant de pouvoir arbitrer correctement.',
   },
 ];
 
 export const homeValueCards = [
   {
-    title: 'Décider avant achat',
-    body: 'Axelys aide à comparer des opportunités dans un cadre de décision simple, crédible et réservé à l’application privée.',
+    title: 'Comparer avant d’engager',
+    body: 'Axelys aide à lire une opportunité sous l’angle de la décision, pas seulement du calcul.',
   },
   {
-    title: 'Piloter après acquisition',
-    body: 'Le projet devient un centre de gravité concret: lots, dépenses, documents, KPI et alertes utiles restent liés au même dossier.',
+    title: 'Piloter dans le même cadre',
+    body: 'Le projet reste le point de lecture central, avec les lots, les dépenses, les documents et les indicateurs qui comptent vraiment.',
   },
   {
-    title: 'Lire l’écart entre prévisionnel et réel',
-    body: 'Quand une simulation retenue se transforme en projet, la référence de départ reste exploitable pour repérer les dérives.',
+    title: 'Voir l’écart entre prévu et réel',
+    body: 'Quand une opportunité devient un projet, la référence de départ reste exploitable pour repérer les dérives plus tôt.',
   },
 ];
 
 export const homePrivateCoreCards = [
   {
-    title: 'Pas de simulateur public réel',
-    body: 'Le site public explique la méthode et la valeur. Les calculs détaillés et le moteur de conversion restent derrière authentification.',
+    title: 'Pas de calculatrice gadget',
+    body: 'Vous découvrez le cadre, les cas d’usage et la valeur d’Axelys. L’analyse détaillée s’utilise ensuite dans un accès réservé.',
   },
   {
-    title: 'Pas de copie facile du cœur produit',
-    body: 'Aucune page publique ne déroule la logique complète de calcul, les règles détaillées ou un outil exploitable sans accès.',
+    title: 'Une méthode qui reste fiable',
+    body: 'Les décisions ne reposent pas sur un mini-calculateur simpliste ni sur des formules sorties de leur contexte.',
   },
   {
-    title: 'Oui à un contenu SEO utile',
-    body: 'Les pages publiques répondent aux vraies questions métier et orientent vers le programme client pilote sans vider l’application de sa valeur.',
+    title: 'Du contenu utile',
+    body: 'Les pages et les articles répondent à de vraies questions métier et vous orientent vers la bonne porte d’entrée.',
   },
 ];
 
@@ -255,17 +253,17 @@ export const homeFaqItems = [
   {
     question: 'Axelys est-il un simple simulateur immobilier ?',
     answer:
-      'Non. Le produit aide à arbitrer avant achat puis à piloter après acquisition. Le calcul n’est qu’un moyen au service d’une décision.',
+      'Non. Axelys aide à arbitrer avant achat puis à piloter après acquisition. Le calcul n’est qu’un moyen au service de la décision.',
   },
   {
-    question: 'Le simulateur est-il public ?',
+    question: 'L’analyse détaillée est-elle ouverte à tous ?',
     answer:
-      'Non. Le site marketing reste éditorial. Le simulateur détaillé, les comparaisons privées et la conversion vers projet restent dans l’application.',
+      'Non. L’usage détaillé s’ouvre dans Axelys une fois l’accès validé. Les pages publiques servent à comprendre l’approche et les cas d’usage.',
   },
   {
     question: 'Que peut-on activer aujourd’hui ?',
     answer:
-      'Le programme client pilote. Les offres Simple et Pro sont visibles pour préparer la suite, mais elles ne sont pas ouvertes à la vente.',
+      'Le programme client pilote. Les offres Simple et Pro sont visibles, mais elles ne sont pas encore ouvertes.',
   },
   {
     question: 'À qui sert Axelys maintenant ?',
@@ -276,22 +274,22 @@ export const homeFaqItems = [
 
 export const clientPilotSignals = [
   'Réponse humaine sous 24 à 48 h ouvrées',
-  'Souscription seulement après validation du profil',
   'Tarif pilote à 15 € / mois',
+  'Accès ouvert quand l’usage est pertinent',
 ];
 
 export const clientPilotSteps = [
   {
-    title: '1. Candidater',
-    body: 'Vous décrivez votre contexte, votre profil et le type de projets que vous pilotez déjà.',
+    title: '1. Présenter votre contexte',
+    body: 'Vous décrivez votre profil, vos projets et la façon dont vous arbitrez ou pilotez aujourd’hui.',
   },
   {
     title: '2. Vérifier l’adéquation',
-    body: 'On regarde si Axelys peut être utile tout de suite et si le cadre pilote correspond à votre usage.',
+    body: 'On regarde si Axelys peut être utile tout de suite et si le cadre pilote correspond bien à votre usage.',
   },
   {
-    title: '3. Ouvrir progressivement',
-    body: 'Si le profil est retenu, la suite se fait dans un cadre sécurisé, avec une souscription déclenchée au bon moment.',
+    title: '3. Ouvrir l’accès',
+    body: 'Si le contexte est retenu, l’ouverture se fait progressivement, avec une souscription déclenchée au bon moment.',
   },
 ];
 
@@ -299,16 +297,16 @@ export const clientPilotFaq = [
   {
     question: 'Le tarif pilote est-il public ?',
     answer:
-      'Oui, il est affiché clairement à 15 € / mois. En revanche, l’accès reste sélectif et n’est pas accordé automatiquement.',
+      'Oui. Il est affiché clairement à 15 € / mois. En revanche, l’accès reste sélectif et n’est pas accordé automatiquement.',
   },
   {
     question: 'Simple et Pro sont-ils disponibles ?',
     answer:
-      'Non. Ils sont visibles pour donner une lecture de la trajectoire commerciale, mais ils restent volontairement non activables.',
+      'Non. Ils restent visibles pour donner une lecture claire de la suite, mais ils ne sont pas encore activables.',
   },
   {
-    question: 'Le site public donne-t-il accès aux calculs ?',
+    question: 'Avez-vous accès à l’analyse détaillée dès maintenant ?',
     answer:
-      'Non. Le site explique les cas d’usage et la valeur. Les calculs détaillés et la logique de conversion restent dans l’application privée.',
+      'Seulement si votre demande est validée. L’analyse détaillée, le suivi et les arbitrages s’utilisent ensuite dans Axelys.',
   },
 ];

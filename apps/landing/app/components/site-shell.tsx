@@ -101,9 +101,9 @@ export function SiteShell({
               Outil de décision et de pilotage immobilier.
             </h2>
             <p className={styles.footerCopy}>
-              Le site public explique les usages, le programme client pilote et
-              les ressources métier. Le simulateur détaillé, les comparaisons
-              privées et la logique de conversion restent dans l’application.
+              Axelys aide à décider avant achat puis à garder une lecture fiable des
+              projets réels. Le programme client pilote est la porte d’entrée ouverte
+              aujourd’hui.
             </p>
             <div className={styles.actionRow}>
               <LandingCtaLink
@@ -121,8 +121,7 @@ export function SiteShell({
             </div>
             <div className={styles.footerLegal}>
               <p className={styles.footerMeta}>
-                Besoin d’ouvrir l’application privée ?{' '}
-                <Link href={appUrl}>Se connecter</Link>.
+                Déjà client ? <Link href={appUrl}>Se connecter</Link>.
               </p>
               <LegalLinks />
             </div>

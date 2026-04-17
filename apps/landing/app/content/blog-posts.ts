@@ -27,7 +27,7 @@ export const blogPosts: BlogPost[] = [
     title:
       'Comment analyser la rentabilité d’un projet immobilier sérieusement',
     description:
-      'Une méthode sobre pour analyser la rentabilité d’un projet immobilier sans se limiter à un seul rendement ni exposer le moteur métier.',
+      'Une méthode sobre pour analyser la rentabilité d’un projet immobilier sans se limiter à un seul rendement.',
     excerpt:
       'Une rentabilité “propre” sur le papier ne suffit pas. Une analyse sérieuse relie coût total, cash mobilisé, durée, risques et capacité à piloter la suite.',
     publishedAt: '2026-04-17',
@@ -156,7 +156,7 @@ export const blogPosts: BlogPost[] = [
         title: 'Ce qu’il faut chercher à la place',
         paragraphs: [
           'Le bon objectif n’est pas d’abandonner les tableurs par principe. C’est de mettre en place un cadre où la comparaison des opportunités, la décision retenue et le pilotage réel restent suffisamment reliés pour produire des arbitrages fiables.',
-          'C’est précisément la logique qu’un outil comme Axelys cherche à couvrir: un site public éditorial pour expliquer le besoin, et une application privée pour porter l’analyse détaillée et la suite opérationnelle.',
+          'C’est précisément le terrain d’Axelys : relier la décision avant achat et le pilotage réel dans un même cadre de lecture.',
         ],
       },
     ],

@@ -22,12 +22,11 @@ export default function BlogIndexPage() {
           <div className={styles.heroGrid}>
             <div className={styles.heroContent}>
               <div className={styles.eyebrow}>Blog</div>
-              <h1 className={styles.heroTitle}>Un contenu SEO utile pour mieux décider et mieux piloter.</h1>
+              <h1 className={styles.heroTitle}>Des articles pour mieux décider et mieux piloter.</h1>
               <p className={styles.heroLead}>
-                Le blog Axelys traite des sujets métier qui comptent vraiment:
-                analyser un projet, lire une rentabilité sérieusement, repérer
-                une dérive et centraliser l’information sans transformer le site
-                public en outil métier ouvert.
+                Le blog Axelys traite des sujets qui reviennent sur le terrain : analyser
+                un projet, lire une rentabilité sérieusement, repérer une dérive et garder
+                une vision claire quand plusieurs opérations avancent en parallèle.
               </p>
             </div>
             <ArticleCard post={featuredPost} featured />

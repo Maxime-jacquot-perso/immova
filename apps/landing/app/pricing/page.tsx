@@ -6,9 +6,9 @@ import { pricingMatrix, pricingPlans } from '../content/marketing-content';
 import { buildMetadata } from '../seo';
 
 export const metadata = buildMetadata({
-  title: 'Pricing',
+  title: 'Offres',
   description:
-    'Découvrez le programme client pilote Axelys et la trajectoire des offres Simple et Pro, visibles mais non encore activables.',
+    'Découvrez le programme client pilote Axelys et les offres Simple et Pro, visibles mais non encore activables.',
   path: '/pricing',
   keywords: ['pricing logiciel immobilier', 'offre client pilote', 'outil pilotage immobilier'],
 });
@@ -20,28 +20,28 @@ export default function PricingPage() {
         <section className={styles.hero}>
           <div className={styles.heroGrid}>
             <div className={styles.heroContent}>
-              <div className={styles.eyebrow}>Pricing</div>
-              <h1 className={styles.heroTitle}>Une offre ouverte maintenant, deux offres visibles pour la suite.</h1>
+              <div className={styles.eyebrow}>Offres</div>
+              <h1 className={styles.heroTitle}>Une offre ouverte aujourd’hui. Deux offres prévues pour la suite.</h1>
               <p className={styles.heroLead}>
-                La seule offre activable aujourd’hui est le programme client
-                pilote. Les offres Simple et Pro sont affichées pour clarifier
-                la trajectoire commerciale, sans promettre un périmètre non prêt.
+                Le programme client pilote est la seule offre accessible maintenant.
+                Simple et Pro restent visibles pour donner une lecture claire de la suite,
+                sans promettre trop tôt ce qui n’est pas prêt.
               </p>
               <div className={styles.actionRow}>
                 <Link className={styles.buttonPrimary} href="/client-pilote">
                   Demander un accès pilote
                 </Link>
                 <Link className={styles.buttonSecondary} href="/blog">
-                  Lire le blog
+                  Découvrir le blog
                 </Link>
               </div>
             </div>
             <aside className={styles.heroPanel}>
-              <p className={styles.kicker}>Principes</p>
+              <p className={styles.kicker}>Repères</p>
               <ul className={styles.panelList}>
-                <li>Client pilote mis en avant et activable</li>
-                <li>Simple et Pro affichés comme à venir</li>
-                <li>Aucune promesse détaillée sur un périmètre encore mouvant</li>
+                <li>Client pilote accessible sur sélection</li>
+                <li>Simple et Pro clairement affichés comme à venir</li>
+                <li>Pas de promesse détaillée sur un périmètre encore mouvant</li>
               </ul>
             </aside>
           </div>
@@ -87,7 +87,7 @@ export default function PricingPage() {
         <section className={styles.ctaBand}>
           <div className={styles.ctaText}>
             <div className={styles.eyebrow}>Aujourd’hui</div>
-            <h2 className={styles.sectionTitle}>Le bon CTA reste le programme client pilote.</h2>
+            <h2 className={styles.sectionTitle}>Le bon point d’entrée reste le programme client pilote.</h2>
             <p className={styles.sectionLead}>
               Si vous avez déjà des opérations concrètes à arbitrer ou à piloter,
               c’est la seule porte d’entrée actionnable maintenant.
@@ -98,7 +98,7 @@ export default function PricingPage() {
               Découvrir le programme client pilote
             </Link>
             <Link className={styles.buttonGhost} href="/analyse-projet-immobilier">
-              Voir les pages métier
+              Découvrir l’approche Axelys
             </Link>
           </div>
         </section>

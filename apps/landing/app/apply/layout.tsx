@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Formulaire client pilote',
   description:
-    'Page utilitaire non indexée pour déposer une demande d’accès au programme client pilote Axelys.',
+    'Demande d’accès directe au programme client pilote Axelys.',
   alternates: {
     canonical: '/client-pilote',
   },

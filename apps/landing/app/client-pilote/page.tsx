@@ -25,11 +25,11 @@ export default function ClientPilotePage() {
           <div className={styles.heroGrid}>
             <div className={styles.heroContent}>
               <div className={styles.eyebrow}>Programme client pilote</div>
-              <h1 className={styles.heroTitle}>Une porte d’entrée sérieuse pour tester Axelys sur vos vrais dossiers.</h1>
+              <h1 className={styles.heroTitle}>Tester Axelys sur vos vrais dossiers, dans un cadre clair.</h1>
               <p className={styles.heroLead}>
-                L’offre client pilote est la seule offre activable aujourd’hui.
-                Elle s’adresse aux profils qui veulent utiliser Axelys sur des
-                cas réels, avec un cadre clair et un accès progressif.
+                Client pilote est la seule offre accessible aujourd’hui. Elle s’adresse aux
+                profils qui veulent décider avant achat et piloter après acquisition sur des
+                cas réels.
               </p>
               <ul className={styles.highlightList}>
                 {clientPilotSignals.map((signal) => (
@@ -41,7 +41,7 @@ export default function ClientPilotePage() {
                   Candidater maintenant
                 </Link>
                 <Link className={styles.buttonSecondary} href="/pricing">
-                  Voir le pricing complet
+                  Voir les offres
                 </Link>
               </div>
             </div>
@@ -49,9 +49,9 @@ export default function ClientPilotePage() {
               <p className={styles.kicker}>Cadre</p>
               <h2 className={styles.panelTitle}>Sobre, crédible, sans faux raccourci.</h2>
               <ul className={styles.panelList}>
-                <li>Pas d’inscription automatique</li>
-                <li>Pas de simulateur public ouvert à tous</li>
-                <li>Accès réservé aux contextes réellement pertinents</li>
+                <li>Accès sur sélection</li>
+                <li>Tarif pilote affiché clairement</li>
+                <li>Usage réservé aux contextes pertinents</li>
               </ul>
             </aside>
           </div>
@@ -81,14 +81,13 @@ export default function ClientPilotePage() {
               <div className={styles.eyebrow}>Demande d’accès</div>
               <h2 className={styles.sectionTitle}>Présentez votre contexte.</h2>
               <p className={styles.sectionLead}>
-                On cherche surtout à comprendre si Axelys peut déjà vous aider
-                à décider avant achat et à piloter après acquisition sur des
-                opérations concrètes.
+                On cherche à comprendre si Axelys peut déjà vous aider à arbitrer et à
+                piloter sur des opérations réelles.
               </p>
               <ul className={styles.signalList}>
                 <li>Tarif pilote à 15 € / mois pour les profils retenus</li>
                 <li>Simple et Pro restent à venir</li>
-                <li>Le détail de la logique métier reste privé</li>
+                <li>Accès ouvert seulement si l’usage est pertinent maintenant</li>
               </ul>
             </div>
             <PilotApplicationForm
@@ -104,7 +103,7 @@ export default function ClientPilotePage() {
         <section className={styles.section}>
           <div className={styles.sectionHeading}>
             <div className={styles.eyebrow}>FAQ</div>
-            <h2 className={styles.sectionTitle}>Ce qu’il faut savoir avant d’envoyer une demande</h2>
+            <h2 className={styles.sectionTitle}>Les questions les plus fréquentes</h2>
           </div>
           <div className={styles.faqGrid}>
             {clientPilotFaq.map((item) => (
