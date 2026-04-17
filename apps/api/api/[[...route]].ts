@@ -19,16 +19,37 @@ async function getApp() {
   return appPromise;
 }
 
-function ensureApiPrefix(url: string | undefined) {
-  if (!url || url.startsWith('/api')) {
-    return url;
+function normalizeRequestUrl(url: string | undefined) {
+  if (!url) {
+    return '/api';
   }
 
-  return `/api${url.startsWith('/') ? url : `/${url}`}`;
+  const parsedUrl =
+    url.startsWith('http://') || url.startsWith('https://')
+      ? new URL(url).pathname
+      : url;
+  const normalizedPath = parsedUrl.startsWith('/')
+    ? parsedUrl
+    : `/${parsedUrl}`;
+
+  if (
+    normalizedPath === '/api' ||
+    normalizedPath.startsWith('/api/') ||
+    normalizedPath.startsWith('/_next/') ||
+    normalizedPath === '/favicon.ico'
+  ) {
+    return normalizedPath;
+  }
+
+  return `/api${normalizedPath}`;
 }
 
 export default async function handler(req: any, res: any) {
-  req.url = ensureApiPrefix(req.url);
+  req.url = normalizeRequestUrl(
+    req.headers?.['x-original-url'] ||
+      req.headers?.['x-rewrite-url'] ||
+      req.url,
+  );
 
   const app = await getApp();
   const httpAdapter = app.getHttpAdapter().getInstance();

@@ -105,6 +105,30 @@ describe('API e2e', () => {
     expect(response.body.role).toBe('ADMIN');
   });
 
+  it('answers CORS preflight requests on auth routes with the API prefix', async () => {
+    const response = await request(app.getHttpServer())
+      .options('/api/auth/login')
+      .set('Origin', 'https://app.axelys.app')
+      .set('Access-Control-Request-Method', 'POST')
+      .set('Access-Control-Request-Headers', 'content-type,authorization')
+      .expect(204);
+
+    expect(response.headers['access-control-allow-origin']).toBe(
+      'https://app.axelys.app',
+    );
+    expect(response.headers['access-control-allow-credentials']).toBe('true');
+    expect(response.headers['access-control-allow-methods']).toContain(
+      'OPTIONS',
+    );
+    expect(response.headers['access-control-allow-methods']).toContain('POST');
+    expect(response.headers['access-control-allow-headers']).toContain(
+      'Content-Type',
+    );
+    expect(response.headers['access-control-allow-headers']).toContain(
+      'Authorization',
+    );
+  });
+
   it('creates and lists ideas per organization, then supports vote and unvote', async () => {
     const actor = await seedUser(prisma, {
       organizationName: 'Org Ideas',

@@ -9,19 +9,55 @@ const defaultAllowedOrigins = [
   'http://127.0.0.1:3001',
 ];
 
+const defaultAllowedMethods = [
+  'GET',
+  'HEAD',
+  'PUT',
+  'PATCH',
+  'POST',
+  'DELETE',
+  'OPTIONS',
+];
+
+const defaultAllowedHeaders = [
+  'Content-Type',
+  'Authorization',
+  'Accept',
+  'Origin',
+  'X-Requested-With',
+];
+
+function normalizeOrigin(origin: string) {
+  return origin.trim().replace(/\/$/, '');
+}
+
 function resolveAllowedOrigins() {
   const configuredOrigins = process.env.ALLOWED_ORIGINS?.split(',')
-    .map((origin) => origin.trim().replace(/\/$/, ''))
+    .map(normalizeOrigin)
     .filter(Boolean);
 
   return configuredOrigins?.length ? configuredOrigins : defaultAllowedOrigins;
 }
 
 export function configureApp(app: INestApplication) {
+  const allowedOrigins = resolveAllowedOrigins();
+
   app.setGlobalPrefix('api');
   app.enableCors({
-    origin: resolveAllowedOrigins(),
+    origin(origin, callback) {
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+
+      callback(null, allowedOrigins.includes(normalizeOrigin(origin)));
+    },
     credentials: true,
+    methods: defaultAllowedMethods,
+    allowedHeaders: defaultAllowedHeaders,
+    optionsSuccessStatus: 204,
+    preflightContinue: false,
+    maxAge: 86400,
   });
   app.useGlobalPipes(
     new ValidationPipe({

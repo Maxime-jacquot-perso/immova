@@ -69,6 +69,7 @@ Les fichiers d'upload et les temporaires de test sont locaux et ignores par Git.
 - `vercel-build` construit d abord les packages workspace runtime requis (ex: `@axelys/legal`), puis execute `prisma generate` ; Vercel compile ensuite la Function a partir du handler `api/`
 - pour le projet Vercel de l'API, laisser l'`Output Directory` vide afin de deployer la Function, pas un dossier build statique
 - le `Root Directory` du projet Vercel doit pointer vers `apps/api`
+- l'URL publique attendue cote frontend reste `https://api.axelys.app/api/...`; si un projet Vercel a ete historicamente configure avec `apps/api/api` comme `Root Directory`, le handler de compatibilite `apps/api/api/api/[[...route]].ts` conserve le bon chemin public `/api/*`, mais la configuration cible a garder reste `apps/api`
 
 ## Reference
 
