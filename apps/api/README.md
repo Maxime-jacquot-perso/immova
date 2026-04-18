@@ -66,9 +66,10 @@ Les fichiers d'upload et les temporaires de test sont locaux et ignores par Git.
 
 - le point d'entree Vercel de l'API est `apps/api/api/[[...route]].ts`
 - `src/main.ts` reste l'entree locale / Nest classique pour le developpement
-- `vercel-build` construit d abord les packages workspace runtime requis (ex: `@axelys/legal`), puis execute `prisma generate` ; Vercel compile ensuite la Function a partir du handler `api/`
+- `vercel:prepare` construit d abord les packages workspace runtime requis (ex: `@axelys/legal`), puis execute `prisma generate` avant la compilation des Functions `api/`
 - le projet Vercel de l'API ne doit pas utiliser le preset `NestJS` pour ce repo ; il doit rester en mode `Other`, ce qui est maintenant force par `apps/api/vercel.json`
-- le `Build Command` Vercel doit rester vide ; le codegen requis pour Vercel est execute via `installCommand` (`pnpm install && pnpm vercel-build`) afin d eviter une attente inutile d artefact statique (`public`)
+- le `Build Command` Vercel doit rester vide ; `apps/api/vercel.json` le force maintenant a `null` pour neutraliser un eventuel override dashboard
+- le codegen requis pour Vercel est execute via `installCommand` (`pnpm install && pnpm vercel:prepare`) et le script ne doit pas s appeler `vercel-build`, sinon Vercel le relance automatiquement comme etape de build
 - pour le projet Vercel de l'API, laisser l'`Output Directory` vide afin de deployer la Function, pas un dossier build statique
 - le `Root Directory` du projet Vercel doit pointer vers `apps/api`
 - l'URL publique attendue cote frontend reste `https://api.axelys.app/api/...`; si un projet Vercel a ete historicamente configure avec `apps/api/api` comme `Root Directory`, le handler de compatibilite `apps/api/api/api/[[...route]].ts` conserve le bon chemin public `/api/*`, mais la configuration cible a garder reste `apps/api`

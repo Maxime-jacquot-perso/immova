@@ -9,7 +9,7 @@
     "build:shared": "pnpm --filter @axelys/legal build",
     "prebuild": "pnpm build:shared && prisma generate",
     "build": "nest build",
-    "vercel-build": "pnpm build:shared && prisma generate",
+    "vercel:prepare": "pnpm build:shared && prisma generate",
     "format": "prettier --write \"src/**/*.ts\" \"prisma/**/*.ts\"",
     "prestart": "pnpm build:shared && prisma generate",
     "start": "nest start",
