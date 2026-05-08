@@ -1,6 +1,11 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
+  "functions": {
+    "api/**/*.ts": {
+      "includeFiles": "node_modules/@axelys/legal/**"
+    }
+  },
   "buildCommand": null,
   "outputDirectory": null,
   "installCommand": "pnpm install && pnpm vercel:prepare"
