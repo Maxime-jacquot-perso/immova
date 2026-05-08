@@ -74,7 +74,9 @@ Les fichiers d'upload et les temporaires de test sont locaux et ignores par Git.
 - le codegen requis pour Vercel est execute via `installCommand` (`pnpm install && pnpm vercel:prepare`) et le script ne doit pas s appeler `vercel-build`, sinon Vercel le relance automatiquement comme etape de build
 - pour le projet Vercel de l'API, laisser l'`Output Directory` vide afin de deployer la Function, pas un dossier build statique
 - le `Root Directory` du projet Vercel doit pointer vers `apps/api`
-- l'URL publique attendue cote frontend reste `https://api.axelys.app/api/...`; si un projet Vercel a ete historicamente configure avec `apps/api/api` comme `Root Directory`, le handler de compatibilite `apps/api/api/api/[[...route]].ts` conserve le bon chemin public `/api/*`, mais la configuration cible a garder reste `apps/api`
+- l'URL publique attendue cote frontend reste `https://api.axelys.app/api/...`
+- il n existe volontairement qu un seul point d entree Vercel versionne pour l API : `apps/api/api/[[...route]].ts`
+- si `api.axelys.app` retourne `404`, il faut corriger la configuration du projet Vercel (domaine, projet cible, `Root Directory = apps/api`) au lieu d ajouter des handlers de compatibilite dans le repo
 
 ## Reference
 
