@@ -64,7 +64,7 @@ Les fichiers d'upload et les temporaires de test sont locaux et ignores par Git.
 
 ## Deploiement Vercel
 
-- le point d'entree Vercel de l'API est `apps/api/api/[[...route]].ts`
+- les points d'entree Vercel de l'API sont `apps/api/api/index.ts` pour `/api` et `apps/api/api/[...route].ts` pour `/api/*`
 - `src/main.ts` reste l'entree locale / Nest classique pour le developpement
 - `vercel:prepare` construit d abord les packages workspace runtime requis (ex: `@axelys/legal`), puis execute `prisma generate` avant la compilation des Functions `api/`
 - `apps/api/package.json` ne doit pas exposer de script `build` ; sinon Vercel relance automatiquement `pnpm run build` et attend un output statique (`public`) qui n'existe pas sur cette API serverless
@@ -75,7 +75,7 @@ Les fichiers d'upload et les temporaires de test sont locaux et ignores par Git.
 - pour le projet Vercel de l'API, laisser l'`Output Directory` vide afin de deployer la Function, pas un dossier build statique
 - le `Root Directory` du projet Vercel doit pointer vers `apps/api`
 - l'URL publique attendue cote frontend reste `https://api.axelys.app/api/...`
-- il n existe volontairement qu un seul point d entree Vercel versionne pour l API : `apps/api/api/[[...route]].ts`
+- la structure Vercel versionnee de l API reste volontairement simple et explicite : `apps/api/api/index.ts` pour la base `/api` et `apps/api/api/[...route].ts` pour les routes imbriquees
 - si `api.axelys.app` retourne `404`, il faut corriger la configuration du projet Vercel (domaine, projet cible, `Root Directory = apps/api`) au lieu d ajouter des handlers de compatibilite dans le repo
 
 ## Reference
