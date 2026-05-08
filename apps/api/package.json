@@ -7,9 +7,10 @@
   "license": "UNLICENSED",
   "scripts": {
     "build:shared": "pnpm --filter @axelys/legal build",
-    "prepare:runtime": "pnpm build:shared && prisma generate",
+    "materialize:runtime": "node ./scripts/vercel/materialize-runtime-dependencies.cjs",
+    "prepare:runtime": "pnpm build:shared && prisma generate && pnpm materialize:runtime",
     "compile": "pnpm prepare:runtime && nest build",
-    "vercel:prepare": "pnpm build:shared && prisma generate",
+    "vercel:prepare": "pnpm prepare:runtime",
     "format": "prettier --write \"src/**/*.ts\" \"prisma/**/*.ts\"",
     "prestart": "pnpm prepare:runtime",
     "start": "nest start",

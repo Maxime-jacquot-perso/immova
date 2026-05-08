@@ -572,7 +572,7 @@ Notes utiles :
 - en production, `MAIL_FROM` doit rester `Axelys <no-reply@axelys.app>`
 - toute future feature qui genere des emails, callbacks, liens de reset, invitations ou URLs absolues doit reutiliser `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_APP_URL`, `API_URL`, `APP_WEB_URL`, `ALLOWED_ORIGINS` et `VITE_API_URL` au lieu d une URL codée en dur
 - le deploiement Vercel de l API doit rester simple : `Root Directory = apps/api`, avec `apps/api/api/index.ts` pour `/api` et `apps/api/api/[...route].ts` pour `/api/*`
-- le package workspace runtime `@axelys/legal` doit etre explicitement inclus dans le bundle Vercel de l API via `apps/api/vercel.json` pour eviter les erreurs `Cannot find module '@axelys/legal'` en serverless
+- en pratique, le packaging Vercel de `apps/api` doit materialiser des copies locales de `@axelys/legal`, `@prisma/client` et `.prisma/client` dans `apps/api/node_modules` avant le bundling, car les symlinks pnpm remontant vers le `node_modules` racine du monorepo ne sont pas fiables pour les Functions serverless
 - Gmail fonctionne en SMTP simple avec `smtp.gmail.com`, le port `465` et un mot de passe d application
 - le login existant reste en place ; l activation redirige ensuite vers `/login`
 
