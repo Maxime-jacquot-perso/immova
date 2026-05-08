@@ -10,7 +10,7 @@
     "build": "pnpm build:landing && pnpm build:web && pnpm build:api",
     "build:landing": "cd apps/landing && pnpm build",
     "build:web": "cd apps/web && pnpm build",
-    "build:api": "cd apps/api && pnpm build",
+    "build:api": "cd apps/api && pnpm compile",
     "lint:landing": "cd apps/landing && pnpm lint",
     "lint": "pnpm lint:landing && pnpm lint:web && pnpm lint:api",
     "test:e2e:api": "cd apps/api && pnpm test:e2e",
