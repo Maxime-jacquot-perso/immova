@@ -16,12 +16,18 @@ import {
 } from '@prisma/client';
 
 export class ListAdminUsersQueryDto {
-  @Transform(({ value }) => Number(value ?? 1))
+  @Transform(({ value }) => {
+    if (value === undefined || value === null || value === '') return 1;
+    return Number(value);
+  })
   @IsInt()
   @Min(1)
   page = 1;
 
-  @Transform(({ value }) => Number(value ?? 10))
+  @Transform(({ value }) => {
+    if (value === undefined || value === null || value === '') return 10;
+    return Number(value);
+  })
   @IsInt()
   @Min(1)
   @Max(50)

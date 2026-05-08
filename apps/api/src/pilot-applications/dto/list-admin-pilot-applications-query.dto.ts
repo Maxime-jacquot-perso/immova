@@ -11,12 +11,18 @@ import {
 } from 'class-validator';
 
 export class ListAdminPilotApplicationsQueryDto {
-  @Transform(({ value }) => Number(value ?? 1))
+  @Transform(({ value }) => {
+    if (value === undefined || value === null || value === '') return 1;
+    return Number(value);
+  })
   @IsInt()
   @Min(1)
   page = 1;
 
-  @Transform(({ value }) => Number(value ?? 20))
+  @Transform(({ value }) => {
+    if (value === undefined || value === null || value === '') return 20;
+    return Number(value);
+  })
   @IsInt()
   @Min(1)
   @Max(100)
