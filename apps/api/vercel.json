@@ -7,6 +7,5 @@
     }
   },
   "buildCommand": null,
-  "outputDirectory": null,
-  "installCommand": "cd ../.. && pnpm install --frozen-lockfile && cd apps/api && pnpm vercel:prepare"
+  "outputDirectory": null
 }

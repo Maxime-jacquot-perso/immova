@@ -11,6 +11,7 @@
     "prepare:runtime": "pnpm build:shared && prisma generate && pnpm materialize:runtime",
     "compile": "pnpm prepare:runtime && nest build",
     "vercel:prepare": "pnpm prepare:runtime",
+    "postinstall": "prisma generate && node ./scripts/vercel/materialize-runtime-dependencies.cjs",
     "format": "prettier --write \"src/**/*.ts\" \"prisma/**/*.ts\"",
     "prestart": "pnpm prepare:runtime",
     "start": "nest start",
