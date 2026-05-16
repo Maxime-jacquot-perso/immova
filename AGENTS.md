@@ -281,6 +281,11 @@ Entites repoussees :
 - `/pilot/subscribe/cancel`
 - `/pricing`
 - `/client-pilote`
+- `/outils`
+- `/outils/calcul-rentabilite-locative`
+- `/outils/calcul-frais-notaire`
+- `/outils/calcul-cashflow-immobilier`
+- `/outils/simulation-investissement-locatif`
 - `/analyse-rentabilite-immobiliere`
 - `/pilotage-operation-immobiliere`
 - `/analyse-projet-immobilier`
@@ -499,6 +504,7 @@ Front :
 - gestion des administrateurs avec creation de compte interne et changement de role selon le niveau autorise
 - audit log admin exploitable depuis l'UI interne
 - site marketing public multi-pages avec `/`, `/pricing`, `/client-pilote`, `/analyse-rentabilite-immobiliere`, `/analyse-projet-immobilier`, `/pilotage-operation-immobiliere`, `/blog` et `/blog/:slug`
+- section publique `/outils` avec calculateurs simplifies et indexables pour `calcul-rentabilite-locative`, `calcul-frais-notaire`, `calcul-cashflow-immobilier` et `simulation-investissement-locatif`, relies aux pages metier, au blog et au programme client pilote sans exposer le moteur complet prive
 - home centree sur l offre `Client pilote`, avec `Simple` et `Pro` visibles mais grisees / non activables
 - pricing public a 3 offres dont seule l offre `Client pilote` est actionnable aujourd hui
 - pages SEO editoriales sur rentabilite, analyse de projet et pilotage, sans simulateur public ni exposition detaillee du moteur metier

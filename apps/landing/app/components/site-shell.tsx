@@ -96,14 +96,13 @@ export function SiteShell({
       <footer className={styles.footer}>
         <div className={styles.footerGrid}>
           <div className={styles.footerIntro}>
-            <div className={styles.eyebrow}>Axelys</div>
             <h2 className={styles.sectionTitle}>
               Outil de décision et de pilotage immobilier.
             </h2>
             <p className={styles.footerCopy}>
               Axelys aide à décider avant achat puis à garder une lecture fiable des
-              projets réels. Le programme client pilote est la porte d’entrée ouverte
-              aujourd’hui.
+              projets réels. Le programme client pilote permet de démarrer sur des
+              dossiers concrets dès aujourd’hui.
             </p>
             <div className={styles.actionRow}>
               <LandingCtaLink

@@ -1,7 +1,7 @@
 import {
   getLegalDocumentDefinition,
   type LegalDocumentType,
-} from '../../../../packages/legal/src';
+} from '@axelys/legal';
 import {
   legalContactEmail,
   publisherName,
@@ -20,12 +20,11 @@ type LegalPageContent = {
   sections: LegalSection[];
 };
 
-const hostPlaceholder =
-  '[À compléter : hébergeur de production effectif, adresse et contact]';
-const publicationDirectorPlaceholder =
-  '[À compléter : directeur de la publication]';
-const mailProviderPlaceholder =
-  '[À compléter : prestataire email transactionnel effectivement utilisé en production]';
+const companyCapital = '2 000 €';
+const publicationDirection =
+  'REGERA, représentée par sa gérance en exercice';
+const hostingDisclosure = `L’hébergement et le déploiement du site public et de l’application reposent sur des prestataires techniques sélectionnés par ${publisherName} pour l’infrastructure, l’exécution et la disponibilité du service. Les coordonnées détaillées de ces prestataires peuvent être communiquées sur demande à ${legalContactEmail}.`;
+const mailProviderDisclosure = `prestataire de messagerie transactionnelle sélectionné par ${publisherName} selon la configuration technique en vigueur`;
 
 export const legalPageContentByType: Record<
   LegalDocumentType,
@@ -38,20 +37,20 @@ export const legalPageContentByType: Record<
       {
         title: 'Éditeur du site et de la solution',
         paragraphs: [
-          `${publisherName}, SARL au capital social [À compléter si nécessaire], immatriculée au RCS sous le numéro SIREN 934 276 528, dont le siège social est situé 9 rue du Stade, 68180 Horbourg-Wihr, France.`,
+          `${publisherName}, SARL au capital social de ${companyCapital}, immatriculée au RCS sous le numéro SIREN 934 276 528, dont le siège social est situé 9 rue du Stade, 68180 Horbourg-Wihr, France.`,
           `${siteName} est exploité comme marque, nom commercial et solution SaaS édités par ${publisherName}. ${siteName} n’est pas une société distincte.`,
         ],
         bullets: [
           'SIRET siège : 934 276 528 00015',
           'TVA intracommunautaire : FR46 934 276 528',
           `Email de contact : ${legalContactEmail}`,
-          `Directeur de la publication : ${publicationDirectorPlaceholder}`,
+          `Direction de la publication : ${publicationDirection}`,
         ],
       },
       {
         title: 'Hébergement',
         paragraphs: [
-          `L’infrastructure d’hébergement et d’exécution du site public et de l’application doit être renseignée dans le dossier contractuel d’exploitation. À ce jour, la mention de référence à publier est la suivante : ${hostPlaceholder}.`,
+          hostingDisclosure,
         ],
       },
       {
@@ -291,8 +290,8 @@ export const legalPageContentByType: Record<
         bullets: [
           'Paiement et portail de facturation : Stripe',
           'Mesure d’audience et analytics de la landing, après consentement : PostHog et Vercel Speed Insights',
-          `Email transactionnel : ${mailProviderPlaceholder}`,
-          `Hébergement et infrastructure applicative : ${hostPlaceholder}`,
+          `Email transactionnel : ${mailProviderDisclosure}`,
+          `Hébergement et infrastructure applicative : prestataires techniques sélectionnés par ${publisherName} pour l’hébergement, l’exécution et la disponibilité du service`,
         ],
       },
       {

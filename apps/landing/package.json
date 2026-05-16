@@ -10,6 +10,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@axelys/legal": "workspace:*",
     "@vercel/speed-insights": "^2.0.0",
     "next": "^16.2.1",
     "posthog-js": "^1.369.0",

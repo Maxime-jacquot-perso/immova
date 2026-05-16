@@ -3,7 +3,7 @@ import {
   getLegalDocumentDefinition,
   listLegalDocumentDefinitions,
   type LegalDocumentType,
-} from '../../../../packages/legal/src';
+} from '@axelys/legal';
 import styles from './legal-links.module.css';
 
 type LegalLinksProps = {

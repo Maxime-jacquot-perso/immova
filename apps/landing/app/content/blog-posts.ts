@@ -17,6 +17,7 @@ export type BlogPost = {
   featured?: boolean;
   intro: string[];
   sections: BlogPostSection[];
+  relatedToolPaths: string[];
   relatedPagePaths: string[];
   relatedPostSlugs: string[];
 };
@@ -31,7 +32,7 @@ export const blogPosts: BlogPost[] = [
     excerpt:
       'Une rentabilité “propre” sur le papier ne suffit pas. Une analyse sérieuse relie coût total, cash mobilisé, durée, risques et capacité à piloter la suite.',
     publishedAt: '2026-04-17',
-    updatedAt: '2026-04-17',
+    updatedAt: '2026-05-14',
     readingTime: '8 min',
     category: 'Analyse',
     keywords: [
@@ -87,6 +88,10 @@ export const blogPosts: BlogPost[] = [
         ],
       },
     ],
+    relatedToolPaths: [
+      '/outils/calcul-rentabilite-locative',
+      '/outils/simulation-investissement-locatif',
+    ],
     relatedPagePaths: [
       '/analyse-rentabilite-immobiliere',
       '/analyse-projet-immobilier',
@@ -105,7 +110,7 @@ export const blogPosts: BlogPost[] = [
     excerpt:
       'Le tableur donne souvent une réponse avant d’avoir posé le cadre. C’est pratique, mais dangereux quand il faut vraiment arbitrer.',
     publishedAt: '2026-04-17',
-    updatedAt: '2026-04-17',
+    updatedAt: '2026-05-14',
     readingTime: '7 min',
     category: 'Décision',
     keywords: [
@@ -160,6 +165,10 @@ export const blogPosts: BlogPost[] = [
         ],
       },
     ],
+    relatedToolPaths: [
+      '/outils/calcul-rentabilite-locative',
+      '/outils/calcul-cashflow-immobilier',
+    ],
     relatedPagePaths: [
       '/analyse-rentabilite-immobiliere',
       '/pilotage-operation-immobiliere',
@@ -178,7 +187,7 @@ export const blogPosts: BlogPost[] = [
     excerpt:
       'Avant de s’engager, il faut quelques indicateurs vraiment décisionnels et pas une pluie de chiffres décoratifs.',
     publishedAt: '2026-04-17',
-    updatedAt: '2026-04-17',
+    updatedAt: '2026-05-14',
     readingTime: '7 min',
     category: 'Analyse',
     keywords: [
@@ -233,6 +242,10 @@ export const blogPosts: BlogPost[] = [
         ],
       },
     ],
+    relatedToolPaths: [
+      '/outils/calcul-frais-notaire',
+      '/outils/simulation-investissement-locatif',
+    ],
     relatedPagePaths: [
       '/analyse-projet-immobilier',
       '/analyse-rentabilite-immobiliere',
@@ -251,7 +264,7 @@ export const blogPosts: BlogPost[] = [
     excerpt:
       'Une dérive utile à voir est une dérive encore rattrapable. Le pilotage sert précisément à lire ces signaux avant le constat post-mortem.',
     publishedAt: '2026-04-17',
-    updatedAt: '2026-04-17',
+    updatedAt: '2026-05-14',
     readingTime: '8 min',
     category: 'Pilotage',
     keywords: [
@@ -307,6 +320,9 @@ export const blogPosts: BlogPost[] = [
         ],
       },
     ],
+    relatedToolPaths: [
+      '/outils/calcul-cashflow-immobilier',
+    ],
     relatedPagePaths: [
       '/pilotage-operation-immobiliere',
       '/client-pilote',
@@ -325,7 +341,7 @@ export const blogPosts: BlogPost[] = [
     excerpt:
       'Centraliser, ce n’est pas empiler des données. C’est rendre les arbitrages plus rapides, plus fiables et moins dépendants de la mémoire du moment.',
     publishedAt: '2026-04-17',
-    updatedAt: '2026-04-17',
+    updatedAt: '2026-05-14',
     readingTime: '6 min',
     category: 'Organisation',
     keywords: [
@@ -366,6 +382,9 @@ export const blogPosts: BlogPost[] = [
           'Autrement dit: pas besoin d’un ERP pour mieux trancher. Il faut surtout un cadre lisible, capable de relier l’avant achat, le projet réel et les dérives importantes.',
         ],
       },
+    ],
+    relatedToolPaths: [
+      '/outils/simulation-investissement-locatif',
     ],
     relatedPagePaths: [
       '/pilotage-operation-immobiliere',

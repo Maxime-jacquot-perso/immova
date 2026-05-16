@@ -140,6 +140,9 @@ importers:
 
   apps/landing:
     dependencies:
+      '@axelys/legal':
+        specifier: workspace:*
+        version: link:../../packages/legal
       '@vercel/speed-insights':
         specifier: ^2.0.0
         version: 2.0.0(next@16.2.1(@opentelemetry/api@1.9.1)(@playwright/test@1.58.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react@19.2.4)
@@ -183,6 +186,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@axelys/legal':
+        specifier: workspace:*
+        version: link:../../packages/legal
       '@hookform/resolvers':
         specifier: ^5.2.2
         version: 5.2.2(react-hook-form@7.72.0(react@19.2.4))

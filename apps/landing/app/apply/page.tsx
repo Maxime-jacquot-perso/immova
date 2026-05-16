@@ -17,9 +17,8 @@ export default function ApplyPage() {
               <div className={styles.eyebrow}>Demande directe</div>
               <h1 className={styles.heroTitle}>Déposer une demande d’accès au programme client pilote</h1>
               <p className={styles.heroLead}>
-                Cette page vous permet d’aller directement au formulaire si vous avez déjà
-                le bon contexte en tête et souhaitez tester Axelys sur des opérations
-                réelles.
+                Accédez directement au formulaire si vous souhaitez présenter votre
+                activité, vos projets et vos besoins.
               </p>
               <ul className={styles.highlightList}>
                 <li>Accès sur sélection</li>
@@ -52,7 +51,7 @@ export default function ApplyPage() {
               submitLabel="Envoyer ma demande"
               successTitle="Demande reçue"
               successDescription="Si votre contexte correspond au programme client pilote, nous reviendrons vers vous pour la suite."
-              successNote="Le tri reste volontairement sélectif. On préfère être clairs plutôt que promettre un accès à tout le monde."
+              successNote="Nous revenons vers vous directement si votre demande correspond au programme."
               returnHref="/client-pilote"
             />
           </div>

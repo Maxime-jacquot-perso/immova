@@ -37,6 +37,11 @@ export type PricingPlan = {
 
 export const marketingNavigation: NavigationItem[] = [
   {
+    href: '/outils',
+    label: 'Outils',
+    matches: ['/outils'],
+  },
+  {
     href: '/pricing',
     label: 'Offres',
   },
@@ -65,6 +70,7 @@ export const footerLinkGroups: FooterLinkGroup[] = [
     title: 'Axelys',
     links: [
       { href: '/', label: 'Accueil' },
+      { href: '/outils', label: 'Outils immobiliers' },
       { href: '/pricing', label: 'Offres' },
       { href: '/client-pilote', label: 'Programme client pilote' },
     ],
@@ -111,7 +117,7 @@ export const pricingPlans: PricingPlan[] = [
     priceLabel: '15 € / mois',
     priceDetail: 'Tarif pilote conservé pour les comptes retenus.',
     description:
-      'Le cadre ouvert aujourd’hui pour utiliser Axelys sur des opérations réelles, avec un retour direct à l’équipe.',
+      'Utilisez Axelys sur vos opérations réelles avec un accès accompagné pendant la phase pilote.',
     highlights: [
       'Accès à Axelys sur vos dossiers réels',
       'Suivi des projets, lots, dépenses, documents et indicateurs utiles',
@@ -119,7 +125,7 @@ export const pricingPlans: PricingPlan[] = [
       'Retour direct à l’équipe pendant la phase pilote',
     ],
     footnote:
-      'L’accès s’ouvre après validation de la demande. L’analyse détaillée et le suivi restent réservés aux comptes autorisés.',
+      'Votre demande est étudiée avant l’ouverture de l’accès.',
     featured: true,
     cta: {
       href: '/client-pilote',
@@ -135,16 +141,16 @@ export const pricingPlans: PricingPlan[] = [
     status: 'Bientôt disponible',
     statusTone: 'pending',
     priceLabel: 'À venir',
-    priceDetail: 'Offre en préparation pour un usage individuel plus cadré.',
+    priceDetail: 'Formule en préparation pour un usage individuel.',
     description:
-      'Une future offre pour les profils qui veulent un cadre simple et resserré, sans couche de complexité inutile.',
+      'Pour les investisseurs qui veulent un cadre de décision et de suivi plus resserré.',
     highlights: [
       'Pensée pour un usage individuel',
       'Périmètre plus resserré que l’offre Pro',
       'Visible aujourd’hui, non activable pour le moment',
     ],
     footnote:
-      'Le périmètre reste volontairement prudent tant que le programme pilote n’a pas stabilisé les priorités.',
+      'L’ouverture sera annoncée dès que l’offre sera disponible.',
     disabled: true,
   },
   {
@@ -155,14 +161,14 @@ export const pricingPlans: PricingPlan[] = [
     priceLabel: 'À venir',
     priceDetail: 'Offre en préparation pour les structures multi-projets.',
     description:
-      'Une future offre pour les équipes qui veulent suivre plusieurs opérations avec une lecture portefeuille plus large.',
+      'Pour les équipes qui veulent suivre plusieurs opérations avec une lecture portefeuille plus large.',
     highlights: [
       'Pensée pour un usage multi-projets',
       'Lecture portefeuille plus large',
       'Visible aujourd’hui, non activable pour le moment',
     ],
     footnote:
-      'Rien n’est ouvert à la vente tant que le périmètre réel n’est pas assez stabilisé.',
+      'L’ouverture sera annoncée dès que l’offre sera disponible.',
     disabled: true,
   },
 ];
@@ -236,16 +242,16 @@ export const homeValueCards = [
 
 export const homePrivateCoreCards = [
   {
-    title: 'Pas de calculatrice gadget',
-    body: 'Vous découvrez le cadre, les cas d’usage et la valeur d’Axelys. L’analyse détaillée s’utilise ensuite dans un accès réservé.',
+    title: 'Des repères concrets',
+    body: 'Estimez un projet, identifiez ses points de vigilance et avancez avec des chiffres lisibles.',
   },
   {
-    title: 'Une méthode qui reste fiable',
-    body: 'Les décisions ne reposent pas sur un mini-calculateur simpliste ni sur des formules sorties de leur contexte.',
+    title: 'Une lecture qui tient dans le temps',
+    body: 'Les décisions reposent sur des chiffres relus dans leur contexte, puis sur un suivi qui ne repart pas de zéro.',
   },
   {
-    title: 'Du contenu utile',
-    body: 'Les pages et les articles répondent à de vraies questions métier et vous orientent vers la bonne porte d’entrée.',
+    title: 'Des méthodes directement utiles',
+    body: 'Guides, outils et articles vous aident à comparer un dossier, préparer une offre ou suivre une opération.',
   },
 ];
 
@@ -258,7 +264,7 @@ export const homeFaqItems = [
   {
     question: 'L’analyse détaillée est-elle ouverte à tous ?',
     answer:
-      'Non. L’usage détaillé s’ouvre dans Axelys une fois l’accès validé. Les pages publiques servent à comprendre l’approche et les cas d’usage.',
+      'Non. L’analyse détaillée s’ouvre dans Axelys une fois l’accès validé. Les contenus et outils ouverts donnent déjà un premier niveau de lecture.',
   },
   {
     question: 'Que peut-on activer aujourd’hui ?',
@@ -285,11 +291,11 @@ export const clientPilotSteps = [
   },
   {
     title: '2. Vérifier l’adéquation',
-    body: 'On regarde si Axelys peut être utile tout de suite et si le cadre pilote correspond bien à votre usage.',
+    body: 'On vérifie si Axelys peut vous aider dès maintenant et si le programme client pilote correspond bien à votre usage.',
   },
   {
     title: '3. Ouvrir l’accès',
-    body: 'Si le contexte est retenu, l’ouverture se fait progressivement, avec une souscription déclenchée au bon moment.',
+    body: 'Si votre demande est retenue, l’ouverture se fait progressivement, avec une souscription déclenchée au bon moment.',
   },
 ];
 
@@ -297,16 +303,16 @@ export const clientPilotFaq = [
   {
     question: 'Le tarif pilote est-il public ?',
     answer:
-      'Oui. Il est affiché clairement à 15 € / mois. En revanche, l’accès reste sélectif et n’est pas accordé automatiquement.',
+      'Oui. Il est affiché clairement à 15 € / mois. Les demandes sont simplement validées avant l’ouverture de l’accès.',
   },
   {
     question: 'Simple et Pro sont-ils disponibles ?',
     answer:
-      'Non. Ils restent visibles pour donner une lecture claire de la suite, mais ils ne sont pas encore activables.',
+      'Non. Leur ouverture sera annoncée lorsqu’ils seront disponibles.',
   },
   {
     question: 'Avez-vous accès à l’analyse détaillée dès maintenant ?',
     answer:
-      'Seulement si votre demande est validée. L’analyse détaillée, le suivi et les arbitrages s’utilisent ensuite dans Axelys.',
+      'Seulement si votre demande est validée. Vous retrouvez ensuite dans Axelys l’analyse détaillée, le suivi et les arbitrages du projet.',
   },
 ];

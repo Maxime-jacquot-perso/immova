@@ -30,8 +30,13 @@
 }
 
 .header,
-.main,
 .footer {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+}
+
+.main {
   position: relative;
   z-index: 1;
   width: min(1180px, 100%);
@@ -47,6 +52,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 20px;
+  width: 100%;
   padding: 16px 20px;
   border: 1px solid var(--border);
   border-radius: 24px;
@@ -173,6 +179,10 @@
   align-items: start;
 }
 
+.heroGridSingle {
+  grid-template-columns: 1fr;
+}
+
 .heroContent,
 .heroPanel,
 .card,
@@ -195,6 +205,10 @@
 .editorialSection,
 .ctaBand {
   padding: 28px;
+}
+
+.heroContentFocused {
+  width: 100%;
 }
 
 .eyebrow,
@@ -576,6 +590,10 @@
   font-weight: 700;
 }
 
+.breadcrumbSeparator {
+  color: var(--muted);
+}
+
 .editorialMain,
 .articleBody {
   display: grid;
@@ -615,6 +633,7 @@
 }
 
 .footer {
+  margin-top: 20px;
   padding-bottom: 24px;
 }
 
@@ -622,6 +641,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) repeat(3, minmax(160px, 1fr));
   gap: 24px;
+  width: 100%;
   padding: 28px;
   border: 1px solid var(--border);
   border-radius: 30px;
@@ -668,6 +688,103 @@
   font-weight: 700;
 }
 
+.calculatorPanel {
+  padding: 28px;
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: var(--shadow-soft);
+}
+
+.calculatorShell {
+  display: grid;
+  gap: 24px;
+}
+
+.fieldGrid,
+.resultGrid {
+  display: grid;
+  gap: 16px;
+}
+
+.fieldGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.resultGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.fieldGroup {
+  display: grid;
+  gap: 8px;
+}
+
+.fieldLabel,
+.resultLabel {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--muted-strong);
+}
+
+.fieldInput,
+.fieldSelect {
+  min-height: 50px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid rgba(207, 217, 230, 0.96);
+  border-radius: 14px;
+  background: rgba(248, 250, 252, 0.95);
+  color: var(--text);
+  font: inherit;
+}
+
+.fieldInput:focus,
+.fieldSelect:focus {
+  outline: 2px solid rgba(29, 78, 216, 0.2);
+  border-color: rgba(29, 78, 216, 0.4);
+}
+
+.fieldHint,
+.resultHelp,
+.disclaimer {
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.fieldHint {
+  font-size: 0.88rem;
+}
+
+.resultCard {
+  display: grid;
+  gap: 10px;
+  padding: 20px;
+  border: 1px solid rgba(207, 217, 230, 0.92);
+  border-radius: 22px;
+  background: rgba(247, 249, 252, 0.94);
+}
+
+.resultValue {
+  font-size: 1.55rem;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+
+.resultValuePositive {
+  color: #137333;
+}
+
+.resultValueNegative {
+  color: #b42318;
+}
+
+.resultHelp,
+.disclaimer {
+  margin: 0;
+  font-size: 0.94rem;
+}
+
 @media (max-width: 1080px) {
   .heroGrid,
   .formGrid,
@@ -680,7 +797,8 @@
   .cardGrid,
   .resourceGrid,
   .pricingGrid,
-  .articleGrid {
+  .articleGrid,
+  .resultGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -707,7 +825,9 @@
   .cardGrid,
   .resourceGrid,
   .pricingGrid,
-  .articleGrid {
+  .articleGrid,
+  .fieldGrid,
+  .resultGrid {
     grid-template-columns: 1fr;
   }
 
@@ -732,6 +852,7 @@
   .sidebarCard,
   .editorialSection,
   .ctaBand,
+  .calculatorPanel,
   .pricingCard,
   .card,
   .resourceCard,

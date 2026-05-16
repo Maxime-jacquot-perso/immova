@@ -4,9 +4,12 @@ import { OfferCard } from './components/offer-card';
 import { PilotApplicationForm } from './components/pilot-application-form';
 import { SiteShell } from './components/site-shell';
 import { ArticleCard } from './components/article-card';
+import { JsonLd } from './components/json-ld';
+import { ToolCard } from './components/tool-card';
 import styles from './components/marketing-ui.module.css';
 import { businessPageList } from './content/business-pages';
 import { getFeaturedBlogPosts } from './content/blog-posts';
+import { toolPageList } from './content/tool-pages';
 import {
   homeFaqItems,
   homeHeroHighlights,
@@ -15,8 +18,13 @@ import {
   homeValueCards,
   pricingPlans,
 } from './content/marketing-content';
-import { buildMetadata } from './seo';
-import { defaultDescription, siteName, siteUrl } from './site-config';
+import { absoluteUrl, buildMetadata } from './seo';
+import {
+  defaultDescription,
+  legalContactEmail,
+  siteName,
+  siteUrl,
+} from './site-config';
 
 export const metadata = buildMetadata({
   title: 'Outil de décision et de pilotage immobilier',
@@ -50,6 +58,11 @@ const softwareApplicationSchema = {
     price: '15',
     priceCurrency: 'EUR',
   },
+  provider: {
+    '@type': 'Organization',
+    name: siteName,
+    url: siteUrl,
+  },
 };
 
 const faqPageSchema = {
@@ -63,6 +76,16 @@ const faqPageSchema = {
       text: item.answer,
     },
   })),
+};
+
+const organizationSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: siteName,
+  url: siteUrl,
+  logo: absoluteUrl('/logo-simple-bleu.svg'),
+  email: legalContactEmail,
+  description: defaultDescription,
 };
 
 export default function HomePage() {
@@ -120,7 +143,7 @@ export default function HomePage() {
               <div className={styles.quickMeta}>
                 <span className={styles.quickMetaItem}>Offre ouverte : client pilote</span>
                 <span className={styles.quickMetaItem}>Simple et Pro visibles, non activables</span>
-                <span className={styles.quickMetaItem}>Accès détaillé réservé aux comptes autorisés</span>
+                <span className={styles.quickMetaItem}>Analyse détaillée accessible après validation</span>
               </div>
             </div>
 
@@ -195,8 +218,8 @@ export default function HomePage() {
             <div className={styles.eyebrow}>Le bon cadre</div>
             <h2 className={styles.sectionTitle}>Un cadre sérieux, pas un gadget.</h2>
             <p className={styles.sectionLead}>
-              Axelys montre comment mieux décider et mieux piloter. L’usage détaillé
-              s’ouvre ensuite dans un environnement réservé.
+              Axelys vous aide à estimer un dossier, à comparer plus vite et à garder une
+              lecture fiable quand le projet devient réel.
             </p>
           </div>
           <div className={styles.cardGrid}>
@@ -250,6 +273,22 @@ export default function HomePage() {
 
         <section className={styles.section}>
           <div className={styles.sectionHeading}>
+            <div className={styles.eyebrow}>Outils publics</div>
+            <h2 className={styles.sectionTitle}>Des calculateurs simples pour chiffrer un projet immobilier.</h2>
+            <p className={styles.sectionLead}>
+              Estimez rapidement la rentabilité, les frais de notaire, le cashflow ou un
+              premier scénario locatif avant de comparer plusieurs options.
+            </p>
+          </div>
+          <div className={styles.resourceGrid}>
+            {toolPageList.map((tool) => (
+              <ToolCard key={tool.href} tool={tool} />
+            ))}
+          </div>
+        </section>
+
+        <section className={styles.section}>
+          <div className={styles.sectionHeading}>
             <div className={styles.eyebrow}>Blog</div>
             <h2 className={styles.sectionTitle}>
               Des articles utiles pour préparer une décision sérieuse.
@@ -285,13 +324,14 @@ export default function HomePage() {
               <div className={styles.eyebrow}>Demande d’accès</div>
               <h2 className={styles.sectionTitle}>Candidater au programme client pilote</h2>
               <p className={styles.sectionLead}>
-                Le programme client pilote est la seule porte d’entrée ouverte aujourd’hui.
-                On retient les contextes où Axelys peut déjà apporter une vraie valeur.
+                Le programme client pilote est l’offre disponible aujourd’hui. Nous
+                répondons en priorité aux contextes où Axelys peut déjà apporter une
+                vraie valeur.
               </p>
               <ul className={styles.signalList}>
                 <li>Réponse humaine sur la pertinence du contexte</li>
                 <li>Offre pilote à 15 € / mois pour les profils retenus</li>
-                <li>Simple et Pro restent volontairement non activables</li>
+                <li>Simple et Pro restent en préparation</li>
               </ul>
               <div className={styles.actionRow}>
                 <LandingCtaLink
@@ -311,20 +351,13 @@ export default function HomePage() {
               submitLabel="Envoyer ma demande"
               successTitle="Demande reçue"
               successDescription="Votre demande a bien été transmise. Si le profil et le contexte correspondent au programme, on revient vers vous."
-              successNote="Pas de séquence automatique. Juste une réponse humaine quand le contexte correspond."
+              successNote="Le programme client pilote est l’offre disponible aujourd’hui."
             />
           </div>
         </section>
       </div>
 
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareApplicationSchema) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqPageSchema) }}
-      />
+      <JsonLd data={[organizationSchema, softwareApplicationSchema, faqPageSchema]} />
     </SiteShell>
   );
 }

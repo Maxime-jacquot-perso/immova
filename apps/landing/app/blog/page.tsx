@@ -1,7 +1,9 @@
 import { ArticleCard } from '../components/article-card';
 import { SiteShell } from '../components/site-shell';
+import { ToolCard } from '../components/tool-card';
 import styles from '../components/marketing-ui.module.css';
 import { blogPosts } from '../content/blog-posts';
+import { toolPageList } from '../content/tool-pages';
 import { buildMetadata } from '../seo';
 
 export const metadata = buildMetadata({
@@ -41,6 +43,23 @@ export default function BlogIndexPage() {
           <div className={styles.articleGrid}>
             {otherPosts.map((post) => (
               <ArticleCard key={post.slug} post={post} />
+            ))}
+          </div>
+        </section>
+
+        <section className={styles.sectionMuted}>
+          <div className={styles.sectionHeading}>
+            <div className={styles.eyebrow}>Outils publics</div>
+            <h2 className={styles.sectionTitle}>Chiffrer rapidement un projet immobilier.</h2>
+            <p className={styles.sectionLead}>
+              Obtenez un premier ordre de grandeur sur la rentabilité, les frais de
+              notaire, le cashflow ou un projet locatif, puis approfondissez si le dossier
+              le mérite.
+            </p>
+          </div>
+          <div className={styles.resourceGrid}>
+            {toolPageList.map((tool) => (
+              <ToolCard key={tool.href} tool={tool} />
             ))}
           </div>
         </section>

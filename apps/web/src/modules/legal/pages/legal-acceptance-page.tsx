@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getLegalDocumentDefinition } from '../../../../../../packages/legal/src';
+import { getLegalDocumentDefinition } from '@axelys/legal';
 import { useAuth } from '../../auth/auth-context';
 import { canAccessAdmin } from '../../admin/permissions';
 import { getErrorMessage } from '../../../shared/ui/error-utils';

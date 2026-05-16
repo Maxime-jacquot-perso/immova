@@ -13,6 +13,7 @@ export type BusinessPageContent = {
   path: string;
   title: string;
   description: string;
+  updatedAt: string;
   eyebrow: string;
   heroTitle: string;
   heroLead: string;
@@ -22,6 +23,7 @@ export type BusinessPageContent = {
   sidebarTitle: string;
   sidebarBody: string;
   sidebarPoints: string[];
+  relatedToolPaths: string[];
   relatedBlogSlugs: string[];
 };
 
@@ -31,6 +33,7 @@ export const businessPages: Record<string, BusinessPageContent> = {
     title: 'Analyse de rentabilité immobilière',
     description:
       'Comprendre ce qu’implique une analyse de rentabilité immobilière sérieuse, au-delà d’un simple rendement affiché dans un tableur.',
+    updatedAt: '2026-05-14',
     eyebrow: 'Décision avant achat',
     heroTitle: 'Analyse de rentabilité immobilière : décider sans se raconter d’histoire',
     heroLead:
@@ -38,7 +41,7 @@ export const businessPages: Record<string, BusinessPageContent> = {
     heroPoints: [
       'Un bon arbitrage croise coût total, cash mobilisé, durée, tension et capacité de sortie.',
       'Un rendement isolé ne suffit pas à qualifier une opportunité.',
-      'Vous gardez un cadre sérieux, sans calculatrice publique simpliste.',
+      'Vous gardez une lecture sérieuse, sans vous limiter à un mini-calcul isolé.',
     ],
     problemCards: [
       {
@@ -78,7 +81,7 @@ export const businessPages: Record<string, BusinessPageContent> = {
         title: 'Ce qu’Axelys change dans cette lecture',
         paragraphs: [
           'Axelys apporte un cadre plus stable pour comparer les opportunités, relire les hypothèses qui comptent et garder une décision exploitable dans le temps.',
-          'L’analyse détaillée s’utilise dans un accès réservé. Vous gardez ainsi une lecture sérieuse, reliée à la suite du projet et pas un simple calcul isolé.',
+          'La lecture du dossier reste reliée au financement, au niveau de risque et à la suite du projet, au lieu de s’arrêter à un calcul isolé.',
         ],
       },
       {
@@ -97,6 +100,10 @@ export const businessPages: Record<string, BusinessPageContent> = {
       'Éviter les coûts oubliés et les hypothèses implicites',
       'Conserver une référence claire pour la suite du pilotage',
     ],
+    relatedToolPaths: [
+      '/outils/calcul-rentabilite-locative',
+      '/outils/calcul-frais-notaire',
+    ],
     relatedBlogSlugs: [
       'comment-analyser-rentabilite-projet-immobilier-serieusement',
       'pourquoi-excel-rentable-peut-cacher-mauvais-projet-immobilier',
@@ -108,6 +115,7 @@ export const businessPages: Record<string, BusinessPageContent> = {
     title: 'Analyse de projet immobilier',
     description:
       'Structurer une analyse de projet immobilier utile, capable d’aider à arbitrer avant achat sans se noyer dans des tableurs dispersés.',
+    updatedAt: '2026-05-14',
     eyebrow: 'Analyse immobilière',
     heroTitle: 'Analyse de projet immobilier : passer d’un “ça peut marcher” à une vraie décision',
     heroLead:
@@ -174,6 +182,10 @@ export const businessPages: Record<string, BusinessPageContent> = {
       'Une lecture claire des hypothèses actives',
       'Une base de départ exploitable pour le projet réel',
     ],
+    relatedToolPaths: [
+      '/outils/simulation-investissement-locatif',
+      '/outils/calcul-frais-notaire',
+    ],
     relatedBlogSlugs: [
       'indicateurs-a-suivre-avant-de-sengager-sur-operation-immobiliere',
       'pourquoi-centraliser-projets-immobiliers-change-la-prise-de-decision',
@@ -185,6 +197,7 @@ export const businessPages: Record<string, BusinessPageContent> = {
     title: 'Pilotage d’opération immobilière',
     description:
       'Mieux piloter une opération immobilière après achat en reliant dépenses, lots, documents, indicateurs utiles et alertes de dérive.',
+    updatedAt: '2026-05-14',
     eyebrow: 'Pilotage après achat',
     heroTitle: 'Pilotage d’opération immobilière : voir les dérives avant qu’elles ne deviennent des dégâts',
     heroLead:
@@ -251,6 +264,10 @@ export const businessPages: Record<string, BusinessPageContent> = {
       'Dérives visibles plus tôt',
       'Pièces et chiffres rattachés au même dossier',
     ],
+    relatedToolPaths: [
+      '/outils/calcul-cashflow-immobilier',
+      '/outils/simulation-investissement-locatif',
+    ],
     relatedBlogSlugs: [
       'comment-reperer-derive-operation-immobiliere-avant-quil-soit-trop-tard',
       'pourquoi-centraliser-projets-immobiliers-change-la-prise-de-decision',
@@ -263,4 +280,5 @@ export const businessPageList = Object.values(businessPages).map((page) => ({
   href: page.path,
   title: page.title,
   description: page.description,
+  updatedAt: page.updatedAt,
 }));

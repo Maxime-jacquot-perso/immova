@@ -2,11 +2,14 @@ import Link from 'next/link';
 import type { BlogPost } from '../content/blog-posts';
 import { businessPageList } from '../content/business-pages';
 import { getRelatedBlogPosts } from '../content/blog-posts';
-import { absoluteUrl, formatFrenchDate } from '../seo';
+import { toolPageList } from '../content/tool-pages';
+import { absoluteUrl, buildBreadcrumbSchema, formatFrenchDate } from '../seo';
 import { LandingCtaLink } from './landing-cta-link';
 import { ArticleCard } from './article-card';
+import { JsonLd } from './json-ld';
 import styles from './marketing-ui.module.css';
 import { SiteShell } from './site-shell';
+import { ToolCard } from './tool-card';
 
 type ArticlePageTemplateProps = {
   post: BlogPost;
@@ -17,6 +20,9 @@ export function ArticlePageTemplate({ post }: ArticlePageTemplateProps) {
     post.relatedPagePaths.includes(page.href),
   );
   const relatedPosts = getRelatedBlogPosts(post.relatedPostSlugs);
+  const relatedTools = toolPageList.filter((tool) =>
+    post.relatedToolPaths.includes(tool.href),
+  );
 
   const articleSchema = {
     '@context': 'https://schema.org',
@@ -36,12 +42,21 @@ export function ArticlePageTemplate({ post }: ArticlePageTemplateProps) {
       name: 'Axelys',
     },
   };
+  const breadcrumbSchema = buildBreadcrumbSchema([
+    { name: 'Accueil', path: '/' },
+    { name: 'Blog', path: '/blog' },
+    { name: post.title, path: `/blog/${post.slug}` },
+  ]);
 
   return (
     <SiteShell currentPath="/blog">
       <div className={styles.page}>
         <section className={styles.articleHero}>
           <div className={styles.breadcrumbRow}>
+            <Link className={styles.breadcrumb} href="/">
+              Accueil
+            </Link>
+            <span className={styles.breadcrumbSeparator}>/</span>
             <Link className={styles.breadcrumb} href="/blog">
               Blog
             </Link>
@@ -111,6 +126,20 @@ export function ArticlePageTemplate({ post }: ArticlePageTemplateProps) {
           </aside>
         </div>
 
+        {relatedTools.length ? (
+          <section className={styles.section}>
+            <div className={styles.sectionHeading}>
+              <div className={styles.eyebrow}>Outils utiles</div>
+              <h2 className={styles.sectionTitle}>Outils pour prolonger la lecture</h2>
+            </div>
+            <div className={styles.resourceGrid}>
+              {relatedTools.map((tool) => (
+                <ToolCard key={tool.href} tool={tool} />
+              ))}
+            </div>
+          </section>
+        ) : null}
+
         {relatedPosts.length ? (
           <section className={styles.section}>
             <div className={styles.sectionHeading}>
@@ -151,12 +180,7 @@ export function ArticlePageTemplate({ post }: ArticlePageTemplateProps) {
         </section>
       </div>
 
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(articleSchema),
-        }}
-      />
+      <JsonLd data={[articleSchema, breadcrumbSchema]} />
     </SiteShell>
   );
 }

@@ -2,7 +2,7 @@ import {
   getLegalDocumentDefinition,
   getLegalDocumentUrl,
   type LegalDocumentType,
-} from '../../../../../packages/legal/src';
+} from '@axelys/legal';
 
 const publicSiteUrl = (import.meta.env.VITE_SITE_URL ?? 'https://axelys.app').replace(
   /\/$/,

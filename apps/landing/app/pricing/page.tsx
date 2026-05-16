@@ -18,32 +18,24 @@ export default function PricingPage() {
     <SiteShell currentPath="/pricing">
       <div className={styles.page}>
         <section className={styles.hero}>
-          <div className={styles.heroGrid}>
-            <div className={styles.heroContent}>
+          <div className={`${styles.heroGrid} ${styles.heroGridSingle}`.trim()}>
+            <div className={`${styles.heroContent} ${styles.heroContentFocused}`.trim()}>
               <div className={styles.eyebrow}>Offres</div>
               <h1 className={styles.heroTitle}>Une offre ouverte aujourd’hui. Deux offres prévues pour la suite.</h1>
               <p className={styles.heroLead}>
                 Le programme client pilote est la seule offre accessible maintenant.
-                Simple et Pro restent visibles pour donner une lecture claire de la suite,
-                sans promettre trop tôt ce qui n’est pas prêt.
+                Simple et Pro restent visibles pour vous donner une lecture claire des
+                prochaines formules.
               </p>
               <div className={styles.actionRow}>
                 <Link className={styles.buttonPrimary} href="/client-pilote">
                   Demander un accès pilote
                 </Link>
-                <Link className={styles.buttonSecondary} href="/blog">
-                  Découvrir le blog
+                <Link className={styles.buttonSecondary} href="/outils">
+                  Voir les outils publics
                 </Link>
               </div>
             </div>
-            <aside className={styles.heroPanel}>
-              <p className={styles.kicker}>Repères</p>
-              <ul className={styles.panelList}>
-                <li>Client pilote accessible sur sélection</li>
-                <li>Simple et Pro clairement affichés comme à venir</li>
-                <li>Pas de promesse détaillée sur un périmètre encore mouvant</li>
-              </ul>
-            </aside>
           </div>
         </section>
 
@@ -90,15 +82,15 @@ export default function PricingPage() {
             <h2 className={styles.sectionTitle}>Le bon point d’entrée reste le programme client pilote.</h2>
             <p className={styles.sectionLead}>
               Si vous avez déjà des opérations concrètes à arbitrer ou à piloter,
-              c’est la seule porte d’entrée actionnable maintenant.
+              c’est l’offre disponible aujourd’hui.
             </p>
           </div>
           <div className={styles.actionRow}>
             <Link className={styles.buttonPrimary} href="/client-pilote">
               Découvrir le programme client pilote
             </Link>
-            <Link className={styles.buttonGhost} href="/analyse-projet-immobilier">
-              Découvrir l’approche Axelys
+            <Link className={styles.buttonGhost} href="/outils">
+              Explorer les outils publics
             </Link>
           </div>
         </section>

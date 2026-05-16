@@ -4,7 +4,7 @@ import {
   getLegalDocumentDefinition,
   listLegalDocumentDefinitions,
   type LegalDocumentType,
-} from '../../../../packages/legal/src';
+} from '@axelys/legal';
 import { LegalFooter } from '../components/legal-footer';
 import { siteName } from '../site-config';
 import { getLegalPageContent } from './legal-content';
@@ -74,46 +74,12 @@ export function LegalDocumentPage({
             <h2>{section.title}</h2>
             <div className={styles.paragraphs}>
               {section.paragraphs?.map((paragraph) => (
-                <p key={paragraph}>
-                  {paragraph.includes('[À compléter') ? (
-                    <>
-                      {paragraph.split(/\[À compléter[^\]]*\]/).map((part, index, array) => (
-                        <span key={`${section.title}-${index}`}>
-                          {part}
-                          {index < array.length - 1 ? (
-                            <span className={styles.placeholder}>
-                              {paragraph.match(/\[À compléter[^\]]*\]/g)?.[index]}
-                            </span>
-                          ) : null}
-                        </span>
-                      ))}
-                    </>
-                  ) : (
-                    paragraph
-                  )}
-                </p>
+                <p key={paragraph}>{paragraph}</p>
               ))}
               {section.bullets ? (
                 <ul>
                   {section.bullets.map((bullet) => (
-                    <li key={bullet}>
-                      {bullet.includes('[À compléter') ? (
-                        <>
-                          {bullet.split(/\[À compléter[^\]]*\]/).map((part, index, array) => (
-                            <span key={`${section.title}-bullet-${index}`}>
-                              {part}
-                              {index < array.length - 1 ? (
-                                <span className={styles.placeholder}>
-                                  {bullet.match(/\[À compléter[^\]]*\]/g)?.[index]}
-                                </span>
-                              ) : null}
-                            </span>
-                          ))}
-                        </>
-                      ) : (
-                        bullet
-                      )}
-                    </li>
+                    <li key={bullet}>{bullet}</li>
                   ))}
                 </ul>
               ) : null}

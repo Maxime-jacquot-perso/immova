@@ -2,10 +2,14 @@ import Link from 'next/link';
 import type { BusinessPageContent } from '../content/business-pages';
 import { businessPageList } from '../content/business-pages';
 import { getRelatedBlogPosts } from '../content/blog-posts';
+import { toolPageList } from '../content/tool-pages';
+import { buildBreadcrumbSchema } from '../seo';
 import { LandingCtaLink } from './landing-cta-link';
 import { ArticleCard } from './article-card';
+import { JsonLd } from './json-ld';
 import styles from './marketing-ui.module.css';
 import { SiteShell } from './site-shell';
+import { ToolCard } from './tool-card';
 
 type BusinessPageTemplateProps = {
   page: BusinessPageContent;
@@ -16,13 +20,25 @@ export function BusinessPageTemplate({
 }: BusinessPageTemplateProps) {
   const relatedPosts = getRelatedBlogPosts(page.relatedBlogSlugs);
   const relatedPages = businessPageList.filter((item) => item.href !== page.path);
+  const relatedTools = toolPageList.filter((item) =>
+    page.relatedToolPaths.includes(item.href),
+  );
+  const breadcrumbSchema = buildBreadcrumbSchema([
+    { name: 'Accueil', path: '/' },
+    { name: page.title, path: page.path },
+  ]);
 
   return (
     <SiteShell currentPath={page.path}>
       <div className={styles.page}>
         <section className={styles.hero}>
-          <div className={styles.heroGrid}>
-            <div className={styles.heroContent}>
+          <div className={`${styles.heroGrid} ${styles.heroGridSingle}`.trim()}>
+            <div className={`${styles.heroContent} ${styles.heroContentFocused}`.trim()}>
+              <div className={styles.breadcrumbRow}>
+                <Link className={styles.breadcrumb} href="/">
+                  Accueil
+                </Link>
+              </div>
               <div className={styles.eyebrow}>{page.eyebrow}</div>
               <h1 className={styles.heroTitle}>{page.heroTitle}</h1>
               <p className={styles.heroLead}>{page.heroLead}</p>
@@ -46,17 +62,6 @@ export function BusinessPageTemplate({
                 </Link>
               </div>
             </div>
-
-            <aside className={styles.heroPanel}>
-              <p className={styles.kicker}>Repère utile</p>
-              <h2 className={styles.panelTitle}>{page.sidebarTitle}</h2>
-              <p className={styles.panelBody}>{page.sidebarBody}</p>
-              <ul className={styles.panelList}>
-                {page.sidebarPoints.map((point) => (
-                  <li key={point}>{point}</li>
-                ))}
-              </ul>
-            </aside>
           </div>
         </section>
 
@@ -129,6 +134,13 @@ export function BusinessPageTemplate({
             <div className={styles.eyebrow}>Aller plus loin</div>
             <h2 className={styles.sectionTitle}>Ressources liées</h2>
           </div>
+          {relatedTools.length ? (
+            <div className={styles.resourceGrid}>
+              {relatedTools.map((tool) => (
+                <ToolCard key={tool.href} tool={tool} />
+              ))}
+            </div>
+          ) : null}
           <div className={styles.resourceGrid}>
             {relatedPages.map((item) => (
               <Link className={styles.resourceCard} href={item.href} key={item.href}>
@@ -170,6 +182,8 @@ export function BusinessPageTemplate({
           </div>
         </section>
       </div>
+
+      <JsonLd data={breadcrumbSchema} />
     </SiteShell>
   );
 }

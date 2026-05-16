@@ -22,10 +22,10 @@ export default function ClientPilotePage() {
     <SiteShell currentPath="/client-pilote" ctaHref="#pilot-form" ctaTarget="#pilot-form" ctaTrackingLabel="jump_to_pilot_form">
       <div className={styles.page}>
         <section className={styles.hero}>
-          <div className={styles.heroGrid}>
-            <div className={styles.heroContent}>
+          <div className={`${styles.heroGrid} ${styles.heroGridSingle}`.trim()}>
+            <div className={`${styles.heroContent} ${styles.heroContentFocused}`.trim()}>
               <div className={styles.eyebrow}>Programme client pilote</div>
-              <h1 className={styles.heroTitle}>Tester Axelys sur vos vrais dossiers, dans un cadre clair.</h1>
+              <h1 className={styles.heroTitle}>Tester Axelys sur vos vrais dossiers, avec un accompagnement clair.</h1>
               <p className={styles.heroLead}>
                 Client pilote est la seule offre accessible aujourd’hui. Elle s’adresse aux
                 profils qui veulent décider avant achat et piloter après acquisition sur des
@@ -45,15 +45,6 @@ export default function ClientPilotePage() {
                 </Link>
               </div>
             </div>
-            <aside className={styles.heroPanel}>
-              <p className={styles.kicker}>Cadre</p>
-              <h2 className={styles.panelTitle}>Sobre, crédible, sans faux raccourci.</h2>
-              <ul className={styles.panelList}>
-                <li>Accès sur sélection</li>
-                <li>Tarif pilote affiché clairement</li>
-                <li>Usage réservé aux contextes pertinents</li>
-              </ul>
-            </aside>
           </div>
         </section>
 
@@ -94,7 +85,7 @@ export default function ClientPilotePage() {
               submitLabel="Envoyer ma demande"
               successTitle="Demande reçue"
               successDescription="Si le contexte correspond au programme client pilote, nous reviendrons vers vous avec la suite."
-              successNote="Le parcours reste volontairement sélectif pour garder un vrai accompagnement et un produit utile."
+              successNote="Le programme client pilote est l’offre disponible aujourd’hui."
               returnHref="/client-pilote"
             />
           </div>

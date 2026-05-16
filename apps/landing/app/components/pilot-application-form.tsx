@@ -310,7 +310,7 @@ export function PilotApplicationForm({
       </button>
 
       <p className={styles.formFootnote}>
-        On lit les demandes une par une. Pas d’inscription automatique.
+        Chaque demande est étudiée manuellement.
       </p>
     </form>
   );

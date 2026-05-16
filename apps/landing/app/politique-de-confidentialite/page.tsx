@@ -8,6 +8,10 @@ export const metadata: Metadata = {
   alternates: {
     canonical: '/politique-de-confidentialite',
   },
+  robots: {
+    index: false,
+    follow: true,
+  },
 };
 
 export default function PolitiqueConfidentialitePage() {
